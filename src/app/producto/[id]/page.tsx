@@ -4,9 +4,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import ProductCard from "@/components/ProductCard";
-import { PRODUCTS } from "@/data/products";
 import ProductPurchasePanel from "./ProductPurchasePanel";
 import { ProductIcon } from "@/components/icons";
+import { getProductById, getRelatedProducts } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
 
 function formatPrice(price: number) {
   return `$${price.toLocaleString("es-MX")}`;
@@ -14,10 +16,10 @@ function formatPrice(price: number) {
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = PRODUCTS.find((p) => p.id === id);
+  const product = await getProductById(id);
   if (!product) notFound();
 
-  const related = PRODUCTS.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 4);
+  const related = await getRelatedProducts(product.category, product.id);
 
   return (
     <div className="flex flex-col min-h-screen">

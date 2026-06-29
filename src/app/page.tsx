@@ -3,10 +3,13 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import ProductCard from "@/components/ProductCard";
-import { CATEGORIES, PRODUCTS } from "@/data/products";
+import { CATEGORIES } from "@/data/products";
+import { getFeaturedProducts } from "@/lib/data";
 
-export default function Home() {
-  const featured = PRODUCTS.filter((p) => p.featured);
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const featured = await getFeaturedProducts();
 
   return (
     <div className="flex flex-col min-h-screen">
