@@ -28,7 +28,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
       <div className="flex flex-col md:flex-row flex-1">
         {/* LEFT: DARK VISUAL PANEL */}
         <div
-          className="relative md:w-[620px] shrink-0 bg-diose-black flex flex-col items-center justify-center py-16 md:py-0"
+          className="relative md:w-[46%] shrink-0 bg-diose-black flex flex-col items-center justify-center p-9 md:p-0 md:min-h-[560px]"
           style={{
             backgroundImage: "radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px)",
             backgroundSize: "24px 24px",
@@ -49,8 +49,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             <span className="text-[11px] text-white/60">{product.name}</span>
           </div>
 
-          <div className="w-[260px] h-[260px] md:w-[340px] md:h-[340px] bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-4">
-            <ProductIcon icon={product.icon} size={80} color="rgba(255,255,255,.2)" strokeWidth={0.8} />
+          <div className="w-full max-w-[440px] aspect-square bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-4">
+            <ProductIcon icon={product.icon} size={110} color="rgba(255,255,255,.2)" strokeWidth={0.7} />
             <span className="text-[10px] text-white/20 tracking-[0.16em] uppercase">Imagen del producto</span>
           </div>
 
@@ -62,15 +62,15 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* RIGHT: PRODUCT INFO PANEL */}
-        <div className="flex-1 p-8 md:p-12">
-          <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-4">
+        <div className="flex-1 p-8 md:p-10 flex flex-col">
+          <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-2.5">
             {product.brand} · SKU-{product.sku}
           </div>
-          <h1 className="font-heading text-4xl md:text-[56px] text-diose-black tracking-[0.02em] leading-[0.92] mb-5">
+          <h1 className="font-heading text-3xl md:text-[40px] text-diose-black tracking-[0.02em] leading-[0.95] mb-3">
             {product.name}
           </h1>
-          <div className="flex items-center gap-4 mb-7">
-            <span className="text-[30px] font-semibold text-diose-amber">{formatPrice(product.price)}</span>
+          <div className="flex items-center gap-4 mb-4">
+            <span className="text-2xl font-semibold text-diose-amber">{formatPrice(product.price)}</span>
             {product.stockStatus !== "AGOTADO" ? (
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 bg-diose-amber rounded-full" />
@@ -83,20 +83,18 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             )}
           </div>
 
-          <div className="h-px bg-diose-border-light mb-5" />
+          <div className="h-px bg-diose-border-light mb-4" />
 
-          {product.description && (
-            <p className="text-sm text-gray-600 font-light leading-relaxed mb-5 max-w-lg">
-              {product.description}
-            </p>
-          )}
+          <p className="text-sm text-gray-600 font-light leading-relaxed mb-5 max-w-lg">
+            {product.description || "Producto disponible en nuestro catálogo. Contáctanos para más detalles técnicos o cotización personalizada."}
+          </p>
 
           {product.specs && (
-            <div className="grid grid-cols-2 gap-0 mb-6 border border-diose-border-light">
+            <div className="grid grid-cols-2 gap-0 mb-5 border border-diose-border-light">
               {Object.entries(product.specs).map(([key, value], i) => (
                 <div
                   key={key}
-                  className={`p-3.5 border-diose-border-light ${i % 2 === 0 ? "border-r" : ""} border-b`}
+                  className={`p-3 border-diose-border-light ${i % 2 === 0 ? "border-r" : ""} border-b`}
                 >
                   <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-1">
                     {key}
@@ -107,7 +105,9 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          <ProductPurchasePanel product={product} />
+          <div className="mt-auto">
+            <ProductPurchasePanel product={product} />
+          </div>
         </div>
       </div>
 
