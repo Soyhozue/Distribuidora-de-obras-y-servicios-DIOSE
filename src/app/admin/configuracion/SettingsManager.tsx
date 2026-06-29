@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { HeroSlide } from "@/lib/data";
+import HeroSlideLayer from "@/components/HeroSlideLayer";
 
 type Settings = {
   phone: string;
@@ -53,6 +54,7 @@ export default function SettingsManager({
   const router = useRouter();
   const [form, setForm] = useState(settings);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(initialHeroSlides);
+  const [selectedSlide, setSelectedSlide] = useState(0);
   const [saving, setSaving] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
@@ -66,7 +68,11 @@ export default function SettingsManager({
     setUploadingHero(true);
     try {
       const uploaded = await Promise.all(Array.from(files).map(uploadImage));
-      setHeroSlides((slides) => [...slides, ...uploaded.map(newSlide)]);
+      setHeroSlides((slides) => {
+        const next = [...slides, ...uploaded.map(newSlide)];
+        setSelectedSlide(slides.length);
+        return next;
+      });
     } finally {
       setUploadingHero(false);
     }
@@ -74,6 +80,7 @@ export default function SettingsManager({
 
   function removeHeroSlide(index: number) {
     setHeroSlides((slides) => slides.filter((_, i) => i !== index));
+    setSelectedSlide((s) => Math.max(0, Math.min(s, heroSlides.length - 2)));
   }
 
   function updateHeroSlide(index: number, patch: Partial<HeroSlide>) {
@@ -271,88 +278,115 @@ export default function SettingsManager({
         <div className="bg-white border border-diose-border p-6">
           <div className="font-heading text-lg text-diose-black mb-1">Imágenes del banner principal</div>
           <div className="text-xs text-gray-400 mb-5">
-            Sube varias imágenes — rotan cada 4 segundos en la portada. Para cada una puedes ajustar el encuadre, el
-            zoom y qué tan oscuro se ve detrás del texto. Si no subes ninguna, se usa la imagen por defecto.
+            Sube varias imágenes — rotan cada 4 segundos en la portada. Selecciona una abajo para ajustar cómo se ve;
+            la vista previa muestra exactamente cómo se verá en el sitio. Si no subes ninguna, se usa la imagen por
+            defecto.
           </div>
-          <div className="flex flex-col gap-4">
-            {heroSlides.map((slide, i) => (
-              <div key={slide.url + i} className="flex gap-4 border border-diose-border-light p-3">
-                <div
-                  className="relative w-32 h-20 shrink-0 overflow-hidden bg-diose-black"
-                >
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      backgroundImage: `url('${slide.url}')`,
-                      backgroundSize: "cover",
-                      backgroundPosition: `${slide.focusX}% ${slide.focusY}%`,
-                      transform: `scale(${slide.zoom / 100})`,
-                    }}
-                  />
-                  <div
-                    className="absolute inset-0 bg-black"
-                    style={{ opacity: (slide.overlay / 100) * 0.6 }}
-                  />
+
+          {heroSlides.length > 0 && (
+            <>
+              {/* LIVE PREVIEW */}
+              <div className="relative w-full aspect-[16/8] bg-diose-black overflow-hidden mb-4">
+                <HeroSlideLayer slide={heroSlides[selectedSlide] ?? heroSlides[0]} />
+                <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-10 max-w-md">
+                  <div className="w-8 h-0.5 bg-diose-amber mb-2" />
+                  <div className="text-[8px] md:text-[10px] text-white/50 tracking-[0.18em] uppercase mb-1.5">
+                    {form.heroEyebrow}
+                  </div>
+                  <h2 className="font-heading text-white text-2xl md:text-[40px] leading-[0.92] tracking-[0.02em]">
+                    {form.heroTitleLine1}
+                    <br />
+                    <span className="text-diose-amber">{form.heroTitleLine2}</span>
+                    <br />
+                    {form.heroTitleLine3}
+                  </h2>
+                  <p className="hidden md:block text-[12px] text-white/60 font-light mt-2 max-w-xs leading-relaxed">
+                    {form.heroSubtitle}
+                  </p>
                 </div>
-                <div className="flex-1 grid grid-cols-2 gap-3">
+              </div>
+
+              {/* PER-SLIDE CONTROLS */}
+              {heroSlides[selectedSlide] && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                   <label className="flex flex-col gap-1">
                     <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
-                      Posición horizontal ({slide.focusX}%)
+                      Posición horizontal ({heroSlides[selectedSlide].focusX}%)
                     </span>
                     <input
                       type="range"
                       min={0}
                       max={100}
-                      value={slide.focusX}
-                      onChange={(e) => updateHeroSlide(i, { focusX: Number(e.target.value) })}
+                      value={heroSlides[selectedSlide].focusX}
+                      onChange={(e) => updateHeroSlide(selectedSlide, { focusX: Number(e.target.value) })}
                     />
                   </label>
                   <label className="flex flex-col gap-1">
                     <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
-                      Posición vertical ({slide.focusY}%)
+                      Posición vertical ({heroSlides[selectedSlide].focusY}%)
                     </span>
                     <input
                       type="range"
                       min={0}
                       max={100}
-                      value={slide.focusY}
-                      onChange={(e) => updateHeroSlide(i, { focusY: Number(e.target.value) })}
+                      value={heroSlides[selectedSlide].focusY}
+                      onChange={(e) => updateHeroSlide(selectedSlide, { focusY: Number(e.target.value) })}
                     />
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">Zoom ({slide.zoom}%)</span>
+                    <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
+                      Zoom ({heroSlides[selectedSlide].zoom}%)
+                    </span>
                     <input
                       type="range"
                       min={100}
                       max={200}
-                      value={slide.zoom}
-                      onChange={(e) => updateHeroSlide(i, { zoom: Number(e.target.value) })}
+                      value={heroSlides[selectedSlide].zoom}
+                      onChange={(e) => updateHeroSlide(selectedSlide, { zoom: Number(e.target.value) })}
                     />
                   </label>
                   <label className="flex flex-col gap-1">
                     <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
-                      Oscurecido ({slide.overlay}%)
+                      Oscurecido ({heroSlides[selectedSlide].overlay}%)
                     </span>
                     <input
                       type="range"
                       min={0}
                       max={100}
-                      value={slide.overlay}
-                      onChange={(e) => updateHeroSlide(i, { overlay: Number(e.target.value) })}
+                      value={heroSlides[selectedSlide].overlay}
+                      onChange={(e) => updateHeroSlide(selectedSlide, { overlay: Number(e.target.value) })}
                     />
                   </label>
                 </div>
+              )}
+            </>
+          )}
+
+          {/* THUMBNAIL STRIP */}
+          <div className="flex flex-wrap gap-2.5">
+            {heroSlides.map((slide, i) => (
+              <div
+                key={slide.url + i}
+                onClick={() => setSelectedSlide(i)}
+                className={`relative w-20 h-14 shrink-0 overflow-hidden cursor-pointer border-2 ${
+                  i === selectedSlide ? "border-diose-amber" : "border-transparent"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={slide.url} alt="" className="w-full h-full object-cover" />
                 <button
-                  onClick={() => removeHeroSlide(i)}
-                  className="self-start text-gray-300 cursor-pointer hover:text-diose-danger text-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeHeroSlide(i);
+                  }}
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-diose-black text-white text-[9px] flex items-center justify-center cursor-pointer rounded-full"
                 >
                   ✕
                 </button>
               </div>
             ))}
-
-            <label className="border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-xs py-4 hover:border-diose-amber">
-              {uploadingHero ? "Subiendo..." : "+ Subir imagen"}
+            <label className="w-20 h-14 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-[10px] shrink-0 hover:border-diose-amber text-center">
+              {uploadingHero ? "..." : "+ Subir"}
               <input
                 type="file"
                 accept="image/*"

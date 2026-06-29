@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { HeroSlide } from "@/lib/data";
+import HeroSlideLayer from "./HeroSlideLayer";
 
 const FALLBACK_SLIDE: HeroSlide = {
   url: "/images/hero-warehouse.png",
@@ -25,28 +26,11 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {items.map((slide, i) => {
-        const darkness = slide.overlay / 100;
-        return (
-          <div key={slide.url + i} className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: i === active ? 1 : 0 }}>
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url('${slide.url}')`,
-                backgroundSize: "cover",
-                backgroundPosition: `${slide.focusX}% ${slide.focusY}%`,
-                transform: `scale(${slide.zoom / 100})`,
-              }}
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `linear-gradient(to right, rgba(5,5,5,${0.93 * darkness}) 32%, rgba(5,5,5,${0.6 * darkness}) 70%, rgba(5,5,5,${0.38 * darkness}) 100%)`,
-              }}
-            />
-          </div>
-        );
-      })}
+      {items.map((slide, i) => (
+        <div key={slide.url + i} className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: i === active ? 1 : 0 }}>
+          <HeroSlideLayer slide={slide} />
+        </div>
+      ))}
       {items.length > 1 && (
         <div className="absolute bottom-5 left-6 md:left-20 z-10 flex gap-1.5">
           {items.map((_, i) => (
