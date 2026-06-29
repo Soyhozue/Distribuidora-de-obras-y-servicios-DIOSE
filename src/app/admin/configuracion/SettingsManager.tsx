@@ -14,6 +14,7 @@ type Settings = {
   heroEyebrow: string;
   heroTitle: string;
   heroTitleHighlight: string;
+  heroTitleHighlightColor: string;
   heroSubtitle: string;
   heroCta1Label: string;
   heroCta1Link: string;
@@ -220,16 +221,25 @@ export default function SettingsManager({
             </label>
             <label className="flex flex-col gap-1 sm:col-span-2">
               <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
-                Palabra o frase que quieres en azul dentro del título
+                Palabra o frase a resaltar de color (debe estar escrita igual dentro del título de arriba)
               </span>
-              <input
-                value={form.heroTitleHighlight}
-                onChange={(e) => setForm({ ...form, heroTitleHighlight: e.target.value })}
-                placeholder="Ej: LO QUE"
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
+              <div className="flex gap-2 items-stretch">
+                <input
+                  value={form.heroTitleHighlight}
+                  onChange={(e) => setForm({ ...form, heroTitleHighlight: e.target.value })}
+                  placeholder="Ej: LO QUE"
+                  className="border border-diose-border px-3 py-2 text-sm outline-none flex-1"
+                />
+                <input
+                  type="color"
+                  value={form.heroTitleHighlightColor}
+                  onChange={(e) => setForm({ ...form, heroTitleHighlightColor: e.target.value })}
+                  className="w-11 border border-diose-border cursor-pointer"
+                  title="Color del resaltado"
+                />
+              </div>
             </label>
-            <label className="flex flex-col gap-1">
+            <label className="flex flex-col gap-1 sm:col-span-2">
               <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Párrafo</span>
               <input
                 value={form.heroSubtitle}
@@ -237,38 +247,51 @@ export default function SettingsManager({
                 className="border border-diose-border px-3 py-2 text-sm outline-none"
               />
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Botón 1 — texto</span>
-              <input
-                value={form.heroCta1Label}
-                onChange={(e) => setForm({ ...form, heroCta1Label: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Botón 1 — enlace</span>
-              <input
-                value={form.heroCta1Link}
-                onChange={(e) => setForm({ ...form, heroCta1Link: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Botón 2 — texto</span>
-              <input
-                value={form.heroCta2Label}
-                onChange={(e) => setForm({ ...form, heroCta2Label: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Botón 2 — enlace</span>
-              <input
-                value={form.heroCta2Link}
-                onChange={(e) => setForm({ ...form, heroCta2Link: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
+          </div>
+
+          <div className="border-t border-diose-border-light mt-5 pt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                Botón 1 (blanco, izquierda)
+              </span>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Texto del botón</span>
+                <input
+                  value={form.heroCta1Label}
+                  onChange={(e) => setForm({ ...form, heroCta1Label: e.target.value })}
+                  className="border border-diose-border px-3 py-2 text-sm outline-none"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">A dónde lleva al hacer clic</span>
+                <input
+                  value={form.heroCta1Link}
+                  onChange={(e) => setForm({ ...form, heroCta1Link: e.target.value })}
+                  className="border border-diose-border px-3 py-2 text-sm outline-none"
+                />
+              </label>
+            </div>
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                Botón 2 (con borde, derecha)
+              </span>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Texto del botón</span>
+                <input
+                  value={form.heroCta2Label}
+                  onChange={(e) => setForm({ ...form, heroCta2Label: e.target.value })}
+                  className="border border-diose-border px-3 py-2 text-sm outline-none"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">A dónde lleva al hacer clic</span>
+                <input
+                  value={form.heroCta2Link}
+                  onChange={(e) => setForm({ ...form, heroCta2Link: e.target.value })}
+                  className="border border-diose-border px-3 py-2 text-sm outline-none"
+                />
+              </label>
+            </div>
           </div>
         </div>
 
@@ -294,6 +317,7 @@ export default function SettingsManager({
                   <HeroTitle
                     title={form.heroTitle}
                     highlight={form.heroTitleHighlight}
+                    highlightColor={form.heroTitleHighlightColor}
                     className="font-heading text-white text-2xl md:text-[40px] leading-[0.92] tracking-[0.02em]"
                   />
                   <p className="hidden md:block text-[12px] text-white/60 font-light mt-2 max-w-xs leading-relaxed">

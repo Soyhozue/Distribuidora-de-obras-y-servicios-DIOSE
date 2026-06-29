@@ -3,10 +3,12 @@ import { Fragment } from "react";
 export default function HeroTitle({
   title,
   highlight,
+  highlightColor,
   className,
 }: {
   title: string;
   highlight: string;
+  highlightColor: string;
   className?: string;
 }) {
   const lines = title.split("\n");
@@ -22,7 +24,7 @@ export default function HeroTitle({
             ) : (
               <>
                 {line.slice(0, idx)}
-                <span className="text-diose-amber">{line.slice(idx, idx + highlight.length)}</span>
+                <span style={{ color: highlightColor }}>{line.slice(idx, idx + highlight.length)}</span>
                 {line.slice(idx + highlight.length)}
               </>
             )}

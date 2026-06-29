@@ -172,6 +172,7 @@ model SiteSettings {
   heroEyebrow        String   @default("Ciudad Juárez · 8 años de experiencia")
   heroTitle          String   @default("CONSTRUYE\nLO QUE\nIMAGINAS")
   heroTitleHighlight String   @default("LO QUE")
+  heroTitleHighlightColor String @default("#1d5fb8")
   heroSubtitle       String   @default("Materiales de construcción, herramientas profesionales y suministros para cada obra en Ciudad Juárez.")
   heroCta1Label   String   @default("Ver Catálogo")
   heroCta1Link    String   @default("/catalogo")

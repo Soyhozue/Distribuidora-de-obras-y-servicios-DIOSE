@@ -32,6 +32,7 @@ export default async function Home() {
           <HeroTitle
             title={settings.heroTitle}
             highlight={settings.heroTitleHighlight}
+            highlightColor={settings.heroTitleHighlightColor}
             className="font-heading text-white text-[56px] md:text-[86px] leading-[0.9] tracking-[0.02em]"
           />
           <p className="text-[15px] text-white/60 font-light mt-3.5 mb-6 max-w-md leading-relaxed">

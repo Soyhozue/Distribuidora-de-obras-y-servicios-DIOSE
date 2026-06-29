@@ -441,6 +441,7 @@ export type SiteSettingsInput = {
   heroEyebrow: string;
   heroTitle: string;
   heroTitleHighlight: string;
+  heroTitleHighlightColor: string;
   heroSubtitle: string;
   heroCta1Label: string;
   heroCta1Link: string;
