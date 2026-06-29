@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import ProductCard from "@/components/ProductCard";
 import HeroCarousel from "@/components/HeroCarousel";
+import HeroTitle from "@/components/HeroTitle";
 import PromoSection from "@/components/PromoSection";
 import { CATEGORIES } from "@/data/products";
 import { getFeaturedProducts, getPromoImages, getSiteSettings, parseHeroSlides } from "@/lib/data";
@@ -28,13 +29,11 @@ export default async function Home() {
         <div className="relative z-10 px-6 md:px-20 py-16 md:py-24 max-w-3xl">
           <div className="w-12 h-0.5 bg-diose-amber mb-3" />
           <div className="text-[11px] text-white/50 tracking-[0.2em] uppercase mb-2.5">{settings.heroEyebrow}</div>
-          <h1 className="font-heading text-white text-[56px] md:text-[86px] leading-[0.9] tracking-[0.02em]">
-            {settings.heroTitleLine1}
-            <br />
-            <span className="text-diose-amber">{settings.heroTitleLine2}</span>
-            <br />
-            {settings.heroTitleLine3}
-          </h1>
+          <HeroTitle
+            title={settings.heroTitle}
+            highlight={settings.heroTitleHighlight}
+            className="font-heading text-white text-[56px] md:text-[86px] leading-[0.9] tracking-[0.02em]"
+          />
           <p className="text-[15px] text-white/60 font-light mt-3.5 mb-6 max-w-md leading-relaxed">
             {settings.heroSubtitle}
           </p>

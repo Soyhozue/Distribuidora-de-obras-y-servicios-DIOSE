@@ -433,9 +433,8 @@ export type SiteSettingsInput = {
   address: string;
   heroSlides: HeroSlide[];
   heroEyebrow: string;
-  heroTitleLine1: string;
-  heroTitleLine2: string;
-  heroTitleLine3: string;
+  heroTitle: string;
+  heroTitleHighlight: string;
   heroSubtitle: string;
   heroCta1Label: string;
   heroCta1Link: string;

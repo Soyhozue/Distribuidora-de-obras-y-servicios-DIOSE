@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { HeroSlide } from "@/lib/data";
 import HeroSlideLayer from "@/components/HeroSlideLayer";
+import HeroTitle from "@/components/HeroTitle";
 
 type Settings = {
   phone: string;
@@ -11,9 +12,8 @@ type Settings = {
   email: string;
   address: string;
   heroEyebrow: string;
-  heroTitleLine1: string;
-  heroTitleLine2: string;
-  heroTitleLine3: string;
+  heroTitle: string;
+  heroTitleHighlight: string;
   heroSubtitle: string;
   heroCta1Label: string;
   heroCta1Link: string;
@@ -207,27 +207,25 @@ export default function SettingsManager({
                 className="border border-diose-border px-3 py-2 text-sm outline-none"
               />
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Título — línea 1</span>
-              <input
-                value={form.heroTitleLine1}
-                onChange={(e) => setForm({ ...form, heroTitleLine1: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
+            <label className="flex flex-col gap-1 sm:col-span-2">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Título grande (un salto de línea = una línea nueva en el banner)
+              </span>
+              <textarea
+                value={form.heroTitle}
+                onChange={(e) => setForm({ ...form, heroTitle: e.target.value })}
+                rows={3}
+                className="border border-diose-border px-3 py-2 text-sm outline-none resize-none"
               />
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Título — línea 2 (color azul)</span>
+            <label className="flex flex-col gap-1 sm:col-span-2">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Palabra o frase que quieres en azul dentro del título
+              </span>
               <input
-                value={form.heroTitleLine2}
-                onChange={(e) => setForm({ ...form, heroTitleLine2: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Título — línea 3</span>
-              <input
-                value={form.heroTitleLine3}
-                onChange={(e) => setForm({ ...form, heroTitleLine3: e.target.value })}
+                value={form.heroTitleHighlight}
+                onChange={(e) => setForm({ ...form, heroTitleHighlight: e.target.value })}
+                placeholder="Ej: LO QUE"
                 className="border border-diose-border px-3 py-2 text-sm outline-none"
               />
             </label>
@@ -293,13 +291,11 @@ export default function SettingsManager({
                   <div className="text-[8px] md:text-[10px] text-white/50 tracking-[0.18em] uppercase mb-1.5">
                     {form.heroEyebrow}
                   </div>
-                  <h2 className="font-heading text-white text-2xl md:text-[40px] leading-[0.92] tracking-[0.02em]">
-                    {form.heroTitleLine1}
-                    <br />
-                    <span className="text-diose-amber">{form.heroTitleLine2}</span>
-                    <br />
-                    {form.heroTitleLine3}
-                  </h2>
+                  <HeroTitle
+                    title={form.heroTitle}
+                    highlight={form.heroTitleHighlight}
+                    className="font-heading text-white text-2xl md:text-[40px] leading-[0.92] tracking-[0.02em]"
+                  />
                   <p className="hidden md:block text-[12px] text-white/60 font-light mt-2 max-w-xs leading-relaxed">
                     {form.heroSubtitle}
                   </p>
