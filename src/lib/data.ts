@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import type { Product } from "@/data/products";
 import type { ProductIconKey } from "@/components/icons";
@@ -23,18 +24,22 @@ type DbProduct = {
   unit: string | null;
   stock: number;
   stockStatus: string;
+  categoryId: string;
+  brandId: string;
   category: { name: string };
   brand: { name: string };
   featured: boolean;
 };
 
-function mapProduct(p: DbProduct): Product {
+function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: string } {
   return {
     id: p.id,
     sku: p.sku,
     name: p.name,
     brand: p.brand.name,
     category: p.category.name,
+    categoryId: p.categoryId,
+    brandId: p.brandId,
     price: Number(p.price.toString()),
     unit: p.unit ?? undefined,
     stock: p.stock,
@@ -45,7 +50,9 @@ function mapProduct(p: DbProduct): Product {
   };
 }
 
-export async function getAllProducts(): Promise<Product[]> {
+export type ManagedProduct = Product & { categoryId: string; brandId: string };
+
+export async function getAllProducts(): Promise<ManagedProduct[]> {
   const products = await prisma.product.findMany({
     include: { category: true, brand: true },
     orderBy: { name: "asc" },
@@ -77,6 +84,41 @@ export async function getRelatedProducts(categoryName: string, excludeId: string
     take: 4,
   });
   return products.map(mapProduct);
+}
+
+export type ProductInput = {
+  sku: string;
+  name: string;
+  description?: string;
+  price: number;
+  unit?: string;
+  stock: number;
+  stockStatus: "EN_STOCK" | "STOCK_BAJO" | "AGOTADO";
+  categoryId: string;
+  brandId: string;
+  featured?: boolean;
+};
+
+export async function createProduct(input: ProductInput) {
+  return prisma.product.create({ data: input });
+}
+
+export async function updateProduct(id: string, input: ProductInput) {
+  return prisma.product.update({ where: { id }, data: input });
+}
+
+export async function deleteProduct(id: string) {
+  await prisma.orderItem.deleteMany({ where: { productId: id } });
+  await prisma.comboItem.deleteMany({ where: { productId: id } });
+  await prisma.product.delete({ where: { id } });
+}
+
+export async function getCategoryOptions() {
+  return prisma.category.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
+}
+
+export async function getBrandOptions() {
+  return prisma.brand.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
 }
 
 export async function getCategoriesWithCounts() {
@@ -214,6 +256,108 @@ export async function getOrderById(id: string) {
       price: `$${Number(i.unitPrice.toString()).toLocaleString("es-MX")}`,
     })),
   };
+}
+
+export async function createContactMessage(input: {
+  name: string;
+  phone?: string;
+  email: string;
+  message: string;
+}) {
+  return prisma.contactMessage.create({ data: input });
+}
+
+export async function registerUser(input: { name: string; email: string; phone?: string; password: string }) {
+  const existing = await prisma.user.findUnique({ where: { email: input.email } });
+  if (existing) {
+    throw new Error("Ya existe una cuenta con ese correo");
+  }
+  const hashed = await bcrypt.hash(input.password, 10);
+  return prisma.user.create({
+    data: { name: input.name, email: input.email, phone: input.phone, password: hashed },
+  });
+}
+
+export async function verifyUserCredentials(email: string, password: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return null;
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return null;
+  return user;
+}
+
+export async function getUserById(id: string) {
+  return prisma.user.findUnique({ where: { id } });
+}
+
+export async function getUserOrders(userId: string) {
+  const orders = await prisma.order.findMany({
+    where: { userId },
+    include: { items: { include: { product: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+  return orders.map((o) => ({
+    number: o.number,
+    date: o.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }),
+    products: o.items.map((i) => i.product.name).join(", "),
+    total: Number(o.total.toString()),
+    status: statusLabel(o.status),
+  }));
+}
+
+export async function getUserAddresses(userId: string) {
+  return prisma.address.findMany({ where: { userId } });
+}
+
+export type CreateComboInput = {
+  title: string;
+  subtitle?: string;
+  type: "COMBO" | "INDIVIDUAL" | "OFERTA" | "BANNER";
+  format: string;
+  background: string;
+  comboPrice?: number;
+  savings?: number;
+  productIds: string[];
+};
+
+export async function createCombo(input: CreateComboInput) {
+  return prisma.combo.create({
+    data: {
+      title: input.title,
+      subtitle: input.subtitle,
+      type: input.type,
+      format: input.format,
+      background: input.background,
+      comboPrice: input.comboPrice,
+      savings: input.savings,
+      items: { create: input.productIds.map((productId) => ({ productId })) },
+    },
+  });
+}
+
+export async function getCombos() {
+  const combos = await prisma.combo.findMany({
+    include: { items: { include: { product: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 30,
+  });
+  return combos.map((c) => ({
+    id: c.id,
+    title: c.title,
+    subtitle: c.subtitle,
+    type: c.type,
+    format: c.format,
+    background: c.background,
+    comboPrice: c.comboPrice ? Number(c.comboPrice.toString()) : null,
+    savings: c.savings ? Number(c.savings.toString()) : null,
+    createdAt: c.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }),
+    products: c.items.map((i) => i.product.name),
+  }));
+}
+
+export async function deleteCombo(id: string) {
+  await prisma.comboItem.deleteMany({ where: { comboId: id } });
+  await prisma.combo.delete({ where: { id } });
 }
 
 export async function updateOrderStatus(

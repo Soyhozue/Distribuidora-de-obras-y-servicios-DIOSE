@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -10,6 +10,16 @@ import type { Product } from "@/data/products";
 
 type CategoryCount = { name: string; count: number };
 type BrandCount = { name: string; count: number };
+
+const SORT_OPTIONS = [
+  { key: "relevancia", label: "Relevancia" },
+  { key: "precio-asc", label: "Precio: menor a mayor" },
+  { key: "precio-desc", label: "Precio: mayor a menor" },
+  { key: "nombre", label: "Nombre (A-Z)" },
+] as const;
+type SortKey = (typeof SORT_OPTIONS)[number]["key"];
+
+const PAGE_SIZE = 12;
 
 export default function CatalogoClient({
   products,
@@ -24,16 +34,30 @@ export default function CatalogoClient({
   const [category, setCategory] = useState<string | null>(null);
   const [brand, setBrand] = useState<string | null>(null);
   const [onlyInStock, setOnlyInStock] = useState(false);
+  const [sort, setSort] = useState<SortKey>("relevancia");
+  const [sortOpen, setSortOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
-    return products.filter((p) => {
+    const result = products.filter((p) => {
       if (category && p.category !== category) return false;
       if (brand && p.brand !== brand) return false;
       if (onlyInStock && p.stockStatus === "AGOTADO") return false;
       if (query && !p.name.toLowerCase().includes(query.toLowerCase())) return false;
       return true;
     });
-  }, [query, category, brand, onlyInStock]);
+    if (sort === "precio-asc") result.sort((a, b) => a.price - b.price);
+    if (sort === "precio-desc") result.sort((a, b) => b.price - a.price);
+    if (sort === "nombre") result.sort((a, b) => a.name.localeCompare(b.name));
+    return result;
+  }, [products, query, category, brand, onlyInStock, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageProducts = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, category, brand, onlyInStock, sort]);
 
   return (
     <div className="flex flex-col min-h-screen bg-diose-gray">
@@ -54,12 +78,31 @@ export default function CatalogoClient({
             className="text-[13px] text-diose-black bg-transparent outline-none w-full placeholder:text-gray-400"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           <span className="text-xs text-gray-400">Ordenar por</span>
-          <div className="border border-diose-border px-3.5 py-1.5 text-xs text-gray-700 flex items-center gap-2 cursor-pointer">
-            <span>Relevancia</span>
+          <div
+            onClick={() => setSortOpen((v) => !v)}
+            className="border border-diose-border px-3.5 py-1.5 text-xs text-gray-700 flex items-center gap-2 cursor-pointer"
+          >
+            <span>{SORT_OPTIONS.find((o) => o.key === sort)?.label}</span>
             <ChevronDownIcon />
           </div>
+          {sortOpen && (
+            <div className="absolute top-full right-0 mt-1 bg-white border border-diose-border shadow-lg z-10 min-w-[200px]">
+              {SORT_OPTIONS.map((o) => (
+                <div
+                  key={o.key}
+                  onClick={() => {
+                    setSort(o.key);
+                    setSortOpen(false);
+                  }}
+                  className="px-3.5 py-2 text-xs text-gray-600 hover:bg-gray-50 cursor-pointer"
+                >
+                  {o.label}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -159,7 +202,7 @@ export default function CatalogoClient({
         {/* PRODUCT GRID */}
         <main className="flex-1 p-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-            {filtered.map((product) => (
+            {pageProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -170,18 +213,21 @@ export default function CatalogoClient({
             </div>
           )}
 
-          {/* Pagination */}
-          <div className="flex items-center justify-center gap-1 mt-6">
-            <div className="w-8 h-8 bg-diose-black flex items-center justify-center cursor-pointer">
-              <span className="text-[13px] text-white font-medium">1</span>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-1 mt-6">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                <div
+                  key={n}
+                  onClick={() => setPage(n)}
+                  className={`w-8 h-8 flex items-center justify-center cursor-pointer ${
+                    page === n ? "bg-diose-black" : "border border-diose-border"
+                  }`}
+                >
+                  <span className={`text-[13px] font-medium ${page === n ? "text-white" : "text-gray-600"}`}>{n}</span>
+                </div>
+              ))}
             </div>
-            <div className="w-8 h-8 border border-diose-border flex items-center justify-center cursor-pointer">
-              <span className="text-[13px] text-gray-600">2</span>
-            </div>
-            <div className="w-8 h-8 border border-diose-border flex items-center justify-center cursor-pointer">
-              <span className="text-[13px] text-gray-600">3</span>
-            </div>
-          </div>
+          )}
         </main>
       </div>
 

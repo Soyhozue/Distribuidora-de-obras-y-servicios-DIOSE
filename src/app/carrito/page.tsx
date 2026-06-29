@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -11,11 +12,36 @@ function formatPrice(price: number) {
   return `$${price.toLocaleString("es-MX")}`;
 }
 
+const COUPONS: Record<string, number> = {
+  DIOSE10: 0.1,
+  BIENVENIDA: 0.05,
+};
+
 export default function CartPage() {
   const lines = useCartStore((s) => s.lines);
   const setQuantity = useCartStore((s) => s.setQuantity);
   const remove = useCartStore((s) => s.remove);
-  const { subtotal, shipping, total, pieceCount } = cartTotals(lines);
+  const { subtotal, shipping, total: rawTotal, pieceCount } = cartTotals(lines);
+
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState("");
+
+  const discountRate = appliedCoupon ? COUPONS[appliedCoupon] : 0;
+  const discount = Math.round(subtotal * discountRate);
+  const total = rawTotal - discount;
+
+  function applyCoupon() {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    if (COUPONS[code]) {
+      setAppliedCoupon(code);
+      setCouponError("");
+    } else {
+      setAppliedCoupon(null);
+      setCouponError("Código no válido");
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -112,14 +138,27 @@ export default function CartPage() {
                 <span className="text-[13px] text-gray-500">¿Tienes un código?</span>
                 <div className="flex">
                   <input
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
                     placeholder="Cupón"
                     className="border border-diose-border border-r-0 px-2.5 py-1.5 text-xs w-30 outline-none bg-white"
                   />
-                  <div className="bg-gray-800 text-white px-3 py-1.5 text-xs font-medium cursor-pointer tracking-[0.06em]">
+                  <button
+                    onClick={applyCoupon}
+                    className="bg-gray-800 text-white px-3 py-1.5 text-xs font-medium cursor-pointer tracking-[0.06em]"
+                  >
                     Aplicar
-                  </div>
+                  </button>
                 </div>
               </div>
+              {couponError && <div className="text-xs text-diose-danger text-right">{couponError}</div>}
+              {appliedCoupon && (
+                <div className="flex justify-between">
+                  <span className="text-[13px] text-gray-500">Descuento ({appliedCoupon})</span>
+                  <span className="text-[13px] text-diose-success font-medium">-{formatPrice(discount)}</span>
+                </div>
+              )}
             </div>
             <div className="h-px bg-gray-300 mb-5" />
             <div className="flex justify-between mb-8">

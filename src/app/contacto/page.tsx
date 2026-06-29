@@ -9,9 +9,34 @@ import { MailIcon, PhoneIcon, PinIcon } from "@/components/icons";
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
   function update(field: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  async function submit() {
+    if (!form.name || !form.email || !form.message) {
+      setError("Completa nombre, correo y mensaje.");
+      return;
+    }
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error();
+      setSent(true);
+      setForm({ name: "", phone: "", email: "", message: "" });
+    } catch {
+      setError("No se pudo enviar el mensaje. Intenta de nuevo.");
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -52,11 +77,13 @@ export default function ContactPage() {
               className="w-full h-30 border border-diose-border p-3.5 text-[13px] outline-none focus:border-diose-black resize-none"
             />
           </div>
+          {error && <div className="text-xs text-diose-danger mb-3">{error}</div>}
           <button
-            onClick={() => setSent(true)}
-            className="bg-diose-black hover:bg-diose-amber text-white px-10 py-3.5 text-[13px] font-semibold tracking-[0.1em] uppercase cursor-pointer inline-block transition-colors"
+            onClick={submit}
+            disabled={sending}
+            className="bg-diose-black hover:bg-diose-amber text-white px-10 py-3.5 text-[13px] font-semibold tracking-[0.1em] uppercase cursor-pointer inline-block transition-colors disabled:opacity-50"
           >
-            {sent ? "Mensaje enviado" : "Enviar mensaje"}
+            {sending ? "Enviando..." : sent ? "Mensaje enviado ✓" : "Enviar mensaje"}
           </button>
 
           <div className="mt-7 pt-7 border-t border-gray-100">
