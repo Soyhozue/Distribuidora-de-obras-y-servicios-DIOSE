@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const NAV = [
   { label: "Dashboard", href: "/admin" },
@@ -10,6 +13,14 @@ const NAV = [
 ];
 
 export default function AdminSidebar({ active }: { active: string }) {
+  const router = useRouter();
+
+  async function logout() {
+    await fetch("/api/admin/logout", { method: "POST" });
+    router.push("/admin/login");
+    router.refresh();
+  }
+
   return (
     <div className="w-60 bg-[#0C0C0C] shrink-0 flex flex-col">
       <div className="px-7 py-6 border-b border-white/[0.07]">
@@ -59,13 +70,16 @@ export default function AdminSidebar({ active }: { active: string }) {
         })}
       </div>
 
-      <div className="px-7 py-5 border-t border-white/[0.07] flex items-center gap-2.5">
+      <div
+        onClick={logout}
+        className="px-7 py-5 border-t border-white/[0.07] flex items-center gap-2.5 cursor-pointer hover:bg-white/[0.04]"
+      >
         <div className="w-8 h-8 bg-white/15 rounded-full flex items-center justify-center shrink-0">
           <span className="text-xs font-semibold text-white">A</span>
         </div>
         <div>
           <div className="text-xs font-medium text-white">Administrador</div>
-          <div className="text-[10px] text-white/35">admin@diose.mx</div>
+          <div className="text-[10px] text-white/35">Cerrar sesión</div>
         </div>
       </div>
     </div>

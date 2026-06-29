@@ -153,3 +153,11 @@ model ContactMessage {
   message   String
   createdAt DateTime @default(now())
 }
+
+model Admin {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}

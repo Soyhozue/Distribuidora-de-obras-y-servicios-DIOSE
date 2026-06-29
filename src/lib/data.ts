@@ -286,6 +286,14 @@ export async function verifyUserCredentials(email: string, password: string) {
   return user;
 }
 
+export async function verifyAdminCredentials(email: string, password: string) {
+  const admin = await prisma.admin.findUnique({ where: { email } });
+  if (!admin) return null;
+  const valid = await bcrypt.compare(password, admin.password);
+  if (!valid) return null;
+  return admin;
+}
+
 export async function getUserById(id: string) {
   return prisma.user.findUnique({ where: { id } });
 }
