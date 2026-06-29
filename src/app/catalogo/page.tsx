@@ -3,12 +3,26 @@ import { getAllProducts, getBrandsWithCounts, getCategoriesWithCounts } from "@/
 
 export const dynamic = "force-dynamic";
 
-export default async function CatalogoPage() {
-  const [products, categories, brands] = await Promise.all([
+const CATEGORY_SLUGS: Record<string, string> = {
+  herramientas: "Herramientas",
+  materiales: "Materiales",
+};
+
+export default async function CatalogoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ categoria?: string }>;
+}) {
+  const [products, categories, brands, params] = await Promise.all([
     getAllProducts(),
     getCategoriesWithCounts(),
     getBrandsWithCounts(),
+    searchParams,
   ]);
 
-  return <CatalogoClient products={products} categories={categories} brands={brands} />;
+  const initialCategory = params.categoria ? CATEGORY_SLUGS[params.categoria] ?? null : null;
+
+  return (
+    <CatalogoClient products={products} categories={categories} brands={brands} initialCategory={initialCategory} />
+  );
 }

@@ -21,17 +21,24 @@ type SortKey = (typeof SORT_OPTIONS)[number]["key"];
 
 const PAGE_SIZE = 12;
 
+const CATEGORY_NAV_LABELS: Record<string, string> = {
+  Herramientas: "Herramientas",
+  Materiales: "Materiales",
+};
+
 export default function CatalogoClient({
   products,
   categories,
   brands,
+  initialCategory,
 }: {
   products: Product[];
   categories: CategoryCount[];
   brands: BrandCount[];
+  initialCategory?: string | null;
 }) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(initialCategory ?? null);
   const [brand, setBrand] = useState<string | null>(null);
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [sort, setSort] = useState<SortKey>("relevancia");
@@ -61,7 +68,7 @@ export default function CatalogoClient({
 
   return (
     <div className="flex flex-col min-h-screen bg-diose-gray">
-      <Navbar active="Catálogo" />
+      <Navbar active={(category && CATEGORY_NAV_LABELS[category]) || "Catálogo"} />
 
       {/* SEARCH + BREADCRUMB BAR */}
       <div className="bg-white border-b border-diose-border-light flex flex-wrap items-center gap-6 px-6 md:px-12 py-3">
