@@ -13,8 +13,10 @@ export default function HeroTitle({
 }) {
   const lines = title.split("\n");
 
+  const textShadow = "0 2px 4px rgba(0,0,0,0.95), 0 4px 18px rgba(0,0,0,0.85), 0 1px 1px rgba(0,0,0,1)";
+
   return (
-    <h1 className={className}>
+    <h1 className={className} style={{ textShadow }}>
       {lines.map((line, i) => {
         const idx = highlight ? line.toLowerCase().indexOf(highlight.toLowerCase()) : -1;
         return (

@@ -311,7 +311,10 @@ export default function SettingsManager({
                 <HeroSlideLayer slide={heroSlides[selectedSlide] ?? heroSlides[0]} />
                 <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-10 max-w-md">
                   <div className="w-8 h-0.5 bg-diose-amber mb-2" />
-                  <div className="text-[8px] md:text-[10px] text-white/50 tracking-[0.18em] uppercase mb-1.5">
+                  <div
+                    className="text-[8px] md:text-[10px] text-white/80 tracking-[0.18em] uppercase mb-1.5"
+                    style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
+                  >
                     {form.heroEyebrow}
                   </div>
                   <HeroTitle
@@ -320,7 +323,10 @@ export default function SettingsManager({
                     highlightColor={form.heroTitleHighlightColor}
                     className="font-heading text-white text-2xl md:text-[40px] leading-[0.92] tracking-[0.02em]"
                   />
-                  <p className="hidden md:block text-[12px] text-white/60 font-light mt-2 max-w-xs leading-relaxed">
+                  <p
+                    className="hidden md:block text-[12px] text-white/80 font-light mt-2 max-w-xs leading-relaxed"
+                    style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
+                  >
                     {form.heroSubtitle}
                   </p>
                 </div>
