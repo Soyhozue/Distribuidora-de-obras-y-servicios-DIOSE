@@ -39,7 +39,7 @@ async function uploadImage(file: File): Promise<string> {
 }
 
 function newSlide(url: string): HeroSlide {
-  return { url, focusX: 50, focusY: 42, zoom: 100, overlay: 100 };
+  return { url, focusX: 50, focusY: 42, zoom: 100, overlay: 100, gradient: "left" };
 }
 
 export default function SettingsManager({
@@ -284,7 +284,7 @@ export default function SettingsManager({
           {heroSlides.length > 0 && (
             <>
               {/* LIVE PREVIEW */}
-              <div className="relative w-full aspect-[16/8] bg-diose-black overflow-hidden mb-4">
+              <div className="relative w-full aspect-[3/4] md:aspect-[29/10] bg-diose-black overflow-hidden mb-4">
                 <HeroSlideLayer slide={heroSlides[selectedSlide] ?? heroSlides[0]} />
                 <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-10 max-w-md">
                   <div className="w-8 h-0.5 bg-diose-amber mb-2" />
@@ -352,6 +352,19 @@ export default function SettingsManager({
                       value={heroSlides[selectedSlide].overlay}
                       onChange={(e) => updateHeroSlide(selectedSlide, { overlay: Number(e.target.value) })}
                     />
+                  </label>
+                  <label className="flex flex-col gap-1 col-span-2 sm:col-span-4">
+                    <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">Tipo de degradado</span>
+                    <select
+                      value={heroSlides[selectedSlide].gradient}
+                      onChange={(e) => updateHeroSlide(selectedSlide, { gradient: e.target.value as HeroSlide["gradient"] })}
+                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                    >
+                      <option value="left">Izquierda a derecha (clásico, texto a la izquierda)</option>
+                      <option value="bottom">De arriba a abajo (oscuro abajo)</option>
+                      <option value="top">De abajo a arriba (oscuro arriba)</option>
+                      <option value="flat">Oscurecido uniforme (sin degradado)</option>
+                    </select>
                   </label>
                 </div>
               )}

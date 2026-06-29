@@ -24,9 +24,9 @@ export default async function Home() {
       <Navbar />
 
       {/* HERO */}
-      <section className="relative bg-diose-black overflow-hidden">
+      <section className="relative bg-diose-black overflow-hidden aspect-[3/4] md:aspect-[29/10]">
         <HeroCarousel slides={heroSlides} />
-        <div className="relative z-10 px-6 md:px-20 py-16 md:py-24 max-w-3xl">
+        <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-20 max-w-3xl">
           <div className="w-12 h-0.5 bg-diose-amber mb-3" />
           <div className="text-[11px] text-white/50 tracking-[0.2em] uppercase mb-2.5">{settings.heroEyebrow}</div>
           <HeroTitle

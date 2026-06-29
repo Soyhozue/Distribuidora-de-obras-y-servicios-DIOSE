@@ -405,13 +405,18 @@ export async function getSiteSettings() {
   }
 }
 
+export type HeroGradient = "left" | "flat" | "top" | "bottom";
+
 export type HeroSlide = {
   url: string;
   focusX: number;
   focusY: number;
   zoom: number;
   overlay: number;
+  gradient: HeroGradient;
 };
+
+const VALID_GRADIENTS: HeroGradient[] = ["left", "flat", "top", "bottom"];
 
 export function parseHeroSlides(value: unknown): HeroSlide[] {
   if (!Array.isArray(value)) return [];
@@ -423,6 +428,7 @@ export function parseHeroSlides(value: unknown): HeroSlide[] {
       focusY: typeof s.focusY === "number" ? s.focusY : 50,
       zoom: typeof s.zoom === "number" ? s.zoom : 100,
       overlay: typeof s.overlay === "number" ? s.overlay : 100,
+      gradient: VALID_GRADIENTS.includes(s.gradient as HeroGradient) ? (s.gradient as HeroGradient) : "left",
     }));
 }
 

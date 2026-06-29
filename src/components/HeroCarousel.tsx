@@ -10,6 +10,7 @@ const FALLBACK_SLIDE: HeroSlide = {
   focusY: 42,
   zoom: 100,
   overlay: 100,
+  gradient: "left",
 };
 
 export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
