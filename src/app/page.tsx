@@ -6,7 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import HeroCarousel from "@/components/HeroCarousel";
 import PromoSection from "@/components/PromoSection";
 import { CATEGORIES } from "@/data/products";
-import { getFeaturedProducts, getPromoImages, getSiteSettings } from "@/lib/data";
+import { getFeaturedProducts, getPromoImages, getSiteSettings, parseHeroSlides } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,7 @@ export default async function Home() {
     getSiteSettings(),
     getPromoImages(),
   ]);
+  const heroSlides = parseHeroSlides(settings.heroSlides);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -23,35 +24,32 @@ export default async function Home() {
 
       {/* HERO */}
       <section className="relative bg-diose-black overflow-hidden">
-        <HeroCarousel images={settings.heroImages} />
+        <HeroCarousel slides={heroSlides} />
         <div className="relative z-10 px-6 md:px-20 py-16 md:py-24 max-w-3xl">
           <div className="w-12 h-0.5 bg-diose-amber mb-3" />
-          <div className="text-[11px] text-white/50 tracking-[0.2em] uppercase mb-2.5">
-            Ciudad Juárez · 8 años de experiencia
-          </div>
+          <div className="text-[11px] text-white/50 tracking-[0.2em] uppercase mb-2.5">{settings.heroEyebrow}</div>
           <h1 className="font-heading text-white text-[56px] md:text-[86px] leading-[0.9] tracking-[0.02em]">
-            CONSTRUYE
+            {settings.heroTitleLine1}
             <br />
-            <span className="text-diose-amber">LO QUE</span>
+            <span className="text-diose-amber">{settings.heroTitleLine2}</span>
             <br />
-            IMAGINAS
+            {settings.heroTitleLine3}
           </h1>
           <p className="text-[15px] text-white/60 font-light mt-3.5 mb-6 max-w-md leading-relaxed">
-            Materiales de construcción, herramientas profesionales y suministros para cada obra en Ciudad
-            Juárez.
+            {settings.heroSubtitle}
           </p>
           <div className="flex flex-wrap gap-3.5">
             <Link
-              href="/catalogo"
+              href={settings.heroCta1Link}
               className="bg-white text-diose-black px-10 py-3.5 text-[13px] font-semibold tracking-[0.1em] uppercase cursor-pointer"
             >
-              Ver Catálogo
+              {settings.heroCta1Label}
             </Link>
             <Link
-              href="/nosotros"
+              href={settings.heroCta2Link}
               className="border border-diose-amber/60 text-diose-amber px-10 py-3.5 text-[13px] font-medium tracking-[0.1em] uppercase cursor-pointer"
             >
-              Quiénes somos
+              {settings.heroCta2Label}
             </Link>
           </div>
         </div>

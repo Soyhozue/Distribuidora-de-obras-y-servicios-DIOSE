@@ -163,13 +163,22 @@ model Admin {
 }
 
 model SiteSettings {
-  id         String   @id @default("main")
-  phone      String   @default("+52 (656) 123-4567")
-  whatsapp   String   @default("526561234567")
-  email      String   @default("contacto@diose.mx")
-  address    String   @default("Av. de las Torres 1234, Col. Industrial, Cd. Juárez, Chih.")
-  heroImages String[] @default([])
-  updatedAt  DateTime @updatedAt
+  id              String   @id @default("main")
+  phone           String   @default("+52 (656) 123-4567")
+  whatsapp        String   @default("526561234567")
+  email           String   @default("contacto@diose.mx")
+  address         String   @default("Av. de las Torres 1234, Col. Industrial, Cd. Juárez, Chih.")
+  heroSlides      Json     @default("[]")
+  heroEyebrow     String   @default("Ciudad Juárez · 8 años de experiencia")
+  heroTitleLine1  String   @default("CONSTRUYE")
+  heroTitleLine2  String   @default("LO QUE")
+  heroTitleLine3  String   @default("IMAGINAS")
+  heroSubtitle    String   @default("Materiales de construcción, herramientas profesionales y suministros para cada obra en Ciudad Juárez.")
+  heroCta1Label   String   @default("Ver Catálogo")
+  heroCta1Link    String   @default("/catalogo")
+  heroCta2Label   String   @default("Quiénes somos")
+  heroCta2Link    String   @default("/nosotros")
+  updatedAt       DateTime @updatedAt
 }
 
 model PromoImage {

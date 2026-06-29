@@ -405,12 +405,42 @@ export async function getSiteSettings() {
   }
 }
 
+export type HeroSlide = {
+  url: string;
+  focusX: number;
+  focusY: number;
+  zoom: number;
+  overlay: number;
+};
+
+export function parseHeroSlides(value: unknown): HeroSlide[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((s): s is Record<string, unknown> => typeof s === "object" && s !== null && typeof (s as { url?: unknown }).url === "string")
+    .map((s) => ({
+      url: s.url as string,
+      focusX: typeof s.focusX === "number" ? s.focusX : 50,
+      focusY: typeof s.focusY === "number" ? s.focusY : 50,
+      zoom: typeof s.zoom === "number" ? s.zoom : 100,
+      overlay: typeof s.overlay === "number" ? s.overlay : 100,
+    }));
+}
+
 export type SiteSettingsInput = {
   phone: string;
   whatsapp: string;
   email: string;
   address: string;
-  heroImages: string[];
+  heroSlides: HeroSlide[];
+  heroEyebrow: string;
+  heroTitleLine1: string;
+  heroTitleLine2: string;
+  heroTitleLine3: string;
+  heroSubtitle: string;
+  heroCta1Label: string;
+  heroCta1Link: string;
+  heroCta2Label: string;
+  heroCta2Link: string;
 };
 
 export async function updateSiteSettings(input: SiteSettingsInput) {
