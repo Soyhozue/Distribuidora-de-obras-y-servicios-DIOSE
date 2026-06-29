@@ -2,17 +2,37 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import { ProductIcon, WhatsAppIcon } from "@/components/icons";
+import { WhatsAppIcon } from "@/components/icons";
 import type { Product } from "@/data/products";
 
 const POST_TYPE_OPTIONS = [
+  { label: "Producto individual", value: "INDIVIDUAL" as const },
   { label: "Combo de productos", value: "COMBO" as const },
-  { label: "Post de producto individual", value: "INDIVIDUAL" as const },
   { label: "Oferta / Promoción", value: "OFERTA" as const },
   { label: "Banner informativo", value: "BANNER" as const },
 ];
-const FORMATS = ["Cuadrado", "Historia", "Banner"];
-const BACKGROUNDS = ["#0A0A0A", "#ffffff", "#3A3A3A"];
+
+const FORMATS = [
+  { label: "Cuadrado", value: "square", ratio: "1/1", dims: "1080 × 1080 px", help: "Instagram / Facebook feed" },
+  { label: "Historia", value: "story", ratio: "9/16", dims: "1080 × 1920 px", help: "Instagram / Facebook story" },
+  { label: "Banner", value: "banner", ratio: "1200/628", dims: "1200 × 628 px", help: "Anuncio web / Facebook ad" },
+];
+
+const BACKGROUNDS = [
+  { value: "#0A0A0A", label: "Negro" },
+  { value: "#0c1f44", label: "Azul oscuro" },
+  { value: "#7a0c14", label: "Rojo oscuro" },
+  { value: "#ffffff", label: "Blanco" },
+];
+
+type AdSettings = {
+  phone: string;
+  phone2: string;
+  address: string;
+  whatsapp: string;
+  partnerLogoUrl: string;
+  partnerName: string;
+};
 
 type SavedCombo = {
   id: string;
@@ -27,21 +47,43 @@ type SavedCombo = {
   products: string[];
 };
 
+function cityFromAddress(address: string) {
+  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+  return parts.length >= 2 ? `${parts[parts.length - 2]}, ${parts[parts.length - 1]}` : address;
+}
+
+async function uploadImage(file: File): Promise<string> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await fetch("/api/upload", { method: "POST", body });
+  if (!res.ok) throw new Error("Error al subir la imagen");
+  const data = await res.json();
+  return data.url as string;
+}
+
 export default function AdsManager({
   products,
   pendingOrders,
   lowStockCount,
+  settings,
 }: {
   products: Product[];
   pendingOrders?: number;
   lowStockCount?: number;
+  settings: AdSettings;
 }) {
-  const [selected, setSelected] = useState<string[]>(products.slice(0, 3).map((p) => p.id));
   const [postType, setPostType] = useState(POST_TYPE_OPTIONS[0].value);
-  const [title, setTitle] = useState("COMBO PROFESIONAL");
+  const maxSelected = postType === "COMBO" ? 4 : 1;
+  const [selected, setSelected] = useState<string[]>(products.slice(0, 1).map((p) => p.id));
+  const [title, setTitle] = useState("PRODUCTO DESTACADO");
   const [subtitle, setSubtitle] = useState("Oferta especial");
-  const [format, setFormat] = useState(FORMATS[0]);
-  const [background, setBackground] = useState(BACKGROUNDS[0]);
+  const [priceLabel, setPriceLabel] = useState("Precio especial");
+  const [locationBadge, setLocationBadge] = useState(cityFromAddress(settings.address));
+  const [format, setFormat] = useState(FORMATS[0].value);
+  const [background, setBackground] = useState(BACKGROUNDS[0].value);
+  const [showPartnerLogo, setShowPartnerLogo] = useState(false);
+  const [customImage, setCustomImage] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -50,14 +92,32 @@ export default function AdsManager({
 
   const selectedProducts = useMemo(() => products.filter((p) => selected.includes(p.id)), [products, selected]);
   const comboPrice = selectedProducts.reduce((sum, p) => sum + p.price, 0);
-  const individualPrice = comboPrice + 510;
+  const individualPrice = comboPrice;
+  const bgImage = customImage ?? selectedProducts[0]?.images?.[0] ?? null;
+  const isLight = background === "#ffffff";
+  const formatInfo = FORMATS.find((f) => f.value === format) ?? FORMATS[0];
 
   function toggle(id: string) {
     setSelected((prev) => {
       if (prev.includes(id)) return prev.filter((p) => p !== id);
-      if (prev.length >= 4) return prev;
+      if (prev.length >= maxSelected) return maxSelected === 1 ? [id] : prev;
       return [...prev, id];
     });
+  }
+
+  function changePostType(value: typeof postType) {
+    setPostType(value);
+    if (value !== "COMBO") setSelected((prev) => prev.slice(0, 1));
+  }
+
+  async function handleCustomImage(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploadingImage(true);
+    try {
+      setCustomImage(await uploadImage(files[0]));
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   async function loadHistory() {
@@ -83,7 +143,7 @@ export default function AdsManager({
           format,
           background,
           comboPrice,
-          savings: 510,
+          savings: 0,
           productIds: selected,
         }),
       });
@@ -123,7 +183,7 @@ export default function AdsManager({
           <div className="flex items-center gap-4">
             <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Publicidad y Combos</span>
             <span className="text-[11px] border border-diose-border px-2.5 py-1 text-gray-600 tracking-[0.06em]">
-              Post {format.toLowerCase()} · 1080×1080
+              {formatInfo.label} · {formatInfo.dims}
             </span>
           </div>
           <div className="flex gap-2.5 items-center">
@@ -153,13 +213,19 @@ export default function AdsManager({
           <div className="w-full lg:w-70 bg-white border-b lg:border-b-0 lg:border-r border-diose-border-light flex flex-col shrink-0">
             <div className="p-4 border-b border-gray-100">
               <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-2.5">
-                Seleccionar productos
+                Seleccionar producto{maxSelected > 1 ? "s" : ""}
               </div>
               <div className="border border-diose-border px-2.5 py-2 bg-[#FAFAFA] text-xs text-gray-400">
                 Buscar...
               </div>
             </div>
             <div className="flex-1 overflow-y-auto py-2 max-h-80 lg:max-h-none">
+              {products.length === 0 && (
+                <div className="px-4 py-6 text-xs text-gray-400 text-center">
+                  Aún no tienes productos. Agrega productos en Admin → Productos para usarlos aquí, o sube una imagen
+                  propia abajo en &quot;Imagen del post&quot;.
+                </div>
+              )}
               {products.map((p) => {
                 const isSelected = selected.includes(p.id);
                 return (
@@ -181,11 +247,11 @@ export default function AdsManager({
                         </svg>
                       )}
                     </div>
-                    <div
-                      className="w-8 h-8 bg-[#F0F0F0] shrink-0 flex items-center justify-center"
-                      style={{ backgroundImage: "radial-gradient(#DCDCDC 1px,transparent 1px)", backgroundSize: "8px 8px" }}
-                    >
-                      <ProductIcon icon={p.icon} size={12} />
+                    <div className="w-8 h-8 bg-[#F0F0F0] shrink-0 overflow-hidden">
+                      {p.images?.[0] && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-medium text-diose-black truncate">{p.name}</div>
@@ -199,71 +265,113 @@ export default function AdsManager({
             </div>
             <div className="p-3 border-t border-gray-100 bg-[#FAFAFA]">
               <div className="text-[11px] text-gray-400 text-center">
-                {selected.length} productos seleccionados <span className="text-diose-amber">(máx. 4)</span>
+                {selected.length} seleccionado{selected.length === 1 ? "" : "s"}{" "}
+                <span className="text-diose-amber">(máx. {maxSelected})</span>
               </div>
             </div>
           </div>
 
           {/* PANEL 2: Preview */}
-          <div className="flex-1 flex flex-col items-center justify-center bg-[#E8E8E8] p-6 gap-4">
+          <div className="flex-1 flex flex-col items-center justify-center bg-[#E8E8E8] p-6 gap-4 overflow-auto">
             <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400">
-              Vista previa del combo
+              Vista previa
             </div>
             <div
               ref={previewRef}
-              className="w-[320px] h-[320px] md:w-[400px] md:h-[400px] shrink-0 overflow-hidden relative shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
-              style={{ background: background }}
+              className="w-full shrink-0 overflow-hidden relative shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
+              style={{
+                aspectRatio: formatInfo.ratio,
+                maxWidth: format === "story" ? 280 : format === "banner" ? 480 : 420,
+                background: bgImage ? "#000" : background,
+              }}
             >
-              <div className="h-11 flex items-center px-4 gap-2.5 border-b border-white/[0.08]">
-                <svg width="16" height="14" viewBox="0 0 56 50" fill="none">
-                  <path d="M28 3 L54 48 L2 48 Z" stroke={background === "#ffffff" ? "#070707" : "#fff"} strokeWidth="2.5" strokeLinejoin="round" />
+              {bgImage && (
+                <div
+                  className="absolute inset-0"
+                  style={{ backgroundImage: `url('${bgImage}')`, backgroundSize: "cover", backgroundPosition: "center" }}
+                />
+              )}
+              {postType === "COMBO" && selectedProducts.length > 1 && (
+                <div className="absolute inset-0 grid grid-cols-2">
+                  {selectedProducts.slice(0, 4).map((p) => (
+                    <div key={p.id} className="overflow-hidden border border-black/20">
+                      {p.images?.[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-[#1a1a1a]" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.55) 65%, rgba(0,0,0,0.9) 100%)",
+                }}
+              />
+
+              {/* TOP: logos */}
+              <div className="absolute top-0 left-0 right-0 flex items-center px-4 py-3 gap-2">
+                <svg width="20" height="18" viewBox="0 0 56 50" fill="none" className="shrink-0">
+                  <path d="M28 3 L54 48 L2 48 Z" stroke="#fff" strokeWidth="2.5" strokeLinejoin="round" />
                 </svg>
-                <span
-                  className="font-heading text-sm tracking-[0.12em]"
-                  style={{ color: background === "#ffffff" ? "#070707" : "#fff" }}
-                >
-                  DIOSE
-                </span>
-                <span className="ml-auto text-[9px] text-gray-400 tracking-[0.12em] uppercase">Ciudad Juárez</span>
+                <span className="font-heading text-sm text-white tracking-[0.1em]">DIOSE</span>
+                {showPartnerLogo && settings.partnerLogoUrl && (
+                  <>
+                    <div className="w-px h-6 bg-white/30 mx-1" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={settings.partnerLogoUrl} alt="" className="h-6 object-contain" />
+                    {settings.partnerName && (
+                      <span className="text-[10px] text-white/80 font-medium leading-tight max-w-[90px]">
+                        {settings.partnerName}
+                      </span>
+                    )}
+                  </>
+                )}
               </div>
-              <div className="px-4 pt-3.5 pb-2.5">
-                <div className="text-[9px] font-semibold tracking-[0.18em] uppercase text-white/35 mb-1.5">
+
+              {/* TITLE BLOCK */}
+              <div className="absolute left-0 right-0 px-4" style={{ top: "30%" }}>
+                <div className="text-[10px] font-bold tracking-[0.16em] uppercase text-diose-amber mb-1.5">
                   {subtitle}
                 </div>
                 <div
-                  className="font-heading text-3xl md:text-[40px] leading-[0.88] tracking-[0.03em]"
-                  style={{ color: background === "#ffffff" ? "#070707" : "#fff" }}
+                  className="font-heading text-2xl sm:text-3xl leading-[0.95] tracking-[0.01em] text-white"
+                  style={{ textShadow: "0 2px 10px rgba(0,0,0,0.9)" }}
                 >
                   {title}
                 </div>
               </div>
-              <div className="flex gap-1.5 px-4 mb-3">
-                {selectedProducts.map((p) => (
-                  <div key={p.id} className="flex-1 bg-white/5 border border-white/[0.08] py-2 px-1 text-center">
-                    <div className="h-10 flex items-center justify-center mb-1.5">
-                      <ProductIcon icon={p.icon} size={22} color="rgba(255,255,255,.25)" strokeWidth={0.9} />
-                    </div>
-                    <div className="text-[7px] text-white/40 uppercase tracking-[0.1em] mb-0.5">{p.brand}</div>
-                    <div className="text-[8px] text-white font-medium leading-tight">{p.name}</div>
+
+              {/* PRICE BANNER */}
+              <div className="absolute left-0 right-0 bottom-12 px-4">
+                <div className="bg-diose-amber inline-block px-3 py-1.5">
+                  <div className="text-[9px] font-bold tracking-[0.12em] uppercase text-white/90">{priceLabel}</div>
+                  <div className="font-heading text-2xl sm:text-[32px] text-white leading-none">
+                    ${(postType === "COMBO" ? comboPrice : individualPrice).toLocaleString("es-MX")}
                   </div>
-                ))}
-              </div>
-              <div className="px-4 pb-3">
-                <div className="text-[8px] text-white/35 tracking-[0.16em] uppercase mb-0.5">Precio combo</div>
-                <div className="font-heading text-3xl md:text-[40px] text-diose-amber tracking-[0.02em] leading-none">
-                  ${comboPrice.toLocaleString("es-MX")}
-                </div>
-                <div className="text-[10px] text-white/35 mt-0.5">
-                  Ahorro de $510 vs. precio individual (${individualPrice.toLocaleString("es-MX")})
                 </div>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 h-8 bg-white/5 border-t border-white/[0.08] flex items-center px-4 justify-between">
-                <span className="text-[9px] text-white/40 tracking-[0.06em]">+52 (656) 123-4567</span>
-                <span className="text-[9px] text-white/25">·</span>
-                <span className="text-[9px] text-white/40 tracking-[0.06em]">diose.mx</span>
+
+              {/* BOTTOM BAR: phones + location */}
+              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2.5 gap-2">
+                <div className="flex flex-col gap-0.5">
+                  {settings.phone && <span className="text-[9px] text-white/80 tracking-[0.04em]">📞 {settings.phone}</span>}
+                  {settings.phone2 && <span className="text-[9px] text-white/80 tracking-[0.04em]">📞 {settings.phone2}</span>}
+                </div>
+                {locationBadge && (
+                  <span className="text-[8px] text-white bg-white/15 px-2 py-1 tracking-[0.04em] uppercase shrink-0">
+                    📍 {locationBadge}
+                  </span>
+                )}
               </div>
             </div>
-            <div className="text-[11px] text-gray-400 tracking-[0.04em]">1080 × 1080 px · Instagram / Facebook</div>
+            <div className="text-[11px] text-gray-400 tracking-[0.04em]">
+              {formatInfo.dims} · {formatInfo.help}
+            </div>
           </div>
 
           {/* PANEL 3: Options */}
@@ -276,7 +384,7 @@ export default function AdsManager({
                 {POST_TYPE_OPTIONS.map((type) => (
                   <button
                     key={type.value}
-                    onClick={() => setPostType(type.value)}
+                    onClick={() => changePostType(type.value)}
                     className={`flex items-center gap-2.5 px-3 py-2.5 cursor-pointer text-left ${
                       postType === type.value ? "border-[1.5px] border-diose-amber bg-diose-amber/5" : "border border-diose-border"
                     }`}
@@ -297,20 +405,37 @@ export default function AdsManager({
             </div>
 
             <Field label="Título" value={title} onChange={setTitle} />
-            <Field label="Subtítulo" value={subtitle} onChange={setSubtitle} />
+            <Field label="Frase / etiqueta (arriba del título)" value={subtitle} onChange={setSubtitle} />
+            <Field label="Texto de la banda de precio" value={priceLabel} onChange={setPriceLabel} />
+            <Field label="Texto de ubicación (opcional)" value={locationBadge} onChange={setLocationBadge} />
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-2">
-                  Precio combo
-                </div>
-                <div className="border border-diose-border px-3 py-2.5 text-[13px] text-diose-amber font-semibold">
-                  ${comboPrice.toLocaleString("es-MX")}
-                </div>
+            <div>
+              <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-2.5">
+                Imagen del post {selectedProducts[0]?.images?.[0] && !customImage ? "(usando foto del producto)" : ""}
               </div>
-              <div>
-                <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-2">Ahorro</div>
-                <div className="border border-diose-border px-3 py-2.5 text-[13px] text-gray-600">$510</div>
+              <div className="flex items-center gap-2.5">
+                {customImage && (
+                  <div className="relative w-12 h-12 shrink-0 overflow-hidden border border-diose-border-light">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={customImage} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => setCustomImage(null)}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-diose-black text-white text-[9px] flex items-center justify-center cursor-pointer rounded-full"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                <label className="flex-1 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-xs py-2.5 hover:border-diose-amber">
+                  {uploadingImage ? "Subiendo..." : customImage ? "Cambiar imagen" : "+ Subir imagen propia"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingImage}
+                    onChange={(e) => handleCustomImage(e.target.files)}
+                  />
+                </label>
               </div>
             </div>
 
@@ -319,29 +444,32 @@ export default function AdsManager({
               <div className="flex border border-diose-border">
                 {FORMATS.map((f) => (
                   <button
-                    key={f}
-                    onClick={() => setFormat(f)}
+                    key={f.value}
+                    onClick={() => setFormat(f.value)}
                     className={`flex-1 py-2 text-center cursor-pointer border-l border-diose-border first:border-l-0 ${
-                      format === f ? "bg-diose-black text-white" : "text-gray-600"
+                      format === f.value ? "bg-diose-black text-white" : "text-gray-600"
                     }`}
                   >
-                    <span className="text-[11px]">{f}</span>
+                    <span className="text-[11px]">{f.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-2.5">Fondo</div>
+              <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-2.5">
+                Color de fondo {bgImage ? "(se usa si quitas la imagen)" : ""}
+              </div>
               <div className="flex gap-2">
                 {BACKGROUNDS.map((bg) => (
                   <button
-                    key={bg}
-                    onClick={() => setBackground(bg)}
+                    key={bg.value}
+                    onClick={() => setBackground(bg.value)}
+                    title={bg.label}
                     className="w-9 h-9 cursor-pointer relative border border-diose-border"
-                    style={{ background: bg }}
+                    style={{ background: bg.value }}
                   >
-                    {background === bg && (
+                    {background === bg.value && (
                       <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-diose-amber rounded-full flex items-center justify-center">
                         <svg width="7" height="7" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
                           <polyline points="2,6 5,9 10,3" />
@@ -352,6 +480,20 @@ export default function AdsManager({
                 ))}
               </div>
             </div>
+
+            {settings.partnerLogoUrl && (
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showPartnerLogo}
+                  onChange={(e) => setShowPartnerLogo(e.target.checked)}
+                  className="cursor-pointer"
+                />
+                <span className="text-xs text-gray-600">
+                  Mostrar logo de {settings.partnerName || "socio"} junto al de DIOSE
+                </span>
+              </label>
+            )}
 
             <div className="mt-auto flex flex-col gap-2">
               <button
@@ -373,7 +515,7 @@ export default function AdsManager({
                 </span>
               </button>
               <a
-                href="https://wa.me/526561234567"
+                href={`https://wa.me/${settings.whatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="border border-diose-border p-2.5 text-center cursor-pointer flex items-center justify-center gap-2 hover:bg-gray-50"

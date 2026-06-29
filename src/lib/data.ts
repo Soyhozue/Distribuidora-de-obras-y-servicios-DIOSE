@@ -434,6 +434,7 @@ export function parseHeroSlides(value: unknown): HeroSlide[] {
 
 export type SiteSettingsInput = {
   phone: string;
+  phone2: string;
   whatsapp: string;
   email: string;
   address: string;
@@ -448,6 +449,8 @@ export type SiteSettingsInput = {
   heroCta1Link: string;
   heroCta2Label: string;
   heroCta2Link: string;
+  partnerLogoUrl: string;
+  partnerName: string;
 };
 
 export async function updateSiteSettings(input: SiteSettingsInput) {

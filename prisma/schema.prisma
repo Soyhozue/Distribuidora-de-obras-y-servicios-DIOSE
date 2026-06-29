@@ -165,6 +165,7 @@ model Admin {
 model SiteSettings {
   id              String   @id @default("main")
   phone           String   @default("+52 (656) 123-4567")
+  phone2          String   @default("")
   whatsapp        String   @default("526561234567")
   email           String   @default("contacto@diose.mx")
   address         String   @default("Av. de las Torres 1234, Col. Industrial, Cd. Juárez, Chih.")
@@ -179,6 +180,8 @@ model SiteSettings {
   heroCta1Link    String   @default("/catalogo")
   heroCta2Label   String   @default("Quiénes somos")
   heroCta2Link    String   @default("/nosotros")
+  partnerLogoUrl  String   @default("")
+  partnerName     String   @default("")
   updatedAt       DateTime @updatedAt
 }
 

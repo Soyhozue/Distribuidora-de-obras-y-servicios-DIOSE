@@ -8,6 +8,7 @@ import HeroTitle from "@/components/HeroTitle";
 
 type Settings = {
   phone: string;
+  phone2: string;
   whatsapp: string;
   email: string;
   address: string;
@@ -21,6 +22,8 @@ type Settings = {
   heroCta1Link: string;
   heroCta2Label: string;
   heroCta2Link: string;
+  partnerLogoUrl: string;
+  partnerName: string;
 };
 
 type Promo = {
@@ -64,6 +67,18 @@ export default function SettingsManager({
   const [promoForm, setPromoForm] = useState({ imageUrl: "", title: "", subtitle: "", link: "" });
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [creatingPromo, setCreatingPromo] = useState(false);
+  const [uploadingPartnerLogo, setUploadingPartnerLogo] = useState(false);
+
+  async function handlePartnerLogoUpload(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploadingPartnerLogo(true);
+    try {
+      const url = await uploadImage(files[0]);
+      setForm((f) => ({ ...f, partnerLogoUrl: url }));
+    } finally {
+      setUploadingPartnerLogo(false);
+    }
+  }
 
   async function handleHeroUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -167,6 +182,15 @@ export default function SettingsManager({
               />
             </label>
             <label className="flex flex-col gap-1">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Teléfono secundario (opcional)</span>
+              <input
+                value={form.phone2}
+                onChange={(e) => setForm({ ...form, phone2: e.target.value })}
+                placeholder="(656) 660-46-52"
+                className="border border-diose-border px-3 py-2 text-sm outline-none"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
               <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
                 WhatsApp (solo números, con código de país)
               </span>
@@ -208,6 +232,49 @@ export default function SettingsManager({
                 Acepta ambos formatos: el enlace simple o el código &lt;iframe&gt; de &quot;Insertar un mapa&quot; (el
                 segundo es más preciso). Si lo dejas vacío, el mapa usa la dirección de arriba.
               </span>
+            </label>
+          </div>
+        </div>
+
+        {/* PARTNER LOGO FOR ADS */}
+        <div className="bg-white border border-diose-border p-6">
+          <div className="font-heading text-lg text-diose-black mb-1">Logo de socio (para publicidad)</div>
+          <div className="text-xs text-gray-400 mb-5">
+            Si trabajas publicidad junto con otro negocio (por ejemplo un proveedor), súbelo aquí una vez. Luego, al
+            crear un post en Admin → Publicidad, puedes activarlo o desactivarlo para ese post.
+          </div>
+          <div className="flex items-center gap-4">
+            {form.partnerLogoUrl ? (
+              <div className="relative w-20 h-20 border border-diose-border-light shrink-0 flex items-center justify-center bg-[#FAFAFA]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.partnerLogoUrl} alt="" className="max-w-full max-h-full object-contain" />
+                <button
+                  onClick={() => setForm({ ...form, partnerLogoUrl: "" })}
+                  className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <label className="w-20 h-20 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-[10px] shrink-0 hover:border-diose-amber text-center">
+                {uploadingPartnerLogo ? "..." : "+ Subir"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingPartnerLogo}
+                  onChange={(e) => handlePartnerLogoUpload(e.target.files)}
+                />
+              </label>
+            )}
+            <label className="flex flex-col gap-1 flex-1">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Nombre del socio</span>
+              <input
+                value={form.partnerName}
+                onChange={(e) => setForm({ ...form, partnerName: e.target.value })}
+                placeholder="Ej: Tornillos y Remaches Horus"
+                className="border border-diose-border px-3 py-2 text-sm outline-none"
+              />
             </label>
           </div>
         </div>
