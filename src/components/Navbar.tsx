@@ -1,17 +1,16 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import { SearchIcon, CartIcon, UserIcon } from "./icons";
+import CartBadge from "./CartBadge";
 import { getSiteSettings } from "@/lib/data";
 
 const LINKS = [
   { label: "Catálogo", href: "/catalogo" },
-  { label: "Herramientas", href: "/catalogo?categoria=herramientas" },
-  { label: "Materiales", href: "/catalogo?categoria=materiales" },
   { label: "Nosotros", href: "/nosotros" },
   { label: "Contacto", href: "/contacto" },
 ];
 
-export default async function Navbar({ active, cartCount = 3 }: { active?: string; cartCount?: number }) {
+export default async function Navbar({ active }: { active?: string }) {
   const settings = await getSiteSettings();
   return (
     <nav className="sticky top-0 z-20 h-16 bg-white border-b border-diose-border-light flex items-center justify-between px-6 md:px-12">
@@ -39,11 +38,7 @@ export default async function Navbar({ active, cartCount = 3 }: { active?: strin
         <SearchIcon className="cursor-pointer" />
         <Link href="/carrito" className="relative cursor-pointer">
           <CartIcon />
-          {cartCount > 0 && (
-            <div className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-diose-amber rounded-full flex items-center justify-center">
-              <span className="text-[9px] font-semibold text-white">{cartCount}</span>
-            </div>
-          )}
+          <CartBadge />
         </Link>
         <Link href="/cuenta" className="cursor-pointer">
           <UserIcon />
