@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #070707;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* DIOSE brand palette */
+  --color-diose-black: #070707;
+  --color-diose-amber: #c08800;
+  --color-diose-amber-dark: #a07200;
+  --color-diose-white: #ffffff;
+  --color-diose-gray: #f4f4f4;
+  --color-diose-border: #e8e8e8;
+  --color-diose-border-light: #ebebeb;
+  --color-diose-danger: #b54040;
+  --color-diose-success: #2a7a2a;
+
+  --font-heading: var(--font-bebas-neue), sans-serif;
+  --font-sans: var(--font-outfit), sans-serif;
+
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-strong: 0 4px 20px rgba(0, 0, 0, 0.18);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  font-weight: 400;
+}
