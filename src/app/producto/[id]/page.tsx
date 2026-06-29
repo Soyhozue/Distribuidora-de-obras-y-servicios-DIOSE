@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import ProductCard from "@/components/ProductCard";
 import ProductPurchasePanel from "./ProductPurchasePanel";
-import { ProductIcon } from "@/components/icons";
+import ProductGallery from "./ProductGallery";
 import { getProductById, getRelatedProducts } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -49,10 +49,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             <span className="text-[11px] text-white/60">{product.name}</span>
           </div>
 
-          <div className="w-full max-w-[440px] aspect-square bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-4">
-            <ProductIcon icon={product.icon} size={110} color="rgba(255,255,255,.2)" strokeWidth={0.7} />
-            <span className="text-[10px] text-white/20 tracking-[0.16em] uppercase">Imagen del producto</span>
-          </div>
+          <ProductGallery product={product} />
 
           <div className="absolute bottom-7 left-9 hidden md:block">
             <span className="text-[10px] tracking-[0.14em] uppercase text-white/28 border border-white/12 px-3 py-1.5">

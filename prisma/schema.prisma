@@ -58,7 +58,7 @@ model Product {
   unit        String?
   stock       Int         @default(0)
   stockStatus StockStatus @default(EN_STOCK)
-  images      String[]
+  images      String[]    @default([])
   specs       Json?
   categoryId  String
   category    Category    @relation(fields: [categoryId], references: [id])

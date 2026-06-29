@@ -38,13 +38,18 @@ export default function ProductCard({ product }: { product: Product }) {
       }`}
     >
       <div
-        className="h-[130px] flex items-center justify-center bg-[#F0F0F0]"
+        className="h-[130px] flex items-center justify-center bg-[#F0F0F0] overflow-hidden"
         style={{
           backgroundImage: "radial-gradient(#DCDCDC 1px,transparent 1px)",
           backgroundSize: "18px 18px",
         }}
       >
-        <ProductIcon icon={product.icon} />
+        {product.images && product.images[0] ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+        ) : (
+          <ProductIcon icon={product.icon} />
+        )}
       </div>
       <div className="p-3.5">
         <div className="flex justify-between items-center mb-1.5">

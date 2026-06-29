@@ -29,6 +29,7 @@ type DbProduct = {
   category: { name: string };
   brand: { name: string };
   featured: boolean;
+  images: string[];
 };
 
 function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: string } {
@@ -47,6 +48,7 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
     icon: pickIcon(p.category.name),
     description: p.description ?? undefined,
     featured: p.featured,
+    images: p.images,
   };
 }
 
@@ -97,6 +99,7 @@ export type ProductInput = {
   categoryId: string;
   brandId: string;
   featured?: boolean;
+  images?: string[];
 };
 
 export async function createProduct(input: ProductInput) {

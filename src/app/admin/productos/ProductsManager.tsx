@@ -44,6 +44,7 @@ type FormState = {
   categoryId: string;
   brandId: string;
   featured: boolean;
+  images: string[];
 };
 
 function emptyForm(categories: Option[], brands: Option[]): FormState {
@@ -58,7 +59,17 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     categoryId: categories[0]?.id ?? "",
     brandId: brands[0]?.id ?? "",
     featured: false,
+    images: [],
   };
+}
+
+async function uploadImage(file: File): Promise<string> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await fetch("/api/upload", { method: "POST", body });
+  if (!res.ok) throw new Error("Error al subir la imagen");
+  const data = await res.json();
+  return data.url as string;
 }
 
 export default function ProductsManager({
@@ -79,6 +90,7 @@ export default function ProductsManager({
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(categories, brands));
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -112,8 +124,24 @@ export default function ProductsManager({
       categoryId: p.categoryId,
       brandId: p.brandId,
       featured: !!p.featured,
+      images: p.images ?? [],
     });
     setModalOpen(true);
+  }
+
+  async function handleImageUpload(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const uploaded = await Promise.all(Array.from(files).map(uploadImage));
+      setForm((f) => ({ ...f, images: [...f.images, ...uploaded].slice(0, 6) }));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removeImage(url: string) {
+    setForm((f) => ({ ...f, images: f.images.filter((i) => i !== url) }));
   }
 
   async function save() {
@@ -130,6 +158,7 @@ export default function ProductsManager({
         categoryId: form.categoryId,
         brandId: form.brandId,
         featured: form.featured,
+        images: form.images,
       };
       if (form.id) {
         await fetch(`/api/products/${form.id}`, {
@@ -279,10 +308,15 @@ export default function ProductsManager({
               >
                 <div className="w-3.5 h-3.5 border-[1.5px] border-gray-300" />
                 <div
-                  className="w-10 h-10 bg-[#F0F0F0] flex items-center justify-center shrink-0"
+                  className="w-10 h-10 bg-[#F0F0F0] flex items-center justify-center shrink-0 overflow-hidden"
                   style={{ backgroundImage: "radial-gradient(#DCDCDC 1px,transparent 1px)", backgroundSize: "10px 10px" }}
                 >
-                  <ProductIcon icon={p.icon} size={16} />
+                  {p.images && p.images[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <ProductIcon icon={p.icon} size={16} />
+                  )}
                 </div>
                 <div>
                   <div className="text-[13px] font-medium text-diose-black">{p.name}</div>
@@ -454,6 +488,37 @@ export default function ProductsManager({
                   className="border border-diose-border px-3 py-2 text-sm outline-none h-20 resize-none"
                 />
               </label>
+              <div className="flex flex-col gap-1.5 col-span-2">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Fotos del producto (máx. 6)</span>
+                <div className="flex flex-wrap gap-2">
+                  {form.images.map((url) => (
+                    <div key={url} className="relative w-16 h-16 border border-diose-border-light shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(url)}
+                        className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  {form.images.length < 6 && (
+                    <label className="w-16 h-16 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-xs shrink-0 hover:border-diose-amber">
+                      {uploading ? "..." : "+"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        disabled={uploading}
+                        onChange={(e) => handleImageUpload(e.target.files)}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
               <button

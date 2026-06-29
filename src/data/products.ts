@@ -14,6 +14,7 @@ export type Product = {
   description?: string;
   specs?: Record<string, string>;
   featured?: boolean;
+  images?: string[];
 };
 
 export const PRODUCTS: Product[] = [

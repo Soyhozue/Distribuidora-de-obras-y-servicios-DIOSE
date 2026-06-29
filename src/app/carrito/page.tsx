@@ -72,13 +72,18 @@ export default function CartPage() {
                 className="flex items-center gap-6 py-5 border-b border-gray-100"
               >
                 <div
-                  className="w-20 h-20 shrink-0 bg-[#F5F5F5] flex items-center justify-center"
+                  className="w-20 h-20 shrink-0 bg-[#F5F5F5] flex items-center justify-center overflow-hidden"
                   style={{
                     backgroundImage: "radial-gradient(#E0E0E0 1px,transparent 1px)",
                     backgroundSize: "12px 12px",
                   }}
                 >
-                  <ProductIcon icon={line.product.icon} size={28} />
+                  {line.product.images && line.product.images[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={line.product.images[0]} alt={line.product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <ProductIcon icon={line.product.icon} size={28} />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-1">
