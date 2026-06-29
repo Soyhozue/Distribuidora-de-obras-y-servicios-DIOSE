@@ -437,6 +437,7 @@ export type SiteSettingsInput = {
   whatsapp: string;
   email: string;
   address: string;
+  mapsUrl: string;
   heroSlides: HeroSlide[];
   heroEyebrow: string;
   heroTitle: string;

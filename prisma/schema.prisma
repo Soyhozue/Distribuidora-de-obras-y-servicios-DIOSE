@@ -168,6 +168,7 @@ model SiteSettings {
   whatsapp        String   @default("526561234567")
   email           String   @default("contacto@diose.mx")
   address         String   @default("Av. de las Torres 1234, Col. Industrial, Cd. Juárez, Chih.")
+  mapsUrl         String   @default("")
   heroSlides      Json     @default("[]")
   heroEyebrow        String   @default("Ciudad Juárez · 8 años de experiencia")
   heroTitle          String   @default("CONSTRUYE\nLO QUE\nIMAGINAS")

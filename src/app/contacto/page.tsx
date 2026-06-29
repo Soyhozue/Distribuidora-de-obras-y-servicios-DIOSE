@@ -5,11 +5,15 @@ import { PinIcon } from "@/components/icons";
 import { getSiteSettings } from "@/lib/data";
 import ContactForm from "./ContactForm";
 
-function mapsUrl(address: string) {
-  return `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+function mapsLink(address: string, mapsUrl: string) {
+  return mapsUrl || `https://maps.google.com/?q=${encodeURIComponent(address)}`;
 }
 
-function mapsEmbedUrl(address: string) {
+function mapsEmbedUrl(address: string, mapsUrl: string) {
+  const coords = mapsUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ?? mapsUrl.match(/^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/);
+  if (coords) {
+    return `https://www.google.com/maps?q=${coords[1]},${coords[2]}&output=embed`;
+  }
   return `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
 }
 
@@ -35,13 +39,13 @@ export default async function ContactPage() {
         {/* MAP */}
         <div className="w-full md:w-[580px] shrink-0 relative min-h-[320px]">
           <iframe
-            src={mapsEmbedUrl(settings.address)}
+            src={mapsEmbedUrl(settings.address, settings.mapsUrl)}
             className="absolute inset-0 w-full h-full border-0"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
           />
           <a
-            href={mapsUrl(settings.address)}
+            href={mapsLink(settings.address, settings.mapsUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="absolute bottom-5 right-5 bg-white border border-diose-border px-4 py-2 flex items-center gap-2 cursor-pointer"

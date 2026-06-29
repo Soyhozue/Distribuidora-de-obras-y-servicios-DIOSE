@@ -11,6 +11,7 @@ type Settings = {
   whatsapp: string;
   email: string;
   address: string;
+  mapsUrl: string;
   heroEyebrow: string;
   heroTitle: string;
   heroTitleHighlight: string;
@@ -191,6 +192,20 @@ export default function SettingsManager({
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
                 className="border border-diose-border px-3 py-2 text-sm outline-none"
               />
+            </label>
+            <label className="flex flex-col gap-1 sm:col-span-2">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                Enlace de Google Maps de tu negocio (opcional)
+              </span>
+              <input
+                value={form.mapsUrl}
+                onChange={(e) => setForm({ ...form, mapsUrl: e.target.value })}
+                placeholder="Pega aquí el enlace que copias en Google Maps con: Compartir → Copiar enlace"
+                className="border border-diose-border px-3 py-2 text-sm outline-none"
+              />
+              <span className="text-[11px] text-gray-400">
+                Si lo dejas vacío, el mapa de la página de Contacto usa la dirección de arriba.
+              </span>
             </label>
           </div>
         </div>
