@@ -197,14 +197,16 @@ export default function SettingsManager({
               <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
                 Enlace de Google Maps de tu negocio (opcional)
               </span>
-              <input
+              <textarea
                 value={form.mapsUrl}
                 onChange={(e) => setForm({ ...form, mapsUrl: e.target.value })}
-                placeholder="Pega aquí el enlace que copias en Google Maps con: Compartir → Copiar enlace"
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
+                placeholder="Pega aquí el enlace de Compartir → Copiar enlace, o el código completo de Compartir → Insertar un mapa"
+                rows={2}
+                className="border border-diose-border px-3 py-2 text-sm outline-none resize-none"
               />
               <span className="text-[11px] text-gray-400">
-                Si lo dejas vacío, el mapa de la página de Contacto usa la dirección de arriba.
+                Acepta ambos formatos: el enlace simple o el código &lt;iframe&gt; de &quot;Insertar un mapa&quot; (el
+                segundo es más preciso). Si lo dejas vacío, el mapa usa la dirección de arriba.
               </span>
             </label>
           </div>

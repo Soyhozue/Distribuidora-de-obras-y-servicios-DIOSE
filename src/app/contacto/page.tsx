@@ -5,22 +5,38 @@ import { PinIcon } from "@/components/icons";
 import { getSiteSettings } from "@/lib/data";
 import ContactForm from "./ContactForm";
 
-function mapsLink(address: string, mapsUrl: string) {
-  return mapsUrl || `https://maps.google.com/?q=${encodeURIComponent(address)}`;
-}
+function extractMapInfo(address: string, mapsInput: string) {
+  const input = mapsInput.trim();
 
-function mapsEmbedUrl(address: string, mapsUrl: string) {
-  const coords = mapsUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ?? mapsUrl.match(/^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/);
-  if (coords) {
-    return `https://www.google.com/maps?q=${coords[1]},${coords[2]}&output=embed`;
+  // Pasted the full <iframe> embed code from Google Maps' "Insertar un mapa" tab.
+  const iframeSrcMatch = input.match(/<iframe[^>]*\ssrc="([^"]+)"/i);
+  if (iframeSrcMatch) {
+    const embedSrc = iframeSrcMatch[1].replace(/&amp;/g, "&");
+    const coords = embedSrc.match(/!2d(-?\d+\.\d+)!3d(-?\d+\.\d+)/);
+    const link = coords ? `https://maps.google.com/?q=${coords[2]},${coords[1]}` : embedSrc;
+    return { embedSrc, link };
   }
-  return `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+
+  // Pasted a regular Maps share link, possibly containing @lat,lng.
+  const coords = input.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ?? input.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
+  if (coords) {
+    return {
+      embedSrc: `https://www.google.com/maps?q=${coords[1]},${coords[2]}&output=embed`,
+      link: input || `https://maps.google.com/?q=${coords[1]},${coords[2]}`,
+    };
+  }
+
+  return {
+    embedSrc: `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`,
+    link: input || `https://maps.google.com/?q=${encodeURIComponent(address)}`,
+  };
 }
 
 export const dynamic = "force-dynamic";
 
 export default async function ContactPage() {
   const settings = await getSiteSettings();
+  const { embedSrc, link } = extractMapInfo(settings.address, settings.mapsUrl);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -39,13 +55,13 @@ export default async function ContactPage() {
         {/* MAP */}
         <div className="w-full md:w-[580px] shrink-0 relative min-h-[320px]">
           <iframe
-            src={mapsEmbedUrl(settings.address, settings.mapsUrl)}
+            src={embedSrc}
             className="absolute inset-0 w-full h-full border-0"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
           />
           <a
-            href={mapsLink(settings.address, settings.mapsUrl)}
+            href={link}
             target="_blank"
             rel="noopener noreferrer"
             className="absolute bottom-5 right-5 bg-white border border-diose-border px-4 py-2 flex items-center gap-2 cursor-pointer"
