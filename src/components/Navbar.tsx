@@ -14,7 +14,7 @@ export default function Navbar({ active, cartCount = 3 }: { active?: string; car
   return (
     <nav className="sticky top-0 z-20 h-16 bg-white border-b border-diose-border-light flex items-center justify-between px-6 md:px-12">
       <Link href="/">
-        <Logo />
+        <Logo invert />
       </Link>
 
       <div className="hidden md:flex gap-9 items-center">

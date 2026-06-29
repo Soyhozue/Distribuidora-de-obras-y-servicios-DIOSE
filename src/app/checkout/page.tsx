@@ -46,7 +46,7 @@ export default function CheckoutPage() {
     <div className="flex flex-col min-h-screen">
       <nav className="h-16 bg-white border-b border-diose-border-light flex items-center justify-between px-6 md:px-12">
         <Link href="/">
-          <Logo />
+          <Logo invert />
         </Link>
         <div className="hidden md:flex items-center">
           <div className="flex items-center gap-2 px-5 py-2 border-b-2 border-gray-300">

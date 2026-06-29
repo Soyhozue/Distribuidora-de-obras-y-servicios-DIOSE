@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="bg-diose-black text-white px-6 md:px-20 py-14">
       <div className="flex flex-col md:flex-row justify-between gap-10">
         <div>
-          <Logo invert />
+          <Logo />
           <p className="text-[13px] text-white/50 mt-4 max-w-xs leading-relaxed">
             Materiales de construcción, herramientas profesionales y suministros para cada obra en Ciudad Juárez.
           </p>
