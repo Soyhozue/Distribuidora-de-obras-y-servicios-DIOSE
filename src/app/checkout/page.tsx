@@ -22,6 +22,8 @@ export default function CheckoutPage() {
   const clear = useCartStore((s) => s.clear);
   const { subtotal, shipping, total } = cartTotals(lines);
   const [payment, setPayment] = useState("transferencia");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     lastName: "",
@@ -37,9 +39,47 @@ export default function CheckoutPage() {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  function confirmOrder() {
-    clear();
-    router.push("/cuenta");
+  const PAYMENT_MAP: Record<string, string> = {
+    transferencia: "TRANSFERENCIA",
+    efectivo: "EFECTIVO",
+    whatsapp: "WHATSAPP",
+  };
+
+  async function confirmOrder() {
+    if (!form.name || !form.email || !form.address) {
+      setError("Completa al menos nombre, correo y dirección.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: `${form.name} ${form.lastName}`.trim(),
+          customerEmail: form.email,
+          customerPhone: form.phone,
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          zip: form.zip,
+          paymentMethod: PAYMENT_MAP[payment] ?? "TRANSFERENCIA",
+          items: lines.map((l) => ({
+            productId: l.product.id,
+            quantity: l.quantity,
+            unitPrice: l.product.price,
+          })),
+        }),
+      });
+      if (!res.ok) throw new Error("No se pudo crear el pedido");
+      clear();
+      router.push("/cuenta");
+    } catch {
+      setError("Hubo un problema al confirmar el pedido. Intenta de nuevo.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -148,12 +188,15 @@ export default function CheckoutPage() {
             <span className="text-base font-semibold text-diose-black">Total</span>
             <span className="text-[22px] font-semibold text-diose-black">{formatPrice(total)}</span>
           </div>
+          {error && <p className="text-xs text-diose-danger mb-3">{error}</p>}
           <button
-            disabled={lines.length === 0}
+            disabled={lines.length === 0 || submitting}
             onClick={confirmOrder}
             className="w-full bg-diose-black hover:bg-diose-amber text-white p-4 text-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            <span className="text-[13px] font-semibold tracking-[0.1em] uppercase">Confirmar pedido</span>
+            <span className="text-[13px] font-semibold tracking-[0.1em] uppercase">
+              {submitting ? "Procesando..." : "Confirmar pedido"}
+            </span>
           </button>
         </div>
       </div>

@@ -1,8 +1,11 @@
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { ProductIcon } from "@/components/icons";
-import { PRODUCTS } from "@/data/products";
+import { getAllProducts } from "@/lib/data";
+import type { Product } from "@/data/products";
 
-function StatusTag({ status }: { status: (typeof PRODUCTS)[number]["stockStatus"] }) {
+export const dynamic = "force-dynamic";
+
+function StatusTag({ status }: { status: Product["stockStatus"] }) {
   if (status === "AGOTADO") {
     return (
       <span className="text-[10px] bg-diose-danger/10 text-diose-danger border border-diose-danger/30 px-2 py-0.5 tracking-[0.07em] uppercase inline-block">
@@ -24,7 +27,9 @@ function StatusTag({ status }: { status: (typeof PRODUCTS)[number]["stockStatus"
   );
 }
 
-export default function AdminProductsPage() {
+export default async function AdminProductsPage() {
+  const products = await getAllProducts();
+
   return (
     <div className="flex min-h-screen">
       <AdminSidebar active="Catálogo" />
@@ -33,7 +38,7 @@ export default function AdminProductsPage() {
         <div className="h-14 bg-white border-b border-diose-border-light flex flex-wrap items-center justify-between gap-3 px-9 shrink-0 py-2">
           <div className="flex items-baseline gap-4">
             <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Catálogo</span>
-            <span className="text-xs text-gray-400">{PRODUCTS.length} productos · última actualización hace 2 horas</span>
+            <span className="text-xs text-gray-400">{products.length} productos</span>
           </div>
           <div className="flex gap-3 items-center">
             <div className="border border-diose-border px-3.5 py-1.5 flex items-center gap-2 bg-[#FAFAFA] w-44">
@@ -63,7 +68,7 @@ export default function AdminProductsPage() {
                 ))}
               </div>
 
-              {PRODUCTS.map((p) => (
+              {products.map((p) => (
                 <div
                   key={p.id}
                   className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_90px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] cursor-pointer ${
@@ -111,7 +116,7 @@ export default function AdminProductsPage() {
           </div>
 
           <div className="flex justify-between items-center pt-4">
-            <span className="text-xs text-gray-400">Mostrando {PRODUCTS.length} de 145 productos</span>
+            <span className="text-xs text-gray-400">Mostrando {products.length} de {products.length} productos</span>
             <div className="flex gap-1 items-center">
               <div className="w-7 h-7 bg-diose-black flex items-center justify-center cursor-pointer">
                 <span className="text-xs text-white font-medium">1</span>

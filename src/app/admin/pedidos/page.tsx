@@ -1,15 +1,24 @@
 import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { getOrders } from "@/lib/data";
 
-const ORDERS = [
-  { id: "2048", date: "28 Jun", client: "Carlos Mendoza", total: "$5,010", status: "Confirmado", style: "bg-diose-black text-white" },
-  { id: "2047", date: "27 Jun", client: "Ana Torres", total: "$1,340", status: "Enviado", style: "bg-gray-700 text-white" },
-  { id: "2046", date: "27 Jun", client: "Rodrigo Nava", total: "$620", status: "Pendiente", style: "bg-diose-amber/10 text-diose-amber border border-diose-amber" },
-  { id: "2045", date: "26 Jun", client: "María Pérez", total: "$3,200", status: "Entregado", style: "border border-gray-600 text-gray-600" },
-  { id: "2044", date: "26 Jun", client: "Luis Guzmán", total: "$890", status: "Cancelado", style: "bg-gray-100 text-gray-400" },
-];
+export const dynamic = "force-dynamic";
 
-export default function AdminOrdersPage() {
+const STATUS_STYLE: Record<string, string> = {
+  PENDIENTE: "bg-diose-amber/10 text-diose-amber border border-diose-amber",
+  CONFIRMADO: "bg-diose-black text-white",
+  EN_CAMINO: "bg-gray-700 text-white",
+  ENTREGADO: "border border-gray-600 text-gray-600",
+  CANCELADO: "bg-gray-100 text-gray-400",
+};
+
+function formatPrice(price: number) {
+  return `$${price.toLocaleString("es-MX")}`;
+}
+
+export default async function AdminOrdersPage() {
+  const orders = await getOrders();
+
   return (
     <div className="flex min-h-screen">
       <AdminSidebar active="Pedidos" />
@@ -26,14 +35,21 @@ export default function AdminOrdersPage() {
                 </span>
               ))}
             </div>
-            {ORDERS.map((o) => (
+            {orders.length === 0 && (
+              <div className="px-6 py-10 text-center text-sm text-gray-400">
+                Todavía no hay pedidos. Aparecerán aquí en cuanto un cliente compre en el sitio.
+              </div>
+            )}
+            {orders.map((o) => (
               <div key={o.id} className="grid grid-cols-[80px_100px_1fr_100px_140px_80px] px-6 py-3 border-b border-gray-100 items-center">
-                <span className="text-[13px] font-semibold text-diose-black">{o.id}</span>
+                <span className="text-[13px] font-semibold text-diose-black">#{o.number}</span>
                 <span className="text-xs text-gray-500">{o.date}</span>
                 <span className="text-[13px] text-gray-700">{o.client}</span>
-                <span className="text-[13px] font-semibold text-diose-black">{o.total}</span>
-                <span className={`text-[10px] px-2.5 py-1 tracking-[0.08em] uppercase inline-block w-fit ${o.style}`}>
-                  {o.status}
+                <span className="text-[13px] font-semibold text-diose-black">{formatPrice(o.total)}</span>
+                <span
+                  className={`text-[10px] px-2.5 py-1 tracking-[0.08em] uppercase inline-block w-fit ${STATUS_STYLE[o.status]}`}
+                >
+                  {o.statusLabel}
                 </span>
                 <Link href={`/admin/pedidos/${o.id}`} className="text-xs text-gray-400 underline cursor-pointer">
                   Ver

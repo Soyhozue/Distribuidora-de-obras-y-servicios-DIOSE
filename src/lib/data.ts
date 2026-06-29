@@ -94,3 +94,143 @@ export async function getBrandsWithCounts() {
   });
   return brands.map((b) => ({ name: b.name, count: b._count.products }));
 }
+
+export type CreateOrderInput = {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  paymentMethod: "TARJETA" | "TRANSFERENCIA" | "EFECTIVO" | "WHATSAPP";
+  items: { productId: string; quantity: number; unitPrice: number }[];
+};
+
+export async function createOrder(input: CreateOrderInput) {
+  const subtotal = input.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+  const shipping = input.items.length > 0 ? 280 : 0;
+  const total = subtotal + shipping;
+
+  const user = await prisma.user.upsert({
+    where: { email: input.customerEmail },
+    update: { name: input.customerName, phone: input.customerPhone },
+    create: {
+      name: input.customerName,
+      email: input.customerEmail,
+      phone: input.customerPhone,
+      password: "guest-checkout",
+    },
+  });
+
+  const address = await prisma.address.create({
+    data: {
+      userId: user.id,
+      street: input.address,
+      city: input.city,
+      state: input.state,
+      postalCode: input.zip,
+    },
+  });
+
+  const order = await prisma.order.create({
+    data: {
+      userId: user.id,
+      addressId: address.id,
+      paymentMethod: input.paymentMethod,
+      subtotal,
+      shipping,
+      total,
+      items: {
+        create: input.items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+        })),
+      },
+    },
+  });
+
+  return order;
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    PENDIENTE: "Pendiente",
+    CONFIRMADO: "Confirmado",
+    EN_CAMINO: "Enviado",
+    ENTREGADO: "Entregado",
+    CANCELADO: "Cancelado",
+  };
+  return labels[status] ?? status;
+}
+
+export async function getOrders() {
+  const orders = await prisma.order.findMany({
+    include: { user: true },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+  return orders.map((o) => ({
+    id: o.id,
+    number: o.number,
+    date: o.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }),
+    client: o.user.name,
+    total: Number(o.total.toString()),
+    status: o.status,
+    statusLabel: statusLabel(o.status),
+  }));
+}
+
+export async function getOrderById(id: string) {
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { user: true, address: true, items: { include: { product: true } } },
+  });
+  if (!order) return null;
+  return {
+    id: order.id,
+    number: order.number,
+    status: order.status,
+    statusLabel: statusLabel(order.status),
+    internalNotes: order.internalNotes ?? "",
+    notifyWhatsapp: order.notifyWhatsapp,
+    total: Number(order.total.toString()),
+    createdAt: order.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }),
+    customer: {
+      name: order.user.name,
+      phone: order.user.phone ?? "",
+      email: order.user.email,
+      address: order.address
+        ? `${order.address.street}, ${order.address.city}, ${order.address.state}`
+        : "",
+    },
+    items: order.items.map((i) => ({
+      id: i.id,
+      name: i.product.name,
+      brand: "",
+      sku: i.product.sku,
+      quantity: i.quantity,
+      price: `$${Number(i.unitPrice.toString()).toLocaleString("es-MX")}`,
+    })),
+  };
+}
+
+export async function updateOrderStatus(
+  id: string,
+  data: { status?: string; internalNotes?: string; notifyWhatsapp?: boolean }
+) {
+  return prisma.order.update({
+    where: { id },
+    data: {
+      status: data.status as never,
+      internalNotes: data.internalNotes,
+      notifyWhatsapp: data.notifyWhatsapp,
+    },
+  });
+}
+
+export async function deleteOrder(id: string) {
+  await prisma.orderItem.deleteMany({ where: { orderId: id } });
+  await prisma.order.delete({ where: { id } });
+}

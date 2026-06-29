@@ -1,22 +1,41 @@
+import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { SearchIcon } from "@/components/icons";
+import { getOrders } from "@/lib/data";
+import { prisma } from "@/lib/prisma";
 
-const STATS = [
-  { label: "Pedidos hoy", value: "14", hint: "+3 vs. ayer", dark: false },
-  { label: "Ingresos del mes", value: "$184,500", hint: "MXN · Junio 2026", dark: true },
-  { label: "Productos activos", value: "145", hint: "3 con stock bajo", dark: false },
-  { label: "Pedidos pendientes", value: "7", hint: "Requieren atención", dark: false },
-];
+export const dynamic = "force-dynamic";
 
-const RECENT_ORDERS = [
-  { id: "2048", date: "28 Jun", client: "Carlos Mendoza", total: "$5,010", status: "Confirmado", style: "bg-diose-black text-white" },
-  { id: "2047", date: "27 Jun", client: "Ana Torres", total: "$1,340", status: "Enviado", style: "bg-gray-700 text-white" },
-  { id: "2046", date: "27 Jun", client: "Rodrigo Nava", total: "$620", status: "Pendiente", style: "bg-diose-amber/10 text-diose-amber border border-diose-amber" },
-  { id: "2045", date: "26 Jun", client: "María Pérez", total: "$3,200", status: "Entregado", style: "border border-gray-600 text-gray-600" },
-  { id: "2044", date: "26 Jun", client: "Luis Guzmán", total: "$890", status: "Cancelado", style: "bg-gray-100 text-gray-400", muted: true },
-];
+const STATUS_STYLE: Record<string, string> = {
+  PENDIENTE: "bg-diose-amber/10 text-diose-amber border border-diose-amber",
+  CONFIRMADO: "bg-diose-black text-white",
+  EN_CAMINO: "bg-gray-700 text-white",
+  ENTREGADO: "border border-gray-600 text-gray-600",
+  CANCELADO: "bg-gray-100 text-gray-400",
+};
 
-export default function AdminDashboardPage() {
+function formatPrice(price: number) {
+  return `$${price.toLocaleString("es-MX")}`;
+}
+
+export default async function AdminDashboardPage() {
+  const [orders, productCount, lowStockCount] = await Promise.all([
+    getOrders(),
+    prisma.product.count(),
+    prisma.product.count({ where: { stockStatus: "STOCK_BAJO" } }),
+  ]);
+
+  const pendingCount = orders.filter((o) => o.status === "PENDIENTE").length;
+  const monthRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+  const recentOrders = orders.slice(0, 5);
+
+  const stats = [
+    { label: "Total de pedidos", value: String(orders.length), hint: `${pendingCount} pendientes`, dark: false },
+    { label: "Ingresos totales", value: formatPrice(monthRevenue), hint: "Todos los pedidos", dark: true },
+    { label: "Productos activos", value: String(productCount), hint: `${lowStockCount} con stock bajo`, dark: false },
+    { label: "Pedidos pendientes", value: String(pendingCount), hint: "Requieren atención", dark: false },
+  ];
+
   return (
     <div className="flex min-h-screen">
       <AdminSidebar active="Dashboard" />
@@ -25,7 +44,6 @@ export default function AdminDashboardPage() {
         <div className="h-14 bg-white border-b border-diose-border-light flex items-center justify-between px-9 shrink-0">
           <div className="flex items-baseline gap-4">
             <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Dashboard</span>
-            <span className="text-xs text-gray-400 tracking-[0.04em]">Hoy, 28 de junio 2026</span>
           </div>
           <div className="border border-diose-border px-3.5 py-1.5 flex items-center gap-2 bg-[#FAFAFA]">
             <SearchIcon size={13} color="#999" />
@@ -34,7 +52,7 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-9 pb-0 shrink-0">
-          {STATS.map((s) => (
+          {stats.map((s) => (
             <div
               key={s.label}
               className={`p-6 border ${s.dark ? "bg-diose-black border-diose-black" : "bg-white border-diose-border"}`}
@@ -57,7 +75,9 @@ export default function AdminDashboardPage() {
         <div className="m-9 bg-white border border-diose-border flex-1 overflow-hidden">
           <div className="px-6 py-4 border-b border-diose-border-light flex justify-between items-center">
             <span className="text-[13px] font-semibold text-diose-black tracking-[0.04em]">Pedidos recientes</span>
-            <span className="text-xs text-gray-400 underline cursor-pointer tracking-[0.04em]">Ver todos</span>
+            <Link href="/admin/pedidos" className="text-xs text-gray-400 underline cursor-pointer tracking-[0.04em]">
+              Ver todos
+            </Link>
           </div>
           <div className="min-w-[640px] overflow-x-auto">
             <div className="grid grid-cols-[80px_100px_1fr_100px_140px_80px] px-6 py-2.5 bg-[#F9F9F9] border-b border-diose-border-light">
@@ -67,21 +87,26 @@ export default function AdminDashboardPage() {
                 </span>
               ))}
             </div>
-            {RECENT_ORDERS.map((o) => (
+            {recentOrders.length === 0 && (
+              <div className="px-6 py-10 text-center text-sm text-gray-400">Todavía no hay pedidos.</div>
+            )}
+            {recentOrders.map((o) => (
               <div
                 key={o.id}
-                className={`grid grid-cols-[80px_100px_1fr_100px_140px_80px] px-6 py-3 border-b border-gray-100 items-center ${
-                  o.muted ? "opacity-50" : ""
-                }`}
+                className="grid grid-cols-[80px_100px_1fr_100px_140px_80px] px-6 py-3 border-b border-gray-100 items-center"
               >
-                <span className="text-[13px] font-semibold text-diose-black">{o.id}</span>
+                <span className="text-[13px] font-semibold text-diose-black">#{o.number}</span>
                 <span className="text-xs text-gray-500">{o.date}</span>
                 <span className="text-[13px] text-gray-700">{o.client}</span>
-                <span className="text-[13px] font-semibold text-diose-black">{o.total}</span>
-                <span className={`text-[10px] px-2.5 py-1 tracking-[0.08em] uppercase inline-block w-fit ${o.style}`}>
-                  {o.status}
+                <span className="text-[13px] font-semibold text-diose-black">{formatPrice(o.total)}</span>
+                <span
+                  className={`text-[10px] px-2.5 py-1 tracking-[0.08em] uppercase inline-block w-fit ${STATUS_STYLE[o.status]}`}
+                >
+                  {o.statusLabel}
                 </span>
-                <span className="text-xs text-gray-400 underline cursor-pointer">Ver</span>
+                <Link href={`/admin/pedidos/${o.id}`} className="text-xs text-gray-400 underline cursor-pointer">
+                  Ver
+                </Link>
               </div>
             ))}
           </div>

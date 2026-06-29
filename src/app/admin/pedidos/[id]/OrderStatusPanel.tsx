@@ -1,14 +1,52 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { WhatsAppIcon } from "@/components/icons";
 
-const STATUSES = ["Pendiente", "Confirmado", "Enviado", "Entregado"];
+const STATUSES = [
+  { key: "PENDIENTE", label: "Pendiente" },
+  { key: "CONFIRMADO", label: "Confirmado" },
+  { key: "EN_CAMINO", label: "Enviado" },
+  { key: "ENTREGADO", label: "Entregado" },
+];
 
-export default function OrderStatusPanel() {
-  const [status, setStatus] = useState("Pendiente");
-  const [notes, setNotes] = useState("Cliente requiere entrega entre 9am y 12pm...");
-  const [notify, setNotify] = useState(false);
+export default function OrderStatusPanel({
+  orderId,
+  initialStatus,
+  initialNotes,
+  initialNotify,
+}: {
+  orderId: string;
+  initialStatus: string;
+  initialNotes: string;
+  initialNotify: boolean;
+}) {
+  const router = useRouter();
+  const [status, setStatus] = useState(initialStatus);
+  const [notes, setNotes] = useState(initialNotes);
+  const [notify, setNotify] = useState(initialNotify);
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, internalNotes: notes, notifyWhatsapp: notify }),
+      });
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeOrder() {
+    if (!confirm("¿Eliminar este pedido? No se puede deshacer.")) return;
+    await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
+    router.push("/admin/pedidos");
+  }
 
   return (
     <div className="w-full lg:w-[380px] bg-white border-t lg:border-t-0 lg:border-l border-diose-border-light shrink-0 p-7 flex flex-col gap-5 overflow-y-auto">
@@ -19,21 +57,21 @@ export default function OrderStatusPanel() {
         <div className="flex flex-col gap-2">
           {STATUSES.map((s) => (
             <button
-              key={s}
-              onClick={() => setStatus(s)}
+              key={s.key}
+              onClick={() => setStatus(s.key)}
               className={`flex items-center gap-3 px-4 py-3 cursor-pointer text-left ${
-                status === s ? "border-[1.5px] border-diose-amber bg-diose-amber/5" : "border border-diose-border"
+                status === s.key ? "border-[1.5px] border-diose-amber bg-diose-amber/5" : "border border-diose-border"
               }`}
             >
               <div
                 className={`w-4 h-4 rounded-full shrink-0 flex items-center justify-center ${
-                  status === s ? "bg-diose-amber" : "border-[1.5px] border-gray-300"
+                  status === s.key ? "bg-diose-amber" : "border-[1.5px] border-gray-300"
                 }`}
               >
-                {status === s && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                {status === s.key && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
               </div>
-              <span className={`text-[13px] ${status === s ? "font-medium text-diose-amber" : "text-gray-600"}`}>
-                {s}
+              <span className={`text-[13px] ${status === s.key ? "font-medium text-diose-amber" : "text-gray-600"}`}>
+                {s.label}
               </span>
             </button>
           ))}
@@ -72,10 +110,19 @@ export default function OrderStatusPanel() {
       </div>
 
       <div className="mt-auto flex flex-col gap-2.5">
-        <button className="bg-diose-amber hover:bg-diose-amber-dark text-white p-3.5 text-center cursor-pointer transition-colors">
-          <span className="text-[13px] font-semibold tracking-[0.1em] uppercase">Guardar cambios</span>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="bg-diose-amber hover:bg-diose-amber-dark text-white p-3.5 text-center cursor-pointer transition-colors disabled:opacity-50"
+        >
+          <span className="text-[13px] font-semibold tracking-[0.1em] uppercase">
+            {saving ? "Guardando..." : "Guardar cambios"}
+          </span>
         </button>
-        <button className="border border-diose-border-light p-3 text-center cursor-pointer flex items-center justify-center gap-1.5 hover:bg-red-50">
+        <button
+          onClick={removeOrder}
+          className="border border-diose-border-light p-3 text-center cursor-pointer flex items-center justify-center gap-1.5 hover:bg-red-50"
+        >
           <span className="text-xs text-diose-danger tracking-[0.04em]">Eliminar pedido</span>
         </button>
       </div>
