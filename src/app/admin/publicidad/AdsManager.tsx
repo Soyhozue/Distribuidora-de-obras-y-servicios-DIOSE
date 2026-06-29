@@ -27,7 +27,15 @@ type SavedCombo = {
   products: string[];
 };
 
-export default function AdsManager({ products }: { products: Product[] }) {
+export default function AdsManager({
+  products,
+  pendingOrders,
+  lowStockCount,
+}: {
+  products: Product[];
+  pendingOrders?: number;
+  lowStockCount?: number;
+}) {
   const [selected, setSelected] = useState<string[]>(products.slice(0, 3).map((p) => p.id));
   const [postType, setPostType] = useState(POST_TYPE_OPTIONS[0].value);
   const [title, setTitle] = useState("COMBO PROFESIONAL");
@@ -108,7 +116,7 @@ export default function AdsManager({ products }: { products: Product[] }) {
 
   return (
     <div className="flex min-h-screen">
-      <AdminSidebar active="Publicidad" />
+      <AdminSidebar active="Publicidad" pendingOrders={pendingOrders} lowStockCount={lowStockCount} />
 
       <div className="flex-1 bg-[#F2F2F2] flex flex-col">
         <div className="h-14 bg-white border-b border-diose-border-light flex flex-wrap items-center justify-between gap-3 px-7 shrink-0 py-2">

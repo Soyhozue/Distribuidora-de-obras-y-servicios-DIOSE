@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import { SearchIcon, CartIcon, UserIcon } from "./icons";
+import { getSiteSettings } from "@/lib/data";
 
 const LINKS = [
   { label: "Catálogo", href: "/catalogo" },
@@ -10,7 +11,8 @@ const LINKS = [
   { label: "Contacto", href: "/contacto" },
 ];
 
-export default function Navbar({ active, cartCount = 3 }: { active?: string; cartCount?: number }) {
+export default async function Navbar({ active, cartCount = 3 }: { active?: string; cartCount?: number }) {
+  const settings = await getSiteSettings();
   return (
     <nav className="sticky top-0 z-20 h-16 bg-white border-b border-diose-border-light flex items-center justify-between px-6 md:px-12">
       <Link href="/">
@@ -47,7 +49,7 @@ export default function Navbar({ active, cartCount = 3 }: { active?: string; car
           <UserIcon />
         </Link>
         <a
-          href="https://wa.me/526561234567"
+          href={`https://wa.me/${settings.whatsapp}`}
           target="_blank"
           rel="noopener noreferrer"
           className="bg-diose-amber text-white px-5 py-2 text-xs font-medium tracking-[0.08em] cursor-pointer hidden sm:inline-block"

@@ -161,3 +161,23 @@ model Admin {
   password  String
   createdAt DateTime @default(now())
 }
+
+model SiteSettings {
+  id         String   @id @default("main")
+  phone      String   @default("+52 (656) 123-4567")
+  whatsapp   String   @default("526561234567")
+  email      String   @default("contacto@diose.mx")
+  address    String   @default("Av. de las Torres 1234, Col. Industrial, Cd. Juárez, Chih.")
+  heroImages String[] @default([])
+  updatedAt  DateTime @updatedAt
+}
+
+model PromoImage {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  title     String?
+  subtitle  String?
+  link      String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}

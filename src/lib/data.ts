@@ -110,6 +110,11 @@ export async function updateProduct(id: string, input: ProductInput) {
   return prisma.product.update({ where: { id }, data: input });
 }
 
+export async function updateProductStock(id: string, stock: number) {
+  const stockStatus = stock <= 0 ? "AGOTADO" : stock <= 10 ? "STOCK_BAJO" : "EN_STOCK";
+  return prisma.product.update({ where: { id }, data: { stock, stockStatus } });
+}
+
 export async function deleteProduct(id: string) {
   await prisma.orderItem.deleteMany({ where: { productId: id } });
   await prisma.comboItem.deleteMany({ where: { productId: id } });
@@ -388,4 +393,64 @@ export async function updateOrderStatus(
 export async function deleteOrder(id: string) {
   await prisma.orderItem.deleteMany({ where: { orderId: id } });
   await prisma.order.delete({ where: { id } });
+}
+
+export async function getSiteSettings() {
+  const existing = await prisma.siteSettings.findUnique({ where: { id: "main" } });
+  if (existing) return existing;
+  try {
+    return await prisma.siteSettings.create({ data: { id: "main" } });
+  } catch {
+    return prisma.siteSettings.findUniqueOrThrow({ where: { id: "main" } });
+  }
+}
+
+export type SiteSettingsInput = {
+  phone: string;
+  whatsapp: string;
+  email: string;
+  address: string;
+  heroImages: string[];
+};
+
+export async function updateSiteSettings(input: SiteSettingsInput) {
+  return prisma.siteSettings.upsert({
+    where: { id: "main" },
+    update: input,
+    create: { id: "main", ...input },
+  });
+}
+
+export async function getPromoImages() {
+  return prisma.promoImage.findMany({ orderBy: { order: "asc" } });
+}
+
+export async function createPromoImage(input: {
+  imageUrl: string;
+  title?: string;
+  subtitle?: string;
+  link?: string;
+}) {
+  const count = await prisma.promoImage.count();
+  return prisma.promoImage.create({ data: { ...input, order: count } });
+}
+
+export async function deletePromoImage(id: string) {
+  await prisma.promoImage.delete({ where: { id } });
+}
+
+export async function getCustomers() {
+  const users = await prisma.user.findMany({
+    include: { orders: true },
+    orderBy: { createdAt: "desc" },
+  });
+  return users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    phone: u.phone ?? "",
+    createdAt: u.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }),
+    orderCount: u.orders.length,
+    totalSpent: u.orders.reduce((sum, o) => sum + Number(o.total.toString()), 0),
+  }));
 }

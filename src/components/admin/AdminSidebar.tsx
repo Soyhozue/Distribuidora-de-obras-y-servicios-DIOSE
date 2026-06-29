@@ -5,14 +5,27 @@ import { useRouter } from "next/navigation";
 
 const NAV = [
   { label: "Dashboard", href: "/admin" },
-  { label: "Pedidos", href: "/admin/pedidos", badge: "7" },
+  { label: "Pedidos", href: "/admin/pedidos" },
   { label: "Catálogo", href: "/admin/productos" },
-  { label: "Inventario", href: "/admin/productos", badge: "3" },
+  { label: "Inventario", href: "/admin/inventario" },
   { label: "Clientes", href: "/admin/clientes" },
-  { label: "Publicidad", href: "/admin/publicidad", tag: "Nuevo" },
+  { label: "Publicidad", href: "/admin/publicidad" },
+  { label: "Configuración", href: "/admin/configuracion" },
 ];
 
-export default function AdminSidebar({ active }: { active: string }) {
+export default function AdminSidebar({
+  active,
+  pendingOrders,
+  lowStockCount,
+}: {
+  active: string;
+  pendingOrders?: number;
+  lowStockCount?: number;
+}) {
+  const badges: Record<string, number | undefined> = {
+    Pedidos: pendingOrders,
+    Inventario: lowStockCount,
+  };
   const router = useRouter();
 
   async function logout() {
@@ -42,6 +55,7 @@ export default function AdminSidebar({ active }: { active: string }) {
       <div className="flex-1 py-5 flex flex-col gap-0.5">
         {NAV.map((item) => {
           const isActive = item.label === active;
+          const badge = badges[item.label];
           return (
             <Link
               key={item.label}
@@ -57,13 +71,10 @@ export default function AdminSidebar({ active }: { active: string }) {
               >
                 {item.label}
               </span>
-              {item.badge && (
+              {!!badge && (
                 <div className="ml-auto bg-white/10 px-2 py-0.5">
-                  <span className="text-[10px] text-white/50">{item.badge}</span>
+                  <span className="text-[10px] text-white/50">{badge}</span>
                 </div>
-              )}
-              {item.tag && (
-                <span className="ml-auto text-[9px] text-white/28 tracking-[0.1em] uppercase">{item.tag}</span>
               )}
             </Link>
           );

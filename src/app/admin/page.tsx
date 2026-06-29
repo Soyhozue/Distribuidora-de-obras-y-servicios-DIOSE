@@ -28,6 +28,9 @@ export default async function AdminDashboardPage() {
   const pendingCount = orders.filter((o) => o.status === "PENDIENTE").length;
   const monthRevenue = orders.reduce((sum, o) => sum + o.total, 0);
   const recentOrders = orders.slice(0, 5);
+  const lowStockProductsCount = await prisma.product.count({
+    where: { stockStatus: { in: ["STOCK_BAJO", "AGOTADO"] } },
+  });
 
   const stats = [
     { label: "Total de pedidos", value: String(orders.length), hint: `${pendingCount} pendientes`, dark: false },
@@ -38,7 +41,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="flex min-h-screen">
-      <AdminSidebar active="Dashboard" />
+      <AdminSidebar active="Dashboard" pendingOrders={pendingCount} lowStockCount={lowStockProductsCount} />
 
       <div className="flex-1 bg-[#F2F2F2] flex flex-col">
         <div className="h-14 bg-white border-b border-diose-border-light flex items-center justify-between px-9 shrink-0">

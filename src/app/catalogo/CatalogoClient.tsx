@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
 import ProductCard from "@/components/ProductCard";
 import { SearchIcon, ChevronDownIcon } from "@/components/icons";
 import type { Product } from "@/data/products";
@@ -20,11 +17,6 @@ const SORT_OPTIONS = [
 type SortKey = (typeof SORT_OPTIONS)[number]["key"];
 
 const PAGE_SIZE = 12;
-
-const CATEGORY_NAV_LABELS: Record<string, string> = {
-  Herramientas: "Herramientas",
-  Materiales: "Materiales",
-};
 
 export default function CatalogoClient({
   products,
@@ -67,9 +59,7 @@ export default function CatalogoClient({
   }, [query, category, brand, onlyInStock, sort]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-diose-gray">
-      <Navbar active={(category && CATEGORY_NAV_LABELS[category]) || "Catálogo"} />
-
+    <>
       {/* SEARCH + BREADCRUMB BAR */}
       <div className="bg-white border-b border-diose-border-light flex flex-wrap items-center gap-6 px-6 md:px-12 py-3">
         <span className="text-xs text-gray-400">Inicio</span>
@@ -237,9 +227,6 @@ export default function CatalogoClient({
           )}
         </main>
       </div>
-
-      <Footer />
-      <WhatsAppFloat />
-    </div>
+    </>
   );
 }

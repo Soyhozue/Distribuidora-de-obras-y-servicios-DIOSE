@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { getOrders } from "@/lib/data";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +18,15 @@ function formatPrice(price: number) {
 }
 
 export default async function AdminOrdersPage() {
-  const orders = await getOrders();
+  const [orders, lowStockCount] = await Promise.all([
+    getOrders(),
+    prisma.product.count({ where: { stockStatus: { in: ["STOCK_BAJO", "AGOTADO"] } } }),
+  ]);
+  const pendingCount = orders.filter((o) => o.status === "PENDIENTE").length;
 
   return (
     <div className="flex min-h-screen">
-      <AdminSidebar active="Pedidos" />
+      <AdminSidebar active="Pedidos" pendingOrders={pendingCount} lowStockCount={lowStockCount} />
       <div className="flex-1 bg-[#F2F2F2] flex flex-col">
         <div className="h-14 bg-white border-b border-diose-border-light flex items-center px-9 shrink-0">
           <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Pedidos</span>

@@ -6,7 +6,7 @@ import WhatsAppFloat from "@/components/WhatsAppFloat";
 import ProductCard from "@/components/ProductCard";
 import ProductPurchasePanel from "./ProductPurchasePanel";
 import ProductGallery from "./ProductGallery";
-import { getProductById, getRelatedProducts } from "@/lib/data";
+import { getProductById, getRelatedProducts, getSiteSettings } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   if (!product) notFound();
 
   const related = await getRelatedProducts(product.category, product.id);
+  const settings = await getSiteSettings();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -103,7 +104,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           )}
 
           <div className="mt-auto">
-            <ProductPurchasePanel product={product} />
+            <ProductPurchasePanel product={product} whatsapp={settings.whatsapp} />
           </div>
         </div>
       </div>

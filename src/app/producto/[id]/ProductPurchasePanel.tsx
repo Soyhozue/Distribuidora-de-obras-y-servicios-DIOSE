@@ -5,7 +5,7 @@ import { useCartStore } from "@/store/cart";
 import { WhatsAppIcon } from "@/components/icons";
 import type { Product } from "@/data/products";
 
-export default function ProductPurchasePanel({ product }: { product: Product }) {
+export default function ProductPurchasePanel({ product, whatsapp }: { product: Product; whatsapp: string }) {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const add = useCartStore((s) => s.add);
@@ -46,7 +46,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         </button>
       </div>
       <a
-        href="https://wa.me/526561234567"
+        href={`https://wa.me/${whatsapp}`}
         target="_blank"
         rel="noopener noreferrer"
         className="border border-diose-border-light h-11 flex items-center justify-center gap-2 cursor-pointer"

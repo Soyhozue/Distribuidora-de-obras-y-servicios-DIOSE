@@ -3,13 +3,19 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import ProductCard from "@/components/ProductCard";
+import HeroCarousel from "@/components/HeroCarousel";
+import PromoSection from "@/components/PromoSection";
 import { CATEGORIES } from "@/data/products";
-import { getFeaturedProducts } from "@/lib/data";
+import { getFeaturedProducts, getPromoImages, getSiteSettings } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const featured = await getFeaturedProducts();
+  const [featured, settings, promos] = await Promise.all([
+    getFeaturedProducts(),
+    getSiteSettings(),
+    getPromoImages(),
+  ]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -17,15 +23,7 @@ export default async function Home() {
 
       {/* HERO */}
       <section className="relative bg-diose-black overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, rgba(5,5,5,.93) 32%, rgba(5,5,5,.6) 70%, rgba(5,5,5,.38) 100%), url('/images/hero-warehouse.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "center 42%",
-          }}
-        />
+        <HeroCarousel images={settings.heroImages} />
         <div className="relative z-10 px-6 md:px-20 py-16 md:py-24 max-w-3xl">
           <div className="w-12 h-0.5 bg-diose-amber mb-3" />
           <div className="text-[11px] text-white/50 tracking-[0.2em] uppercase mb-2.5">
@@ -99,6 +97,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <PromoSection promos={promos} />
 
       <Footer />
       <WhatsAppFloat />

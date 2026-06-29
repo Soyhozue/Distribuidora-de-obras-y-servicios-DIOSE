@@ -1,3 +1,6 @@
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 import CatalogoClient from "./CatalogoClient";
 import { getAllProducts, getBrandsWithCounts, getCategoriesWithCounts } from "@/lib/data";
 
@@ -23,6 +26,11 @@ export default async function CatalogoPage({
   const initialCategory = params.categoria ? CATEGORY_SLUGS[params.categoria] ?? null : null;
 
   return (
-    <CatalogoClient products={products} categories={categories} brands={brands} initialCategory={initialCategory} />
+    <div className="flex flex-col min-h-screen bg-diose-gray">
+      <Navbar active={initialCategory ?? "Catálogo"} />
+      <CatalogoClient products={products} categories={categories} brands={brands} initialCategory={initialCategory} />
+      <Footer />
+      <WhatsAppFloat />
+    </div>
   );
 }

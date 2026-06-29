@@ -1,7 +1,9 @@
 import Logo from "./Logo";
 import { PinIcon, PhoneIcon, MailIcon } from "./icons";
+import { getSiteSettings } from "@/lib/data";
 
-export default function Footer() {
+export default async function Footer() {
+  const settings = await getSiteSettings();
   return (
     <footer className="bg-diose-black text-white px-6 md:px-20 py-8">
       <div className="flex flex-col md:flex-row justify-between gap-6">
@@ -17,17 +19,15 @@ export default function Footer() {
           </span>
           <div className="flex items-center gap-3">
             <PhoneIcon color="rgba(255,255,255,.6)" />
-            <span className="text-[13px] text-white/70">+52 (656) 123-4567</span>
+            <span className="text-[13px] text-white/70">{settings.phone}</span>
           </div>
           <div className="flex items-center gap-3">
             <MailIcon color="rgba(255,255,255,.6)" />
-            <span className="text-[13px] text-white/70">contacto@diose.mx</span>
+            <span className="text-[13px] text-white/70">{settings.email}</span>
           </div>
           <div className="flex items-center gap-3">
             <PinIcon color="rgba(255,255,255,.6)" />
-            <span className="text-[13px] text-white/70">
-              Av. de las Torres 1234, Col. Industrial, Cd. Juárez, Chih.
-            </span>
+            <span className="text-[13px] text-white/70">{settings.address}</span>
           </div>
         </div>
       </div>
