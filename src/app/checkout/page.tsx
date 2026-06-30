@@ -59,6 +59,18 @@ export default function CheckoutPage() {
   const { subtotal, shipping, total, totalWeight, isJuarez } = cartTotals(lines, city);
 
   useEffect(() => {
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((u: { name: string; email: string; phone: string | null } | null) => {
+        if (u) {
+          const parts = u.name.split(" ");
+          setName(parts[0] ?? "");
+          setLastName(parts.slice(1).join(" "));
+          setEmail(u.email);
+          if (u.phone) setPhone(u.phone);
+        }
+      })
+      .catch(() => {});
     fetch("/api/addresses")
       .then((r) => r.json())
       .then((data: SavedAddress[]) => {

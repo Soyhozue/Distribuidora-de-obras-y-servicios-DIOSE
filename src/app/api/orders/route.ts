@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createOrder, type CreateOrderInput } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { sendOrderConfirmation } from "@/lib/email";
+import { getSessionUserId } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as CreateOrderInput;
@@ -29,7 +30,8 @@ export async function POST(request: Request) {
     }
   }
 
-  const order = await createOrder(body);
+  const sessionUserId = await getSessionUserId();
+  const order = await createOrder(body, sessionUserId ?? undefined);
 
   // Email de confirmación — fire & forget
   sendOrderConfirmation({

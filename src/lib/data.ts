@@ -160,25 +160,37 @@ export type CreateOrderInput = {
   items: { productId: string; quantity: number; unitPrice: number }[];
 };
 
-export async function createOrder(input: CreateOrderInput) {
+export async function createOrder(input: CreateOrderInput, sessionUserId?: string) {
   const subtotal = input.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const shipping = input.items.length > 0 ? 280 : 0;
   const total = subtotal + shipping;
 
-  const user = await prisma.user.upsert({
-    where: { email: input.customerEmail },
-    update: { name: input.customerName, phone: input.customerPhone },
-    create: {
-      name: input.customerName,
-      email: input.customerEmail,
-      phone: input.customerPhone,
-      password: "guest-checkout",
-    },
-  });
+  let userId: string;
+  if (sessionUserId) {
+    // Logged-in user — link directly, update contact info
+    await prisma.user.update({
+      where: { id: sessionUserId },
+      data: { phone: input.customerPhone ?? undefined },
+    });
+    userId = sessionUserId;
+  } else {
+    // Guest checkout — upsert by email
+    const user = await prisma.user.upsert({
+      where: { email: input.customerEmail },
+      update: { name: input.customerName, phone: input.customerPhone },
+      create: {
+        name: input.customerName,
+        email: input.customerEmail,
+        phone: input.customerPhone,
+        password: "guest-checkout",
+      },
+    });
+    userId = user.id;
+  }
 
   const address = await prisma.address.create({
     data: {
-      userId: user.id,
+      userId,
       street: input.address,
       city: input.city,
       state: input.state,
@@ -188,7 +200,7 @@ export async function createOrder(input: CreateOrderInput) {
 
   const order = await prisma.order.create({
     data: {
-      userId: user.id,
+      userId,
       addressId: address.id,
       paymentMethod: input.paymentMethod,
       subtotal,
