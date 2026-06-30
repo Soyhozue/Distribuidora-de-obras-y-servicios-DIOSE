@@ -17,6 +17,26 @@ const PAYMENT_METHODS = [
   { id: "whatsapp", label: "Cotización por WhatsApp" },
 ];
 
+const PAYMENT_MAP: Record<string, string> = {
+  mercadopago: "TARJETA",
+  transferencia: "TRANSFERENCIA",
+  efectivo: "EFECTIVO",
+  whatsapp: "WHATSAPP",
+};
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const DEFAULT_FORM = {
+  name: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  address: "",
+  city: "Ciudad Juárez",
+  state: "Chihuahua",
+  zip: "",
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
   const lines = useCartStore((s) => s.lines);
@@ -24,31 +44,13 @@ export default function CheckoutPage() {
   const [payment, setPayment] = useState("transferencia");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "Ciudad Juárez",
-    state: "Chihuahua",
-    zip: "",
-  });
+  const [form, setForm] = useState(DEFAULT_FORM);
 
   const { subtotal, shipping, total, totalWeight, isJuarez } = cartTotals(lines, form.city);
 
-  function update(field: keyof typeof form, value: string) {
+  function update(field: keyof typeof DEFAULT_FORM, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
   }
-
-  const PAYMENT_MAP: Record<string, string> = {
-    mercadopago: "TARJETA",
-    transferencia: "TRANSFERENCIA",
-    efectivo: "EFECTIVO",
-    whatsapp: "WHATSAPP",
-  };
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   async function confirmOrder() {
     if (!form.name || !form.email || !form.address) {
@@ -67,7 +69,6 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
-      // Pago con MercadoPago → Checkout Pro
       if (payment === "mercadopago") {
         const res = await fetch("/api/checkout/mercadopago", {
           method: "POST",
@@ -87,7 +88,6 @@ export default function CheckoutPage() {
         if (data.url) { window.location.href = data.url; return; }
       }
 
-      // Otros métodos → orden directa
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
