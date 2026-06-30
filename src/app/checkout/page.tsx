@@ -11,7 +11,7 @@ function formatPrice(price: number) {
 }
 
 const PAYMENT_METHODS = [
-  { id: "tarjeta", label: "Tarjeta de crédito / débito" },
+  { id: "mercadopago", label: "Tarjeta de crédito / débito (MercadoPago)" },
   { id: "transferencia", label: "Transferencia bancaria" },
   { id: "efectivo", label: "Pago en efectivo (en sucursal)" },
   { id: "whatsapp", label: "Cotización por WhatsApp" },
@@ -41,7 +41,7 @@ export default function CheckoutPage() {
   }
 
   const PAYMENT_MAP: Record<string, string> = {
-    tarjeta: "TARJETA",
+    mercadopago: "TARJETA",
     transferencia: "TRANSFERENCIA",
     efectivo: "EFECTIVO",
     whatsapp: "WHATSAPP",
@@ -66,9 +66,9 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
-      // Pago con tarjeta → Stripe Checkout
-      if (payment === "tarjeta") {
-        const res = await fetch("/api/checkout/stripe", {
+      // Pago con MercadoPago → Checkout Pro
+      if (payment === "mercadopago") {
+        const res = await fetch("/api/checkout/mercadopago", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -78,17 +78,12 @@ export default function CheckoutPage() {
               name: l.product.name,
               price: l.product.price,
               quantity: l.quantity,
-              image: l.product.images?.[0],
             })),
-            metadata: { phone: form.phone, address: form.address },
           }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Error al iniciar el pago");
-        if (data.url) {
-          window.location.href = data.url;
-          return;
-        }
+        if (data.url) { window.location.href = data.url; return; }
       }
 
       // Otros métodos → orden directa
