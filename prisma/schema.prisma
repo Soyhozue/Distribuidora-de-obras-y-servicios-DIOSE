@@ -72,14 +72,15 @@ model Product {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  name      String
-  email     String    @unique
-  phone     String?
-  password  String
-  addresses Address[]
-  orders    Order[]
-  createdAt DateTime  @default(now())
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  phone          String?
+  password       String
+  addresses      Address[]
+  orders         Order[]
+  passwordResets PasswordReset[]
+  createdAt      DateTime        @default(now())
 }
 
 model Address {
@@ -200,5 +201,15 @@ model Coupon {
   code      String   @unique
   discount  Decimal  @db.Decimal(5, 4)
   active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
   createdAt DateTime @default(now())
 }

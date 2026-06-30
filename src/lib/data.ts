@@ -199,6 +199,7 @@ export async function createOrder(input: CreateOrderInput) {
         })),
       },
     },
+    include: { items: { include: { product: { select: { name: true } } } } },
   });
 
   return order;

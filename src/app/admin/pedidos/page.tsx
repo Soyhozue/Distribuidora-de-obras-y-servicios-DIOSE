@@ -22,6 +22,13 @@ export default async function AdminOrdersPage() {
     <>
       <div className="h-14 bg-white border-b border-diose-border-light flex items-center px-9 shrink-0">
         <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Pedidos</span>
+        <a
+          href="/api/admin/orders-csv"
+          download
+          className="ml-auto text-[10px] border border-diose-border px-4 py-1.5 text-gray-500 hover:border-diose-black hover:text-diose-black tracking-[0.08em] uppercase"
+        >
+          Exportar CSV
+        </a>
       </div>
       <div className="p-9">
         <div className="bg-white border border-diose-border overflow-hidden">

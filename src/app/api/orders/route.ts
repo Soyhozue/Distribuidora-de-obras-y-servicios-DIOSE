@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createOrder, type CreateOrderInput } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
+import { sendOrderConfirmation } from "@/lib/email";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as CreateOrderInput;
@@ -9,7 +10,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
   }
 
-  // Validar stock antes de crear la orden
   const productIds = body.items.map((i) => i.productId);
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
@@ -30,5 +30,22 @@ export async function POST(request: Request) {
   }
 
   const order = await createOrder(body);
+
+  // Email de confirmación — fire & forget
+  sendOrderConfirmation({
+    number: order.number,
+    customerName: body.customerName,
+    customerEmail: body.customerEmail,
+    items: order.items.map((i) => ({
+      name: i.product.name,
+      quantity: i.quantity,
+      unitPrice: Number(i.unitPrice),
+    })),
+    subtotal: Number(order.subtotal),
+    shipping: Number(order.shipping),
+    discount: Number(order.discount),
+    total: Number(order.total),
+  }).catch(() => {});
+
   return NextResponse.json({ id: order.id, number: order.number });
 }

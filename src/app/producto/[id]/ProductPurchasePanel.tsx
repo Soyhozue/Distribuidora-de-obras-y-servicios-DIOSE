@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCartStore } from "@/store/cart";
+import { useToastStore } from "@/store/toastStore";
 import { WhatsAppIcon } from "@/components/icons";
 import type { Product } from "@/data/products";
 
@@ -9,6 +10,7 @@ export default function ProductPurchasePanel({ product, whatsapp }: { product: P
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const add = useCartStore((s) => s.add);
+  const showToast = useToastStore((s) => s.show);
   const agotado = product.stockStatus === "AGOTADO";
 
   return (
@@ -36,6 +38,7 @@ export default function ProductPurchasePanel({ product, whatsapp }: { product: P
           onClick={() => {
             add(product, quantity);
             setAdded(true);
+            showToast(`"${product.name}" agregado al carrito`);
             setTimeout(() => setAdded(false), 1800);
           }}
           className="flex-1 bg-diose-amber hover:bg-diose-amber-dark text-white h-11 flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"

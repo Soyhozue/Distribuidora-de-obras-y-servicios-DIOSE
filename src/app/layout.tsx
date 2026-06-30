@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Outfit } from "next/font/google";
 import "./globals.css";
+import ToastProvider from "@/components/ToastProvider";
 
 const bebasNeue = Bebas_Neue({
   variable: "--font-bebas-neue",
@@ -64,7 +65,10 @@ export default function RootLayout({
       lang="es"
       className={`${bebasNeue.variable} ${outfit.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <ToastProvider />
+      </body>
     </html>
   );
 }

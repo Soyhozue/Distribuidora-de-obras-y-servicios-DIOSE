@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function AuthForms() {
   const router = useRouter();
@@ -87,6 +88,14 @@ export default function AuthForms() {
             placeholder="Contraseña"
             className="border border-diose-border px-3.5 py-2.5 text-[13px] outline-none focus:border-diose-black"
           />
+
+          {mode === "login" && (
+            <div className="text-right">
+              <Link href="/recuperar" className="text-[11px] text-gray-400 underline hover:text-diose-black">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+          )}
 
           {error && <div className="text-xs text-diose-danger">{error}</div>}
 
