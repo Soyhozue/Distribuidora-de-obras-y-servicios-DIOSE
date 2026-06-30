@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 const NAV = [
   { label: "Dashboard", href: "/admin" },
@@ -14,14 +14,13 @@ const NAV = [
 ];
 
 export default function AdminSidebar({
-  active,
   pendingOrders,
   lowStockCount,
 }: {
-  active: string;
   pendingOrders?: number;
   lowStockCount?: number;
 }) {
+  const pathname = usePathname();
   const badges: Record<string, number | undefined> = {
     Pedidos: pendingOrders,
     Inventario: lowStockCount,
@@ -54,7 +53,10 @@ export default function AdminSidebar({
 
       <div className="flex-1 py-5 flex flex-col gap-0.5">
         {NAV.map((item) => {
-          const isActive = item.label === active;
+          const isActive =
+            item.href === "/admin"
+              ? pathname === "/admin"
+              : pathname.startsWith(item.href);
           const badge = badges[item.label];
           return (
             <Link

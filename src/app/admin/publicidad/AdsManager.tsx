@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import AdminSidebar from "@/components/admin/AdminSidebar";
 import { WhatsAppIcon } from "@/components/icons";
 import type { Product } from "@/data/products";
 
@@ -63,13 +62,9 @@ async function uploadImage(file: File): Promise<string> {
 
 export default function AdsManager({
   products,
-  pendingOrders,
-  lowStockCount,
   settings,
 }: {
   products: Product[];
-  pendingOrders?: number;
-  lowStockCount?: number;
   settings: AdSettings;
 }) {
   const [postType, setPostType] = useState(POST_TYPE_OPTIONS[0].value);
@@ -175,10 +170,7 @@ export default function AdsManager({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <AdminSidebar active="Publicidad" pendingOrders={pendingOrders} lowStockCount={lowStockCount} />
-
-      <div className="flex-1 bg-[#F2F2F2] flex flex-col">
+    <div className="flex flex-col flex-1">
         <div className="h-14 bg-white border-b border-diose-border-light flex flex-wrap items-center justify-between gap-3 px-7 shrink-0 py-2">
           <div className="flex items-center gap-4">
             <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Publicidad y Combos</span>
@@ -526,7 +518,6 @@ export default function AdsManager({
             </div>
           </div>
         </div>
-      </div>
 
       {historyOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

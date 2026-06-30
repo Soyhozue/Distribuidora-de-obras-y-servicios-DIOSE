@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
-import AdminSidebar from "@/components/admin/AdminSidebar";
 import OrderStatusPanel from "./OrderStatusPanel";
 import { getOrderById } from "@/lib/data";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const STEPS: { key: string; label: string }[] = [
   { key: "PENDIENTE", label: "Pendiente" },
@@ -24,12 +23,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const currentStep = STEPS.findIndex((s) => s.key === order.status);
 
   return (
-    <div className="flex min-h-screen">
-      <AdminSidebar active="Pedidos" />
-
-      <div className="flex-1 bg-[#F2F2F2] flex flex-col">
-        {/* Top bar */}
-        <div className="h-14 bg-white border-b border-diose-border-light flex items-center px-9 gap-5 shrink-0">
+    <>
+      <div className="h-14 bg-white border-b border-diose-border-light flex items-center px-9 gap-5 shrink-0">
           <span className="text-xs text-gray-400 tracking-[0.04em] cursor-pointer">← Pedidos</span>
           <span className="text-xs text-gray-300">/</span>
           <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Pedido #{order.number}</span>
@@ -107,8 +102,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             initialNotify={order.notifyWhatsapp}
           />
         </div>
-      </div>
-    </div>
+    </>
   );
 }
 

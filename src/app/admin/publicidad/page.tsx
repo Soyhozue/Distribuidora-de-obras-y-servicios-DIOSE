@@ -1,17 +1,13 @@
-import { getAllProducts, getOrders, getSiteSettings } from "@/lib/data";
+import { getAllProducts, getSiteSettings } from "@/lib/data";
 import AdsManager from "./AdsManager";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function AdminAdsPage() {
-  const [products, orders, settings] = await Promise.all([getAllProducts(), getOrders(), getSiteSettings()]);
-  const lowStockCount = products.filter((p) => p.stockStatus !== "EN_STOCK").length;
-  const pendingCount = orders.filter((o) => o.status === "PENDIENTE").length;
+  const [products, settings] = await Promise.all([getAllProducts(), getSiteSettings()]);
   return (
     <AdsManager
       products={products}
-      pendingOrders={pendingCount}
-      lowStockCount={lowStockCount}
       settings={{
         phone: settings.phone,
         phone2: settings.phone2,
