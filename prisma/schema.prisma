@@ -194,3 +194,11 @@ model PromoImage {
   order     Int      @default(0)
   createdAt DateTime @default(now())
 }
+
+model Coupon {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  discount  Decimal  @db.Decimal(5, 4)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}

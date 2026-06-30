@@ -9,11 +9,6 @@ function formatPrice(price: number) {
   return `$${price.toLocaleString("es-MX")}`;
 }
 
-const COUPONS: Record<string, number> = {
-  DIOSE10: 0.1,
-  BIENVENIDA: 0.05,
-};
-
 export default function CartView({ whatsapp }: { whatsapp: string }) {
   const lines = useCartStore((s) => s.lines);
   const setQuantity = useCartStore((s) => s.setQuantity);
@@ -22,21 +17,31 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
 
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [discountRate, setDiscountRate] = useState(0);
   const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
 
-  const discountRate = appliedCoupon ? COUPONS[appliedCoupon] : 0;
   const discount = Math.round(subtotal * discountRate);
   const total = rawTotal - discount;
 
-  function applyCoupon() {
+  async function applyCoupon() {
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
-    if (COUPONS[code]) {
-      setAppliedCoupon(code);
-      setCouponError("");
-    } else {
-      setAppliedCoupon(null);
-      setCouponError("Código no válido");
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}`);
+      if (!res.ok) {
+        setAppliedCoupon(null);
+        setDiscountRate(0);
+        setCouponError("Código no válido o inactivo");
+        return;
+      }
+      const data = await res.json();
+      setAppliedCoupon(data.code);
+      setDiscountRate(data.discount);
+    } finally {
+      setCouponLoading(false);
     }
   }
 
@@ -143,9 +148,10 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
                   />
                   <button
                     onClick={applyCoupon}
-                    className="bg-gray-800 text-white px-3 py-1.5 text-xs font-medium cursor-pointer tracking-[0.06em]"
+                    disabled={couponLoading}
+                    className="bg-gray-800 text-white px-3 py-1.5 text-xs font-medium cursor-pointer tracking-[0.06em] disabled:opacity-60"
                   >
-                    Aplicar
+                    {couponLoading ? "..." : "Aplicar"}
                   </button>
                 </div>
               </div>

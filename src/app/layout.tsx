@@ -43,6 +43,10 @@ export const metadata: Metadata = {
     description: "Distribuidora de materiales y herramientas en Ciudad Juárez.",
     images: ["/og-image.jpg"],
   },
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
   robots: {
     index: true,
     follow: true,
