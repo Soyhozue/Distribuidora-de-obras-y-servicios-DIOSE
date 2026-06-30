@@ -67,9 +67,16 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="text-[13px] font-medium text-diose-black leading-snug mb-2.5 line-clamp-2">
           {product.name}
         </div>
-        <div className="text-base font-semibold text-diose-amber">
-          {formatPrice(product.price)}
-          {product.unit && <span className="text-[11px] font-normal"> {product.unit}</span>}
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="text-base font-semibold text-diose-amber">
+            {formatPrice(product.price)}
+            <span className="text-[11px] font-normal text-gray-400 ml-1">MXN</span>
+          </div>
+          {product.unit && (
+            <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-gray-400 border border-diose-border-light px-2 py-0.5 shrink-0">
+              {product.unit}
+            </span>
+          )}
         </div>
       </div>
     </Link>
