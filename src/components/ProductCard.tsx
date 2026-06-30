@@ -37,24 +37,26 @@ export default function ProductCard({ product }: { product: Product }) {
         agotado ? "opacity-60" : ""
       }`}
     >
-      <div
-        className="relative w-full aspect-square bg-[#F5F5F5] flex items-center justify-center overflow-hidden"
-        style={{
-          backgroundImage: "radial-gradient(#E0E0E0 1px,transparent 1px)",
-          backgroundSize: "18px 18px",
-        }}
-      >
-        {product.images && product.images[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
+      {product.images && product.images[0] ? (
+        <div className="relative w-full aspect-square bg-white flex items-center justify-center overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={product.images[0]}
             alt={product.name}
             className="w-full h-full object-contain p-5 transition-transform duration-300 group-hover:scale-105"
           />
-        ) : (
+        </div>
+      ) : (
+        <div
+          className="relative w-full aspect-square bg-[#F5F5F5] flex items-center justify-center overflow-hidden"
+          style={{
+            backgroundImage: "radial-gradient(#E0E0E0 1px,transparent 1px)",
+            backgroundSize: "18px 18px",
+          }}
+        >
           <ProductIcon icon={product.icon} />
-        )}
-      </div>
+        </div>
+      )}
       <div className="p-3.5">
         <div className="flex justify-between items-center mb-1.5">
           <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400">
