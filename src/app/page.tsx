@@ -47,16 +47,16 @@ export default async function Home() {
           >
             {settings.heroSubtitle}
           </p>
-          <div className="flex flex-col sm:flex-row gap-2.5">
+          <div className="flex flex-col sm:flex-row gap-3 mt-1">
             <Link
               href={settings.heroCta1Link}
-              className="bg-white text-diose-black px-8 py-3 text-[12px] font-semibold tracking-[0.1em] uppercase text-center cursor-pointer"
+              className="bg-white hover:bg-diose-amber hover:text-white text-diose-black px-8 py-3.5 text-[12px] font-semibold tracking-[0.12em] uppercase text-center cursor-pointer transition-colors duration-200"
             >
               {settings.heroCta1Label}
             </Link>
             <Link
               href={settings.heroCta2Link}
-              className="border border-diose-amber/60 text-diose-amber px-8 py-3 text-[12px] font-medium tracking-[0.1em] uppercase text-center cursor-pointer"
+              className="bg-white/15 hover:bg-white/30 border border-white/80 text-white px-8 py-3.5 text-[12px] font-semibold tracking-[0.12em] uppercase text-center cursor-pointer transition-colors duration-200 backdrop-blur-sm"
             >
               {settings.heroCta2Label}
             </Link>
