@@ -133,10 +133,16 @@ export default function CheckoutPage() {
           body: JSON.stringify({
             customerName: `${name} ${lastName}`.trim(),
             customerEmail: email,
-            items: lines.map((l) => ({ name: l.product.name, price: l.product.price, quantity: l.quantity })),
+            customerPhone: phone,
+            address,
+            city,
+            state,
+            zip,
+            paymentMethod: "TARJETA",
+            items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity, unitPrice: l.product.price })),
           }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error ?? "Error al iniciar el pago");
         if (data.url) { window.location.href = data.url; return; }
       }
