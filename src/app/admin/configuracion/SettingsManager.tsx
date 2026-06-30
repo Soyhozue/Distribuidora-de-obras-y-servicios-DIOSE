@@ -164,7 +164,7 @@ export default function SettingsManager({
         <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Configuración</span>
       </div>
 
-      <div className="flex-1 p-9 flex flex-col gap-7 max-w-3xl overflow-y-auto">
+      <div className="flex-1 p-9 flex flex-col gap-7 max-w-3xl">
         {/* CONTACT INFO */}
         <div className="bg-white border border-diose-border p-6">
           <div className="font-heading text-lg text-diose-black mb-1">Datos de contacto</div>

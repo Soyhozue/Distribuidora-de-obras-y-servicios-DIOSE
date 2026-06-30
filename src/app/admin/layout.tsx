@@ -19,9 +19,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { pendingOrders, lowStockCount } = await getBadgeCounts();
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <AdminSidebar pendingOrders={pendingOrders} lowStockCount={lowStockCount} />
-      <div className="flex-1 bg-[#F2F2F2] flex flex-col min-w-0">
+      <div className="flex-1 bg-[#F2F2F2] flex flex-col min-w-0 overflow-y-auto">
         {children}
       </div>
     </div>
