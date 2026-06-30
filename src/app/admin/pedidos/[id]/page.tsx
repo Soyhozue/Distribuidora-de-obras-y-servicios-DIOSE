@@ -34,7 +34,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           </span>
           <div className="ml-auto flex items-center gap-3">
             <Link
-              href={`/admin/pedidos/${order.id}/guia`}
+              href={`/guia/${order.id}`}
               target="_blank"
               className="text-[10px] border border-diose-black text-diose-black px-3 py-1 tracking-[0.1em] uppercase hover:bg-diose-black hover:text-white transition-colors"
             >
