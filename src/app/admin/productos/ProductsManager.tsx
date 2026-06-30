@@ -39,6 +39,7 @@ type FormState = {
   description: string;
   benefits: string;
   applications: string;
+  characteristics: string;
   price: string;
   unit: string;
   stock: string;
@@ -50,29 +51,34 @@ type FormState = {
 };
 
 function parseDescriptionField(raw: string | null | undefined) {
-  if (!raw) return { main: "", benefits: "", applications: "" };
-  const beneficiosIdx = raw.toLowerCase().indexOf("[beneficios]");
-  const aplicacionesIdx = raw.toLowerCase().indexOf("[aplicaciones]");
-  const firstMarker = Math.min(
-    beneficiosIdx === -1 ? Infinity : beneficiosIdx,
-    aplicacionesIdx === -1 ? Infinity : aplicacionesIdx,
-  );
+  if (!raw) return { main: "", benefits: "", applications: "", characteristics: "" };
+  const lower = raw.toLowerCase();
+  const charIdx  = lower.indexOf("[caracteristicas]");
+  const benefIdx = lower.indexOf("[beneficios]");
+  const appIdx   = lower.indexOf("[aplicaciones]");
+
+  const markers = [charIdx, benefIdx, appIdx].filter((i) => i !== -1);
+  const firstMarker = markers.length ? Math.min(...markers) : Infinity;
   const main = firstMarker !== Infinity ? raw.slice(0, firstMarker).trim() : raw.trim();
-  let benefits = "";
-  let applications = "";
-  if (beneficiosIdx !== -1) {
-    const end = aplicacionesIdx !== -1 && aplicacionesIdx > beneficiosIdx ? aplicacionesIdx : raw.length;
-    benefits = raw.slice(beneficiosIdx + "[beneficios]".length, end).trim();
+
+  function extractBlock(idx: number, markerLen: number) {
+    if (idx === -1) return "";
+    const start = idx + markerLen;
+    const next = [charIdx, benefIdx, appIdx].filter((i) => i !== -1 && i > idx).sort((a, b) => a - b)[0] ?? raw!.length;
+    return raw!.slice(start, next).trim();
   }
-  if (aplicacionesIdx !== -1) {
-    const end = beneficiosIdx !== -1 && beneficiosIdx > aplicacionesIdx ? beneficiosIdx : raw.length;
-    applications = raw.slice(aplicacionesIdx + "[aplicaciones]".length, end).trim();
-  }
-  return { main, benefits, applications };
+
+  return {
+    main,
+    characteristics: extractBlock(charIdx, "[caracteristicas]".length),
+    benefits:        extractBlock(benefIdx, "[beneficios]".length),
+    applications:    extractBlock(appIdx,   "[aplicaciones]".length),
+  };
 }
 
-function serializeDescription(main: string, benefits: string, applications: string): string {
+function serializeDescription(main: string, benefits: string, applications: string, characteristics: string): string {
   let result = main.trim();
+  if (characteristics.trim()) result += `\n\n[caracteristicas]\n${characteristics.trim()}`;
   if (benefits.trim()) result += `\n\n[beneficios]\n${benefits.trim()}`;
   if (applications.trim()) result += `\n\n[aplicaciones]\n${applications.trim()}`;
   return result;
@@ -85,6 +91,7 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     description: "",
     benefits: "",
     applications: "",
+    characteristics: "",
     price: "",
     unit: "",
     stock: "0",
@@ -145,7 +152,7 @@ export default function ProductsManager({
   }
 
   function openEdit(p: ManagedProduct) {
-    const { main, benefits, applications } = parseDescriptionField(p.description);
+    const { main, benefits, applications, characteristics } = parseDescriptionField(p.description);
     setForm({
       id: p.id,
       sku: p.sku,
@@ -153,6 +160,7 @@ export default function ProductsManager({
       description: main,
       benefits,
       applications,
+      characteristics,
       price: String(p.price),
       unit: p.unit ?? "",
       stock: String(p.stock),
@@ -183,7 +191,7 @@ export default function ProductsManager({
   async function save() {
     setSaving(true);
     try {
-      const fullDescription = serializeDescription(form.description, form.benefits, form.applications);
+      const fullDescription = serializeDescription(form.description, form.benefits, form.applications, form.characteristics);
       const payload = {
         sku: form.sku,
         name: form.name,
@@ -545,6 +553,17 @@ export default function ProductsManager({
                   value={form.applications}
                   onChange={(e) => setForm({ ...form, applications: e.target.value })}
                   placeholder={"Talleres de llantas\nVulcanizadoras\nCentros de servicio automotriz"}
+                  className="border border-diose-border px-3 py-2 text-sm outline-none h-16 resize-none"
+                />
+              </label>
+              <label className="flex flex-col gap-1 col-span-2">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                  Características <span className="normal-case text-gray-300">(una por línea — aparecen debajo de la imagen)</span>
+                </span>
+                <textarea
+                  value={form.characteristics}
+                  onChange={(e) => setForm({ ...form, characteristics: e.target.value })}
+                  placeholder={"Contenido neto: 19 litros\nFórmula anticorrosiva\nApto para uso profesional"}
                   className="border border-diose-border px-3 py-2 text-sm outline-none h-16 resize-none"
                 />
               </label>

@@ -30,29 +30,28 @@ function formatPrice(price: number) {
 }
 
 function parseDescription(raw: string | null | undefined) {
-  if (!raw) return { main: "", benefits: [], applications: [] };
+  if (!raw) return { main: "", benefits: [], applications: [], characteristics: [] };
 
-  // Detect both marker format [beneficios] and natural language headers
   const lower = raw.toLowerCase();
 
-  // Natural headers: "Beneficios", "Aplicaciones" as standalone words (may be preceded by a period/space)
   const BENEFIT_RE = /\.\s*(beneficios)\s+/i;
   const APP_RE = /\.\s*(aplicaciones)\s+/i;
   const SPEC_RE = /\.\s*(especificaciones)\s+/i;
 
   const markerBenef = lower.indexOf("[beneficios]");
-  const markerApp = lower.indexOf("[aplicaciones]");
+  const markerApp   = lower.indexOf("[aplicaciones]");
+  const markerChar  = lower.indexOf("[caracteristicas]");
 
   const naturalBenef = BENEFIT_RE.exec(raw);
-  const naturalApp = APP_RE.exec(raw);
-  const naturalSpec = SPEC_RE.exec(raw);
+  const naturalApp   = APP_RE.exec(raw);
+  const naturalSpec  = SPEC_RE.exec(raw);
 
-  // Prefer explicit markers; fall back to natural detection
   const benefIdx = markerBenef !== -1 ? markerBenef : (naturalBenef ? naturalBenef.index + 1 : -1);
   const appIdx   = markerApp   !== -1 ? markerApp   : (naturalApp   ? naturalApp.index   + 1 : -1);
   const specIdx  = naturalSpec ? naturalSpec.index + 1 : -1;
+  const charIdx  = markerChar  !== -1 ? markerChar  : -1;
 
-  const markers = [benefIdx, appIdx, specIdx].filter((i) => i !== -1);
+  const markers = [benefIdx, appIdx, specIdx, charIdx].filter((i) => i !== -1);
   const firstMarker = markers.length ? Math.min(...markers) : Infinity;
 
   const main = firstMarker !== Infinity ? raw.slice(0, firstMarker).trim() : raw.trim();
@@ -65,22 +64,26 @@ function parseDescription(raw: string | null | undefined) {
 
   let benefits: string[] = [];
   let applications: string[] = [];
+  let characteristics: string[] = [];
 
   if (benefIdx !== -1) {
-    const markerLen = markerBenef !== -1 ? "[beneficios]".length
-      : (naturalBenef ? naturalBenef[0].length - 1 : 0);
-    const block = extractBlock(benefIdx, markerLen, [appIdx, specIdx].filter((i) => i !== -1));
+    const markerLen = markerBenef !== -1 ? "[beneficios]".length : (naturalBenef ? naturalBenef[0].length - 1 : 0);
+    const block = extractBlock(benefIdx, markerLen, [appIdx, specIdx, charIdx].filter((i) => i !== -1));
     benefits = block.split(/[\n.]+/).map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter((l) => l.length > 4);
   }
 
   if (appIdx !== -1) {
-    const markerLen = markerApp !== -1 ? "[aplicaciones]".length
-      : (naturalApp ? naturalApp[0].length - 1 : 0);
-    const block = extractBlock(appIdx, markerLen, [benefIdx, specIdx].filter((i) => i !== -1));
+    const markerLen = markerApp !== -1 ? "[aplicaciones]".length : (naturalApp ? naturalApp[0].length - 1 : 0);
+    const block = extractBlock(appIdx, markerLen, [benefIdx, specIdx, charIdx].filter((i) => i !== -1));
     applications = block.split(/[\n.]+/).map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter((l) => l.length > 4);
   }
 
-  return { main, benefits, applications };
+  if (charIdx !== -1) {
+    const block = extractBlock(charIdx, "[caracteristicas]".length, [benefIdx, appIdx, specIdx].filter((i) => i !== -1));
+    characteristics = block.split("\n").map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter((l) => l.length > 2);
+  }
+
+  return { main, benefits, applications, characteristics };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -90,7 +93,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   const related = await getRelatedProducts(product.category, product.id);
   const settings = await getSiteSettings();
-  const { main, benefits, applications } = parseDescription(product.description);
+  const { main, benefits, applications, characteristics } = parseDescription(product.description);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -118,10 +121,25 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         {/* LEFT: GALLERY */}
         <div className="md:w-[46%] shrink-0">
           <ProductGallery product={product} />
-          <div className="mt-4">
-            <span className="text-[10px] tracking-[0.14em] uppercase text-gray-400 border border-diose-border-light px-3 py-1.5">
+          <div className="mt-4 flex flex-col gap-4">
+            <span className="text-[10px] tracking-[0.14em] uppercase text-gray-400 border border-diose-border-light px-3 py-1.5 self-start">
               {product.category}
             </span>
+            {characteristics.length > 0 && (
+              <div>
+                <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-2">
+                  Características
+                </div>
+                <ul className="flex flex-col gap-1.5">
+                  {characteristics.map((c, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-diose-black shrink-0" />
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
