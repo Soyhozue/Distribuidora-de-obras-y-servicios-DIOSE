@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /carrito
+Disallow: /checkout
+Disallow: /cuenta
+
+Sitemap: https://ntpdcyoeulknkezftwvb.supabase.co/sitemap.xml

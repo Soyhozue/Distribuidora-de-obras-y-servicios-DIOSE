@@ -10,6 +10,21 @@ import { getProductById, getRelatedProducts, getSiteSettings } from "@/lib/data"
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const product = await getProductById(id);
+  if (!product) return {};
+  return {
+    title: `${product.name} | DIOSE`,
+    description: product.description ?? `Compra ${product.name} en DIOSE. ${product.brand} · ${product.category}`,
+    openGraph: {
+      title: product.name,
+      description: product.description ?? `${product.brand} · ${product.category}`,
+      images: product.images?.[0] ? [{ url: product.images[0] }] : [],
+    },
+  };
+}
+
 function formatPrice(price: number) {
   return `$${price.toLocaleString("es-MX")}`;
 }

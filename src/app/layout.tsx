@@ -14,10 +14,40 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
+const BASE_URL = "https://diose.vercel.app";
+
 export const metadata: Metadata = {
-  title: "DIOSE | Materiales y Herramientas de Construcción · Ciudad Juárez",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "DIOSE | Materiales y Herramientas de Construcción · Ciudad Juárez",
+    template: "%s | DIOSE",
+  },
   description:
-    "Distribuidora de materiales de construcción, herramientas y suministros con 8 años de presencia en Ciudad Juárez.",
+    "Distribuidora de materiales de construcción, herramientas y suministros en Ciudad Juárez, Chihuahua. Envíos rápidos, precios competitivos.",
+  keywords: ["materiales de construcción", "herramientas", "Ciudad Juárez", "ferretería", "DIOSE", "Chihuahua"],
+  authors: [{ name: "DIOSE" }],
+  creator: "DIOSE",
+  openGraph: {
+    type: "website",
+    locale: "es_MX",
+    url: BASE_URL,
+    siteName: "DIOSE",
+    title: "DIOSE | Materiales y Herramientas de Construcción",
+    description:
+      "Distribuidora de materiales de construcción, herramientas y suministros en Ciudad Juárez, Chihuahua.",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "DIOSE Materiales de Construcción" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DIOSE | Materiales y Herramientas de Construcción",
+    description: "Distribuidora de materiales y herramientas en Ciudad Juárez.",
+    images: ["/og-image.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 export default function RootLayout({

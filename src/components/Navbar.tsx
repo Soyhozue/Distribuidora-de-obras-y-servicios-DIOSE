@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Logo from "./Logo";
-import { SearchIcon, CartIcon, UserIcon } from "./icons";
+import { CartIcon, UserIcon } from "./icons";
 import CartBadge from "./CartBadge";
+import SearchBar from "./SearchBar";
 import { getSiteSettings } from "@/lib/data";
 
 const LINKS = [
@@ -35,7 +36,7 @@ export default async function Navbar({ active }: { active?: string }) {
       </div>
 
       <div className="flex gap-6 items-center">
-        <SearchIcon className="cursor-pointer" />
+        <SearchBar />
         <Link href="/carrito" className="relative cursor-pointer">
           <CartIcon />
           <CartBadge />

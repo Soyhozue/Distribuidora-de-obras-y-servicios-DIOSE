@@ -45,9 +45,19 @@ export default function CheckoutPage() {
     whatsapp: "WHATSAPP",
   };
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   async function confirmOrder() {
     if (!form.name || !form.email || !form.address) {
       setError("Completa al menos nombre, correo y dirección.");
+      return;
+    }
+    if (!emailRegex.test(form.email)) {
+      setError("Ingresa un correo electrónico válido.");
+      return;
+    }
+    if (lines.length === 0) {
+      setError("Tu carrito está vacío.");
       return;
     }
     setSubmitting(true);
@@ -72,11 +82,15 @@ export default function CheckoutPage() {
           })),
         }),
       });
-      if (!res.ok) throw new Error("No se pudo crear el pedido");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "No se pudo crear el pedido");
+      }
+      const data = await res.json();
       clear();
-      router.push("/cuenta");
-    } catch {
-      setError("Hubo un problema al confirmar el pedido. Intenta de nuevo.");
+      router.push(`/pedido-confirmado?n=${data.number ?? ""}`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Hubo un problema al confirmar el pedido. Intenta de nuevo.");
     } finally {
       setSubmitting(false);
     }
