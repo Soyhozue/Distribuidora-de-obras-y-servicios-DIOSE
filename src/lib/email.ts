@@ -1,7 +1,10 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = "DIOSE <noreply@diose.mx>";
+
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY ?? "no-key");
+}
 
 function formatPrice(n: number) {
   return `$${n.toLocaleString("es-MX")}`;
@@ -30,7 +33,7 @@ export async function sendOrderConfirmation(order: {
     )
     .join("");
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: order.customerEmail,
     subject: `DIOSE – Pedido #${order.number} recibido`,
@@ -73,7 +76,7 @@ export async function sendOrderConfirmation(order: {
 export async function sendPasswordResetEmail(email: string, name: string, token: string) {
   if (!process.env.RESEND_API_KEY) return;
   const link = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://diose.vercel.app"}/recuperar?token=${token}`;
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: email,
     subject: "DIOSE – Recupera tu contraseña",
