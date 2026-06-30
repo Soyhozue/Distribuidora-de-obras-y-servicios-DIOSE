@@ -2,8 +2,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/data";
 
-export const revalidate = 3600;
+export const revalidate = 0;
 
 export const metadata = {
   title: "Nosotros | DIOSE",
@@ -11,17 +12,20 @@ export const metadata = {
 };
 
 export default async function AboutPage() {
-  const [productCount, orderCount, userCount] = await Promise.all([
+  const [settings, productCount, , userCount] = await Promise.all([
+    getSiteSettings(),
     prisma.product.count({ where: { stockStatus: { not: "AGOTADO" } } }),
     prisma.order.count(),
     prisma.user.count(),
   ]);
 
   const metrics = [
-    { value: "2018", label: "Año de fundación" },
+    { value: settings.aboutFoundedYear, label: "Año de fundación" },
     { value: `${productCount}+`, label: "Productos en catálogo" },
     { value: userCount > 0 ? `${userCount}+` : "—", label: "Clientes registrados" },
   ];
+
+  const features = [settings.aboutFeature1, settings.aboutFeature2, settings.aboutFeature3].filter(Boolean);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -39,14 +43,14 @@ export default async function AboutPage() {
         />
         <div className="relative z-10">
           <div className="text-[11px] text-white/35 tracking-[0.2em] uppercase mb-5">
-            Distribuidora de obras y servicios
+            {settings.aboutEyebrow}
           </div>
           <h1 className="font-heading text-white text-5xl md:text-[88px] leading-[0.9] tracking-[0.02em]">
-            MATERIALES
+            {settings.aboutHeroLine1}
             <br />
-            <span className="text-white/20">CON</span>
+            <span className="text-white/20">{settings.aboutHeroLine2}</span>
             <br />
-            PROPÓSITO
+            {settings.aboutHeroLine3}
           </h1>
         </div>
       </section>
@@ -60,23 +64,17 @@ export default async function AboutPage() {
             Nuestra historia
           </div>
           <p className="text-base font-light text-gray-700 leading-relaxed mb-5 max-w-xl">
-            DIOSE nació en 2018 en Ciudad Juárez como una respuesta directa a la necesidad de los
-            constructores locales: acceso a materiales de calidad, en el lugar correcto, en el momento justo.
+            {settings.aboutHistoryP1}
           </p>
           <p className="text-[15px] font-light text-gray-400 leading-relaxed max-w-xl">
-            Hoy atendemos a contratistas, constructoras y particulares con un catálogo amplio de productos
-            y entrega en toda la zona metropolitana de Ciudad Juárez.
+            {settings.aboutHistoryP2}
           </p>
 
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { icon: "✓", text: "Productos certificados de calidad" },
-              { icon: "✓", text: "Entrega rápida en Ciudad Juárez" },
-              { icon: "✓", text: "Atención personalizada" },
-            ].map((item) => (
-              <div key={item.text} className="flex items-start gap-2.5">
-                <span className="text-diose-amber font-bold text-sm mt-0.5">{item.icon}</span>
-                <span className="text-[13px] text-gray-600 leading-snug">{item.text}</span>
+            {features.map((text) => (
+              <div key={text} className="flex items-start gap-2.5">
+                <span className="text-diose-amber font-bold text-sm mt-0.5">✓</span>
+                <span className="text-[13px] text-gray-600 leading-snug">{text}</span>
               </div>
             ))}
           </div>
@@ -102,10 +100,10 @@ export default async function AboutPage() {
             ))}
             <div className="p-6">
               <div className="font-heading text-3xl md:text-4xl text-diose-black tracking-[0.02em] leading-tight mb-1.5">
-                Cd. Juárez
+                {settings.aboutCityLine}
               </div>
               <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400">
-                Chihuahua, México
+                {settings.aboutStateLine}
               </div>
             </div>
           </div>

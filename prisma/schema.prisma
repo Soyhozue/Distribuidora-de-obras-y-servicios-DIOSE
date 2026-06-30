@@ -184,6 +184,18 @@ model SiteSettings {
   heroCta2Link    String   @default("/nosotros")
   partnerLogoUrl  String   @default("")
   partnerName     String   @default("")
+  aboutEyebrow    String   @default("Distribuidora de obras y servicios")
+  aboutHeroLine1  String   @default("MATERIALES")
+  aboutHeroLine2  String   @default("CON")
+  aboutHeroLine3  String   @default("PROPÓSITO")
+  aboutFoundedYear String  @default("2018")
+  aboutHistoryP1  String   @default("DIOSE nació en 2018 en Ciudad Juárez como una respuesta directa a la necesidad de los constructores locales: acceso a materiales de calidad, en el lugar correcto, en el momento justo.")
+  aboutHistoryP2  String   @default("Hoy atendemos a contratistas, constructoras y particulares con un catálogo amplio de productos y entrega en toda la zona metropolitana de Ciudad Juárez.")
+  aboutFeature1   String   @default("Productos certificados de calidad")
+  aboutFeature2   String   @default("Entrega rápida en Ciudad Juárez")
+  aboutFeature3   String   @default("Atención personalizada")
+  aboutCityLine   String   @default("Cd. Juárez")
+  aboutStateLine  String   @default("Chihuahua, México")
   updatedAt       DateTime @updatedAt
 }
 

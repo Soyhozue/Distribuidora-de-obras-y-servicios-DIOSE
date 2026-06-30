@@ -498,6 +498,18 @@ export type SiteSettingsInput = {
   heroCta2Link: string;
   partnerLogoUrl: string;
   partnerName: string;
+  aboutEyebrow: string;
+  aboutHeroLine1: string;
+  aboutHeroLine2: string;
+  aboutHeroLine3: string;
+  aboutFoundedYear: string;
+  aboutHistoryP1: string;
+  aboutHistoryP2: string;
+  aboutFeature1: string;
+  aboutFeature2: string;
+  aboutFeature3: string;
+  aboutCityLine: string;
+  aboutStateLine: string;
 };
 
 export async function updateSiteSettings(input: SiteSettingsInput) {

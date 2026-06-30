@@ -172,6 +172,18 @@ type Settings = {
   heroCta2Link: string;
   partnerLogoUrl: string;
   partnerName: string;
+  aboutEyebrow: string;
+  aboutHeroLine1: string;
+  aboutHeroLine2: string;
+  aboutHeroLine3: string;
+  aboutFoundedYear: string;
+  aboutHistoryP1: string;
+  aboutHistoryP2: string;
+  aboutFeature1: string;
+  aboutFeature2: string;
+  aboutFeature3: string;
+  aboutCityLine: string;
+  aboutStateLine: string;
 };
 
 type Promo = {
@@ -195,6 +207,29 @@ function newSlide(url: string): HeroSlide {
   return { url, focusX: 50, focusY: 42, zoom: 100, overlay: 100, gradient: "left" };
 }
 
+const TABS = [
+  { key: "contacto", label: "Contacto" },
+  { key: "portada", label: "Portada" },
+  { key: "nosotros", label: "Nosotros" },
+  { key: "publicidad", label: "Publicidad" },
+  { key: "catalogo", label: "Catálogo" },
+  { key: "promos", label: "Promociones" },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">{label}</span>
+      {children}
+      {hint && <span className="text-[11px] text-gray-400">{hint}</span>}
+    </label>
+  );
+}
+
+const inputCls = "border border-diose-border px-3 py-2 text-sm outline-none focus:border-diose-amber transition-colors";
+
 export default function SettingsManager({
   settings,
   heroSlides: initialHeroSlides,
@@ -205,24 +240,31 @@ export default function SettingsManager({
   promos: Promo[];
 }) {
   const router = useRouter();
+  const [tab, setTab] = useState<TabKey>("contacto");
   const [form, setForm] = useState(settings);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(initialHeroSlides);
   const [selectedSlide, setSelectedSlide] = useState(0);
   const [saving, setSaving] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   const [promoForm, setPromoForm] = useState({ imageUrl: "", title: "", subtitle: "", link: "" });
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [creatingPromo, setCreatingPromo] = useState(false);
   const [uploadingPartnerLogo, setUploadingPartnerLogo] = useState(false);
 
+  function setField<K extends keyof Settings>(key: K, value: Settings[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+    setDirty(true);
+  }
+
   async function handlePartnerLogoUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploadingPartnerLogo(true);
     try {
       const url = await uploadImage(files[0]);
-      setForm((f) => ({ ...f, partnerLogoUrl: url }));
+      setField("partnerLogoUrl", url);
     } finally {
       setUploadingPartnerLogo(false);
     }
@@ -238,6 +280,7 @@ export default function SettingsManager({
         setSelectedSlide(slides.length);
         return next;
       });
+      setDirty(true);
     } finally {
       setUploadingHero(false);
     }
@@ -246,10 +289,12 @@ export default function SettingsManager({
   function removeHeroSlide(index: number) {
     setHeroSlides((slides) => slides.filter((_, i) => i !== index));
     setSelectedSlide((s) => Math.max(0, Math.min(s, heroSlides.length - 2)));
+    setDirty(true);
   }
 
   function updateHeroSlide(index: number, patch: Partial<HeroSlide>) {
     setHeroSlides((slides) => slides.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+    setDirty(true);
   }
 
   async function saveSettings() {
@@ -261,6 +306,7 @@ export default function SettingsManager({
         body: JSON.stringify({ ...form, heroSlides }),
       });
       setSavedMsg(true);
+      setDirty(false);
       setTimeout(() => setSavedMsg(false), 2500);
       router.refresh();
     } finally {
@@ -307,473 +353,548 @@ export default function SettingsManager({
     router.refresh();
   }
 
+  const formTabs: TabKey[] = ["contacto", "portada", "nosotros", "publicidad"];
+  const showGlobalSave = formTabs.includes(tab);
+
   return (
     <>
-      <div className="h-14 bg-white border-b border-diose-border-light flex items-center px-9 shrink-0">
-        <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Configuración</span>
+      {/* TOP BAR: title + tabs + sticky save */}
+      <div className="bg-white border-b border-diose-border-light shrink-0 sticky top-0 z-20">
+        <div className="h-14 flex items-center justify-between px-9">
+          <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Configuración</span>
+          {showGlobalSave && (
+            <div className="flex items-center gap-3">
+              {savedMsg && <span className="text-xs text-diose-success">Cambios guardados ✓</span>}
+              {dirty && !savedMsg && <span className="text-xs text-gray-400">Cambios sin guardar</span>}
+              <button
+                onClick={saveSettings}
+                disabled={saving || !dirty}
+                className="bg-diose-amber hover:bg-diose-amber-dark text-white px-6 py-2.5 text-xs font-semibold tracking-[0.08em] cursor-pointer disabled:opacity-40 transition-colors"
+              >
+                {saving ? "Guardando..." : "Guardar cambios"}
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-1 px-9 overflow-x-auto">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-2.5 text-[12px] font-semibold tracking-[0.04em] whitespace-nowrap cursor-pointer border-b-2 transition-colors ${
+                tab === t.key
+                  ? "border-diose-amber text-diose-black"
+                  : "border-transparent text-gray-400 hover:text-diose-black"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 p-9 flex flex-col gap-7 max-w-3xl">
-        {/* CONTACT INFO */}
-        <div className="bg-white border border-diose-border p-6">
-          <div className="font-heading text-lg text-diose-black mb-1">Datos de contacto</div>
-          <div className="text-xs text-gray-400 mb-5">
-            Se usan en el menú, pie de página, página de contacto y botones de WhatsApp en todo el sitio.
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Teléfono (texto mostrado)</span>
-              <input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="+52 (656) 123-4567"
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Teléfono secundario (opcional)</span>
-              <input
-                value={form.phone2}
-                onChange={(e) => setForm({ ...form, phone2: e.target.value })}
-                placeholder="(656) 660-46-52"
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
-                WhatsApp (solo números, con código de país)
-              </span>
-              <input
-                value={form.whatsapp}
-                onChange={(e) => setForm({ ...form, whatsapp: e.target.value.replace(/\D/g, "") })}
-                placeholder="526561234567"
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Correo</span>
-              <input
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Dirección</span>
-              <input
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
-                Enlace de Google Maps de tu negocio (opcional)
-              </span>
-              <textarea
-                value={form.mapsUrl}
-                onChange={(e) => setForm({ ...form, mapsUrl: e.target.value })}
-                placeholder="Pega aquí el enlace de Compartir → Copiar enlace, o el código completo de Compartir → Insertar un mapa"
-                rows={2}
-                className="border border-diose-border px-3 py-2 text-sm outline-none resize-none"
-              />
-              <span className="text-[11px] text-gray-400">
-                Acepta ambos formatos: el enlace simple o el código &lt;iframe&gt; de &quot;Insertar un mapa&quot; (el
-                segundo es más preciso). Si lo dejas vacío, el mapa usa la dirección de arriba.
-              </span>
-            </label>
-          </div>
-        </div>
-
-        {/* PARTNER LOGO FOR ADS */}
-        <div className="bg-white border border-diose-border p-6">
-          <div className="font-heading text-lg text-diose-black mb-1">Logo de socio (para publicidad)</div>
-          <div className="text-xs text-gray-400 mb-5">
-            Si trabajas publicidad junto con otro negocio (por ejemplo un proveedor), súbelo aquí una vez. Luego, al
-            crear un post en Admin → Publicidad, puedes activarlo o desactivarlo para ese post.
-          </div>
-          <div className="flex items-center gap-4">
-            {form.partnerLogoUrl ? (
-              <div className="relative w-20 h-20 border border-diose-border-light shrink-0 flex items-center justify-center bg-[#FAFAFA]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.partnerLogoUrl} alt="" className="max-w-full max-h-full object-contain" />
-                <button
-                  onClick={() => setForm({ ...form, partnerLogoUrl: "" })}
-                  className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
+        {/* CONTACTO */}
+        {tab === "contacto" && (
+          <div className="bg-white border border-diose-border p-6">
+            <div className="font-heading text-lg text-diose-black mb-1">Datos de contacto</div>
+            <div className="text-xs text-gray-400 mb-5">
+              Se usan en el menú, pie de página, página de contacto y botones de WhatsApp en todo el sitio.
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Teléfono (texto mostrado)">
+                <input
+                  value={form.phone}
+                  onChange={(e) => setField("phone", e.target.value)}
+                  placeholder="+52 (656) 123-4567"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Teléfono secundario (opcional)">
+                <input
+                  value={form.phone2}
+                  onChange={(e) => setField("phone2", e.target.value)}
+                  placeholder="(656) 660-46-52"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="WhatsApp (solo números, con código de país)">
+                <input
+                  value={form.whatsapp}
+                  onChange={(e) => setField("whatsapp", e.target.value.replace(/\D/g, ""))}
+                  placeholder="526561234567"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Correo">
+                <input value={form.email} onChange={(e) => setField("email", e.target.value)} className={inputCls} />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label="Dirección">
+                  <input value={form.address} onChange={(e) => setField("address", e.target.value)} className={inputCls} />
+                </Field>
+              </div>
+              <div className="sm:col-span-2">
+                <Field
+                  label="Enlace de Google Maps de tu negocio (opcional)"
+                  hint='Acepta ambos formatos: el enlace simple o el código <iframe> de "Insertar un mapa" (el segundo es más preciso). Si lo dejas vacío, el mapa usa la dirección de arriba.'
                 >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <label className="w-20 h-20 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-[10px] shrink-0 hover:border-diose-amber text-center">
-                {uploadingPartnerLogo ? "..." : "+ Subir"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={uploadingPartnerLogo}
-                  onChange={(e) => handlePartnerLogoUpload(e.target.files)}
-                />
-              </label>
-            )}
-            <label className="flex flex-col gap-1 flex-1">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Nombre del socio</span>
-              <input
-                value={form.partnerName}
-                onChange={(e) => setForm({ ...form, partnerName: e.target.value })}
-                placeholder="Ej: Tornillos y Remaches Horus"
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-          </div>
-        </div>
-
-        {/* HERO TEXT */}
-        <div className="bg-white border border-diose-border p-6">
-          <div className="font-heading text-lg text-diose-black mb-1">Texto del banner principal</div>
-          <div className="text-xs text-gray-400 mb-5">El título grande, la frase de arriba, el párrafo y los dos botones de la portada.</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Frase pequeña (arriba)</span>
-              <input
-                value={form.heroEyebrow}
-                onChange={(e) => setForm({ ...form, heroEyebrow: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
-                Título grande (un salto de línea = una línea nueva en el banner)
-              </span>
-              <textarea
-                value={form.heroTitle}
-                onChange={(e) => setForm({ ...form, heroTitle: e.target.value })}
-                rows={3}
-                className="border border-diose-border px-3 py-2 text-sm outline-none resize-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
-                Palabra o frase a resaltar de color (debe estar escrita igual dentro del título de arriba)
-              </span>
-              <div className="flex gap-2 items-stretch">
-                <input
-                  value={form.heroTitleHighlight}
-                  onChange={(e) => setForm({ ...form, heroTitleHighlight: e.target.value })}
-                  placeholder="Ej: LO QUE"
-                  className="border border-diose-border px-3 py-2 text-sm outline-none flex-1"
-                />
-                <input
-                  type="color"
-                  value={form.heroTitleHighlightColor}
-                  onChange={(e) => setForm({ ...form, heroTitleHighlightColor: e.target.value })}
-                  className="w-11 border border-diose-border cursor-pointer"
-                  title="Color del resaltado"
-                />
-              </div>
-            </label>
-            <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Párrafo</span>
-              <input
-                value={form.heroSubtitle}
-                onChange={(e) => setForm({ ...form, heroSubtitle: e.target.value })}
-                className="border border-diose-border px-3 py-2 text-sm outline-none"
-              />
-            </label>
-          </div>
-
-          <div className="border-t border-diose-border-light mt-5 pt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-3">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
-                Botón 1 (blanco, izquierda)
-              </span>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Texto del botón</span>
-                <input
-                  value={form.heroCta1Label}
-                  onChange={(e) => setForm({ ...form, heroCta1Label: e.target.value })}
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">A dónde lleva al hacer clic</span>
-                <input
-                  value={form.heroCta1Link}
-                  onChange={(e) => setForm({ ...form, heroCta1Link: e.target.value })}
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
-                />
-              </label>
-            </div>
-            <div className="flex flex-col gap-3">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
-                Botón 2 (con borde, derecha)
-              </span>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Texto del botón</span>
-                <input
-                  value={form.heroCta2Label}
-                  onChange={(e) => setForm({ ...form, heroCta2Label: e.target.value })}
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">A dónde lleva al hacer clic</span>
-                <input
-                  value={form.heroCta2Link}
-                  onChange={(e) => setForm({ ...form, heroCta2Link: e.target.value })}
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
-                />
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* HERO BANNER IMAGES */}
-        <div className="bg-white border border-diose-border p-6">
-          <div className="font-heading text-lg text-diose-black mb-1">Imágenes del banner principal</div>
-          <div className="text-xs text-gray-400 mb-5">
-            Sube varias imágenes — rotan cada 4 segundos en la portada. Selecciona una abajo para ajustar cómo se ve;
-            la vista previa muestra exactamente cómo se verá en el sitio. Si no subes ninguna, se usa la imagen por
-            defecto.
-          </div>
-
-          {heroSlides.length > 0 && (
-            <>
-              {/* LIVE PREVIEW */}
-              <div className="relative w-full aspect-[3/4] md:aspect-[29/10] bg-diose-black overflow-hidden mb-4">
-                <HeroSlideLayer slide={heroSlides[selectedSlide] ?? heroSlides[0]} />
-                <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-10 max-w-md">
-                  <div className="w-8 h-0.5 bg-diose-amber mb-2" />
-                  <div
-                    className="text-[8px] md:text-[10px] text-white/80 tracking-[0.18em] uppercase mb-1.5"
-                    style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
-                  >
-                    {form.heroEyebrow}
-                  </div>
-                  <HeroTitle
-                    title={form.heroTitle}
-                    highlight={form.heroTitleHighlight}
-                    highlightColor={form.heroTitleHighlightColor}
-                    className="font-heading text-white text-2xl md:text-[40px] leading-[0.92] tracking-[0.02em]"
+                  <textarea
+                    value={form.mapsUrl}
+                    onChange={(e) => setField("mapsUrl", e.target.value)}
+                    placeholder="Pega aquí el enlace de Compartir → Copiar enlace, o el código completo de Compartir → Insertar un mapa"
+                    rows={2}
+                    className={`${inputCls} resize-none`}
                   />
-                  <p
-                    className="hidden md:block text-[12px] text-white/80 font-light mt-2 max-w-xs leading-relaxed"
-                    style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
-                  >
-                    {form.heroSubtitle}
-                  </p>
-                </div>
+                </Field>
               </div>
-
-              {/* PER-SLIDE CONTROLS */}
-              {heroSlides[selectedSlide] && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
-                      Posición horizontal ({heroSlides[selectedSlide].focusX}%)
-                    </span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={heroSlides[selectedSlide].focusX}
-                      onChange={(e) => updateHeroSlide(selectedSlide, { focusX: Number(e.target.value) })}
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
-                      Posición vertical ({heroSlides[selectedSlide].focusY}%)
-                    </span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={heroSlides[selectedSlide].focusY}
-                      onChange={(e) => updateHeroSlide(selectedSlide, { focusY: Number(e.target.value) })}
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
-                      Zoom ({heroSlides[selectedSlide].zoom}%)
-                    </span>
-                    <input
-                      type="range"
-                      min={100}
-                      max={200}
-                      value={heroSlides[selectedSlide].zoom}
-                      onChange={(e) => updateHeroSlide(selectedSlide, { zoom: Number(e.target.value) })}
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
-                      Oscurecido ({heroSlides[selectedSlide].overlay}%)
-                    </span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={heroSlides[selectedSlide].overlay}
-                      onChange={(e) => updateHeroSlide(selectedSlide, { overlay: Number(e.target.value) })}
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 col-span-2 sm:col-span-4">
-                    <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">Tipo de degradado</span>
-                    <select
-                      value={heroSlides[selectedSlide].gradient}
-                      onChange={(e) => updateHeroSlide(selectedSlide, { gradient: e.target.value as HeroSlide["gradient"] })}
-                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
-                    >
-                      <option value="left">Izquierda a derecha (clásico, texto a la izquierda)</option>
-                      <option value="bottom">De arriba a abajo (oscuro abajo)</option>
-                      <option value="top">De abajo a arriba (oscuro arriba)</option>
-                      <option value="flat">Oscurecido uniforme (sin degradado)</option>
-                    </select>
-                  </label>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* THUMBNAIL STRIP */}
-          <div className="flex flex-wrap gap-2.5">
-            {heroSlides.map((slide, i) => (
-              <div
-                key={slide.url + i}
-                onClick={() => setSelectedSlide(i)}
-                className={`relative w-20 h-14 shrink-0 overflow-hidden cursor-pointer border-2 ${
-                  i === selectedSlide ? "border-diose-amber" : "border-transparent"
-                }`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={slide.url} alt="" className="w-full h-full object-cover" />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeHeroSlide(i);
-                  }}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-diose-black text-white text-[9px] flex items-center justify-center cursor-pointer rounded-full"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            <label className="w-20 h-14 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-[10px] shrink-0 hover:border-diose-amber text-center">
-              {uploadingHero ? "..." : "+ Subir"}
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                disabled={uploadingHero}
-                onChange={(e) => handleHeroUpload(e.target.files)}
-              />
-            </label>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={saveSettings}
-            disabled={saving}
-            className="bg-diose-amber hover:bg-diose-amber-dark text-white px-6 py-2.5 text-xs font-semibold tracking-[0.08em] cursor-pointer disabled:opacity-50"
-          >
-            {saving ? "Guardando..." : "Guardar cambios"}
-          </button>
-          {savedMsg && <span className="text-xs text-diose-success">Cambios guardados ✓</span>}
-        </div>
-
-        <CatalogSection
-          title="Marcas"
-          description="Las marcas que aparecen al agregar o editar productos. Puedes agregar, renombrar o eliminar (solo si no tienen productos asignados)."
-          endpoint="/api/brands"
-          namePlaceholder="Ej: TRUPER"
-        />
-
-        <CatalogSection
-          title="Categorías"
-          description="Las categorías del catálogo. Puedes agregar, renombrar o eliminar (solo si no tienen productos asignados)."
-          endpoint="/api/categories"
-          namePlaceholder="Ej: Herramientas"
-        />
-
-        {/* PROMOS */}
-        <div className="bg-white border border-diose-border p-6">
-          <div className="font-heading text-lg text-diose-black mb-1">Ofertas y promociones (inicio)</div>
-          <div className="text-xs text-gray-400 mb-5">
-            Tarjetas de promoción que aparecen en la página de inicio, debajo de los productos destacados.
-          </div>
-
-          <div className="flex flex-wrap gap-3 mb-5">
-            {promos.map((p) => (
-              <div key={p.id} className="relative w-32 border border-diose-border-light">
-                <div className="w-full h-24 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.imageUrl} alt="" className="w-full h-full object-cover" />
-                </div>
-                {p.title && <div className="text-[11px] font-medium text-diose-black px-2 pt-1.5 truncate">{p.title}</div>}
-                <button
-                  onClick={() => setConfirmPromoId(p.id)}
-                  className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            {promos.length === 0 && <div className="text-xs text-gray-400">Aún no hay promociones.</div>}
-          </div>
-
-          <div className="border-t border-diose-border-light pt-5">
-            <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-gray-400 mb-3">
-              Agregar nueva promoción
             </div>
-            <div className="flex flex-wrap gap-3 items-start">
-              {promoForm.imageUrl ? (
-                <div className="w-24 h-20 border border-diose-border-light overflow-hidden shrink-0">
+          </div>
+        )}
+
+        {/* PORTADA */}
+        {tab === "portada" && (
+          <>
+            <div className="bg-white border border-diose-border p-6">
+              <div className="font-heading text-lg text-diose-black mb-1">Texto del banner principal</div>
+              <div className="text-xs text-gray-400 mb-5">El título grande, la frase de arriba, el párrafo y los dos botones de la portada.</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <Field label="Frase pequeña (arriba)">
+                    <input value={form.heroEyebrow} onChange={(e) => setField("heroEyebrow", e.target.value)} className={inputCls} />
+                  </Field>
+                </div>
+                <div className="sm:col-span-2">
+                  <Field label="Título grande (un salto de línea = una línea nueva en el banner)">
+                    <textarea
+                      value={form.heroTitle}
+                      onChange={(e) => setField("heroTitle", e.target.value)}
+                      rows={3}
+                      className={`${inputCls} resize-none`}
+                    />
+                  </Field>
+                </div>
+                <div className="sm:col-span-2">
+                  <Field label="Palabra o frase a resaltar de color (debe estar escrita igual dentro del título de arriba)">
+                    <div className="flex gap-2 items-stretch">
+                      <input
+                        value={form.heroTitleHighlight}
+                        onChange={(e) => setField("heroTitleHighlight", e.target.value)}
+                        placeholder="Ej: LO QUE"
+                        className={`${inputCls} flex-1`}
+                      />
+                      <input
+                        type="color"
+                        value={form.heroTitleHighlightColor}
+                        onChange={(e) => setField("heroTitleHighlightColor", e.target.value)}
+                        className="w-11 border border-diose-border cursor-pointer"
+                        title="Color del resaltado"
+                      />
+                    </div>
+                  </Field>
+                </div>
+                <div className="sm:col-span-2">
+                  <Field label="Párrafo">
+                    <input value={form.heroSubtitle} onChange={(e) => setField("heroSubtitle", e.target.value)} className={inputCls} />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="border-t border-diose-border-light mt-5 pt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                    Botón 1 (blanco, izquierda)
+                  </span>
+                  <Field label="Texto del botón">
+                    <input value={form.heroCta1Label} onChange={(e) => setField("heroCta1Label", e.target.value)} className={inputCls} />
+                  </Field>
+                  <Field label="A dónde lleva al hacer clic">
+                    <input value={form.heroCta1Link} onChange={(e) => setField("heroCta1Link", e.target.value)} className={inputCls} />
+                  </Field>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                    Botón 2 (con borde, derecha)
+                  </span>
+                  <Field label="Texto del botón">
+                    <input value={form.heroCta2Label} onChange={(e) => setField("heroCta2Label", e.target.value)} className={inputCls} />
+                  </Field>
+                  <Field label="A dónde lleva al hacer clic">
+                    <input value={form.heroCta2Link} onChange={(e) => setField("heroCta2Link", e.target.value)} className={inputCls} />
+                  </Field>
+                </div>
+              </div>
+            </div>
+
+            {/* HERO BANNER IMAGES */}
+            <div className="bg-white border border-diose-border p-6">
+              <div className="font-heading text-lg text-diose-black mb-1">Imágenes del banner principal</div>
+              <div className="text-xs text-gray-400 mb-5">
+                Sube varias imágenes — rotan cada 4 segundos en la portada. Selecciona una abajo para ajustar cómo se
+                ve; la vista previa muestra exactamente cómo se verá en el sitio. Si no subes ninguna, se usa la
+                imagen por defecto.
+              </div>
+
+              {heroSlides.length > 0 && (
+                <>
+                  <div className="relative w-full aspect-[3/4] md:aspect-[29/10] bg-diose-black overflow-hidden mb-4">
+                    <HeroSlideLayer slide={heroSlides[selectedSlide] ?? heroSlides[0]} />
+                    <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-10 max-w-md">
+                      <div className="w-8 h-0.5 bg-diose-amber mb-2" />
+                      <div
+                        className="text-[8px] md:text-[10px] text-white/80 tracking-[0.18em] uppercase mb-1.5"
+                        style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
+                      >
+                        {form.heroEyebrow}
+                      </div>
+                      <HeroTitle
+                        title={form.heroTitle}
+                        highlight={form.heroTitleHighlight}
+                        highlightColor={form.heroTitleHighlightColor}
+                        className="font-heading text-white text-2xl md:text-[40px] leading-[0.92] tracking-[0.02em]"
+                      />
+                      <p
+                        className="hidden md:block text-[12px] text-white/80 font-light mt-2 max-w-xs leading-relaxed"
+                        style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
+                      >
+                        {form.heroSubtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  {heroSlides[selectedSlide] && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
+                          Posición horizontal ({heroSlides[selectedSlide].focusX}%)
+                        </span>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={heroSlides[selectedSlide].focusX}
+                          onChange={(e) => updateHeroSlide(selectedSlide, { focusX: Number(e.target.value) })}
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
+                          Posición vertical ({heroSlides[selectedSlide].focusY}%)
+                        </span>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={heroSlides[selectedSlide].focusY}
+                          onChange={(e) => updateHeroSlide(selectedSlide, { focusY: Number(e.target.value) })}
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
+                          Zoom ({heroSlides[selectedSlide].zoom}%)
+                        </span>
+                        <input
+                          type="range"
+                          min={100}
+                          max={200}
+                          value={heroSlides[selectedSlide].zoom}
+                          onChange={(e) => updateHeroSlide(selectedSlide, { zoom: Number(e.target.value) })}
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">
+                          Oscurecido ({heroSlides[selectedSlide].overlay}%)
+                        </span>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={heroSlides[selectedSlide].overlay}
+                          onChange={(e) => updateHeroSlide(selectedSlide, { overlay: Number(e.target.value) })}
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 col-span-2 sm:col-span-4">
+                        <span className="text-[9px] uppercase tracking-[0.08em] text-gray-400">Tipo de degradado</span>
+                        <select
+                          value={heroSlides[selectedSlide].gradient}
+                          onChange={(e) => updateHeroSlide(selectedSlide, { gradient: e.target.value as HeroSlide["gradient"] })}
+                          className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                        >
+                          <option value="left">Izquierda a derecha (clásico, texto a la izquierda)</option>
+                          <option value="bottom">De arriba a abajo (oscuro abajo)</option>
+                          <option value="top">De abajo a arriba (oscuro arriba)</option>
+                          <option value="flat">Oscurecido uniforme (sin degradado)</option>
+                        </select>
+                      </label>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="flex flex-wrap gap-2.5">
+                {heroSlides.map((slide, i) => (
+                  <div
+                    key={slide.url + i}
+                    onClick={() => setSelectedSlide(i)}
+                    className={`relative w-20 h-14 shrink-0 overflow-hidden cursor-pointer border-2 ${
+                      i === selectedSlide ? "border-diose-amber" : "border-transparent"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={slide.url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeHeroSlide(i);
+                      }}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-diose-black text-white text-[9px] flex items-center justify-center cursor-pointer rounded-full"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <label className="w-20 h-14 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-[10px] shrink-0 hover:border-diose-amber text-center">
+                  {uploadingHero ? "..." : "+ Subir"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={uploadingHero}
+                    onChange={(e) => handleHeroUpload(e.target.files)}
+                  />
+                </label>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* NOSOTROS */}
+        {tab === "nosotros" && (
+          <div className="bg-white border border-diose-border p-6">
+            <div className="font-heading text-lg text-diose-black mb-1">Página &quot;Nosotros&quot;</div>
+            <div className="text-xs text-gray-400 mb-5">
+              Edita el contenido de la página /nosotros: el encabezado oscuro, la historia, los puntos destacados y
+              las métricas.
+            </div>
+
+            <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500 mb-3">Encabezado</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="sm:col-span-2">
+                <Field label="Frase pequeña (arriba, en gris)">
+                  <input value={form.aboutEyebrow} onChange={(e) => setField("aboutEyebrow", e.target.value)} className={inputCls} />
+                </Field>
+              </div>
+              <Field label="Título — línea 1">
+                <input value={form.aboutHeroLine1} onChange={(e) => setField("aboutHeroLine1", e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Título — línea 2 (se muestra atenuada)">
+                <input value={form.aboutHeroLine2} onChange={(e) => setField("aboutHeroLine2", e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Título — línea 3">
+                <input value={form.aboutHeroLine3} onChange={(e) => setField("aboutHeroLine3", e.target.value)} className={inputCls} />
+              </Field>
+            </div>
+
+            <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500 mb-3">Historia</div>
+            <div className="grid grid-cols-1 gap-4 mb-6">
+              <Field label="Año de fundación (se muestra en la métrica grande)">
+                <input
+                  value={form.aboutFoundedYear}
+                  onChange={(e) => setField("aboutFoundedYear", e.target.value)}
+                  className={`${inputCls} max-w-[160px]`}
+                />
+              </Field>
+              <Field label="Párrafo 1 (oscuro)">
+                <textarea
+                  value={form.aboutHistoryP1}
+                  onChange={(e) => setField("aboutHistoryP1", e.target.value)}
+                  rows={3}
+                  className={`${inputCls} resize-none`}
+                />
+              </Field>
+              <Field label="Párrafo 2 (gris)">
+                <textarea
+                  value={form.aboutHistoryP2}
+                  onChange={(e) => setField("aboutHistoryP2", e.target.value)}
+                  rows={3}
+                  className={`${inputCls} resize-none`}
+                />
+              </Field>
+            </div>
+
+            <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500 mb-3">
+              Puntos destacados (3 íconos con check)
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <Field label="Punto 1">
+                <input value={form.aboutFeature1} onChange={(e) => setField("aboutFeature1", e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Punto 2">
+                <input value={form.aboutFeature2} onChange={(e) => setField("aboutFeature2", e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Punto 3">
+                <input value={form.aboutFeature3} onChange={(e) => setField("aboutFeature3", e.target.value)} className={inputCls} />
+              </Field>
+            </div>
+
+            <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500 mb-3">
+              Ubicación (última tarjeta de métricas)
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Ciudad">
+                <input value={form.aboutCityLine} onChange={(e) => setField("aboutCityLine", e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Estado / país">
+                <input value={form.aboutStateLine} onChange={(e) => setField("aboutStateLine", e.target.value)} className={inputCls} />
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {/* PUBLICIDAD */}
+        {tab === "publicidad" && (
+          <div className="bg-white border border-diose-border p-6">
+            <div className="font-heading text-lg text-diose-black mb-1">Logo de socio (para publicidad)</div>
+            <div className="text-xs text-gray-400 mb-5">
+              Si trabajas publicidad junto con otro negocio (por ejemplo un proveedor), súbelo aquí una vez. Luego, al
+              crear un post en Admin → Publicidad, puedes activarlo o desactivarlo para ese post.
+            </div>
+            <div className="flex items-center gap-4">
+              {form.partnerLogoUrl ? (
+                <div className="relative w-20 h-20 border border-diose-border-light shrink-0 flex items-center justify-center bg-[#FAFAFA]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={promoForm.imageUrl} alt="" className="w-full h-full object-cover" />
+                  <img src={form.partnerLogoUrl} alt="" className="max-w-full max-h-full object-contain" />
+                  <button
+                    onClick={() => setField("partnerLogoUrl", "")}
+                    className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
+                  >
+                    ✕
+                  </button>
                 </div>
               ) : (
-                <label className="w-24 h-20 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-xs shrink-0 hover:border-diose-amber">
-                  {uploadingPromo ? "..." : "+ Imagen"}
+                <label className="w-20 h-20 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-[10px] shrink-0 hover:border-diose-amber text-center">
+                  {uploadingPartnerLogo ? "..." : "+ Subir"}
                   <input
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    disabled={uploadingPromo}
-                    onChange={(e) => handlePromoUpload(e.target.files)}
+                    disabled={uploadingPartnerLogo}
+                    onChange={(e) => handlePartnerLogoUpload(e.target.files)}
                   />
                 </label>
               )}
-              <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+              <Field label="Nombre del socio">
                 <input
-                  value={promoForm.title}
-                  onChange={(e) => setPromoForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="Título (opcional)"
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
+                  value={form.partnerName}
+                  onChange={(e) => setField("partnerName", e.target.value)}
+                  placeholder="Ej: Tornillos y Remaches Horus"
+                  className={inputCls}
                 />
-                <input
-                  value={promoForm.subtitle}
-                  onChange={(e) => setPromoForm((f) => ({ ...f, subtitle: e.target.value }))}
-                  placeholder="Subtítulo (opcional)"
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
-                />
-                <input
-                  value={promoForm.link}
-                  onChange={(e) => setPromoForm((f) => ({ ...f, link: e.target.value }))}
-                  placeholder="Enlace al hacer clic, ej: /catalogo?categoria=herramientas"
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
-                />
-              </div>
-              <button
-                onClick={createPromo}
-                disabled={creatingPromo || !promoForm.imageUrl}
-                className="bg-diose-black hover:bg-diose-amber text-white px-5 py-2.5 text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors"
-              >
-                {creatingPromo ? "Agregando..." : "Añadir"}
-              </button>
+              </Field>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* CATALOGO */}
+        {tab === "catalogo" && (
+          <>
+            <div className="text-xs text-gray-400 -mb-2">Estos cambios se guardan al instante, no necesitan el botón de arriba.</div>
+            <CatalogSection
+              title="Marcas"
+              description="Las marcas que aparecen al agregar o editar productos. Puedes agregar, renombrar o eliminar (solo si no tienen productos asignados)."
+              endpoint="/api/brands"
+              namePlaceholder="Ej: TRUPER"
+            />
+            <CatalogSection
+              title="Categorías"
+              description="Las categorías del catálogo. Puedes agregar, renombrar o eliminar (solo si no tienen productos asignados)."
+              endpoint="/api/categories"
+              namePlaceholder="Ej: Herramientas"
+            />
+          </>
+        )}
+
+        {/* PROMOS */}
+        {tab === "promos" && (
+          <div className="bg-white border border-diose-border p-6">
+            <div className="font-heading text-lg text-diose-black mb-1">Ofertas y promociones (inicio)</div>
+            <div className="text-xs text-gray-400 mb-5">
+              Tarjetas de promoción que aparecen en la página de inicio, debajo de los productos destacados. Se
+              guardan al instante.
+            </div>
+
+            <div className="flex flex-wrap gap-3 mb-5">
+              {promos.map((p) => (
+                <div key={p.id} className="relative w-32 border border-diose-border-light">
+                  <div className="w-full h-24 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.imageUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  {p.title && <div className="text-[11px] font-medium text-diose-black px-2 pt-1.5 truncate">{p.title}</div>}
+                  <button
+                    onClick={() => setConfirmPromoId(p.id)}
+                    className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {promos.length === 0 && <div className="text-xs text-gray-400">Aún no hay promociones.</div>}
+            </div>
+
+            <div className="border-t border-diose-border-light pt-5">
+              <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-gray-400 mb-3">
+                Agregar nueva promoción
+              </div>
+              <div className="flex flex-wrap gap-3 items-start">
+                {promoForm.imageUrl ? (
+                  <div className="w-24 h-20 border border-diose-border-light overflow-hidden shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={promoForm.imageUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <label className="w-24 h-20 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-xs shrink-0 hover:border-diose-amber">
+                    {uploadingPromo ? "..." : "+ Imagen"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingPromo}
+                      onChange={(e) => handlePromoUpload(e.target.files)}
+                    />
+                  </label>
+                )}
+                <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+                  <input
+                    value={promoForm.title}
+                    onChange={(e) => setPromoForm((f) => ({ ...f, title: e.target.value }))}
+                    placeholder="Título (opcional)"
+                    className="border border-diose-border px-3 py-2 text-sm outline-none"
+                  />
+                  <input
+                    value={promoForm.subtitle}
+                    onChange={(e) => setPromoForm((f) => ({ ...f, subtitle: e.target.value }))}
+                    placeholder="Subtítulo (opcional)"
+                    className="border border-diose-border px-3 py-2 text-sm outline-none"
+                  />
+                  <input
+                    value={promoForm.link}
+                    onChange={(e) => setPromoForm((f) => ({ ...f, link: e.target.value }))}
+                    placeholder="Enlace al hacer clic, ej: /catalogo?categoria=herramientas"
+                    className="border border-diose-border px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+                <button
+                  onClick={createPromo}
+                  disabled={creatingPromo || !promoForm.imageUrl}
+                  className="bg-diose-black hover:bg-diose-amber text-white px-5 py-2.5 text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors"
+                >
+                  {creatingPromo ? "Agregando..." : "Añadir"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       {confirmPromoId && (
         <ConfirmModal
