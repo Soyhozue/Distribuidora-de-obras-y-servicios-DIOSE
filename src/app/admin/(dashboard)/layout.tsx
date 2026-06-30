@@ -21,7 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="flex h-screen overflow-hidden">
       <AdminSidebar pendingOrders={pendingOrders} lowStockCount={lowStockCount} />
-      <div className="flex-1 bg-[#F2F2F2] flex flex-col min-w-0 overflow-y-auto">
+      <div className="flex-1 bg-[#F2F2F2] flex flex-col min-w-0 overflow-y-auto animate-admin-in">
         {children}
       </div>
     </div>

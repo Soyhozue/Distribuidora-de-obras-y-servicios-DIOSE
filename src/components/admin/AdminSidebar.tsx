@@ -35,7 +35,7 @@ export default function AdminSidebar({
   }
 
   return (
-    <div className="w-60 bg-[#0C0C0C] shrink-0 flex flex-col">
+    <div className="w-60 bg-[#0C0C0C] shrink-0 flex flex-col animate-admin-in">
       <div className="px-7 py-6 border-b border-white/[0.07]">
         <div className="flex items-center gap-2.5">
           <svg width="22" height="20" viewBox="0 0 56 50" fill="none">
