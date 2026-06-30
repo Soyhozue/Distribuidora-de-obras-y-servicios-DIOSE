@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 
+export async function GET() {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json([]);
+  const addresses = await prisma.address.findMany({ where: { userId }, orderBy: { isDefault: "desc" } });
+  return NextResponse.json(addresses);
+}
+
 export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
