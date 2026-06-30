@@ -3,6 +3,7 @@ import Logo from "./Logo";
 import { CartIcon, UserIcon } from "./icons";
 import CartBadge from "./CartBadge";
 import SearchBar from "./SearchBar";
+import MobileMenu from "./MobileMenu";
 import { getSiteSettings } from "@/lib/data";
 
 const LINKS = [
@@ -14,11 +15,13 @@ const LINKS = [
 export default async function Navbar({ active }: { active?: string }) {
   const settings = await getSiteSettings();
   return (
-    <nav className="sticky top-0 z-20 h-16 bg-white border-b border-diose-border-light flex items-center justify-between px-6 md:px-12">
-      <Link href="/">
+    <nav className="sticky top-0 z-30 h-16 bg-white border-b border-diose-border-light flex items-center justify-between px-5 md:px-12">
+      {/* Logo */}
+      <Link href="/" className="shrink-0">
         <Logo invert />
       </Link>
 
+      {/* Desktop links */}
       <div className="hidden md:flex gap-9 items-center">
         {LINKS.map((link) => (
           <Link
@@ -35,23 +38,27 @@ export default async function Navbar({ active }: { active?: string }) {
         ))}
       </div>
 
-      <div className="flex gap-6 items-center">
+      {/* Right side */}
+      <div className="flex gap-4 md:gap-6 items-center">
         <SearchBar />
         <Link href="/carrito" className="relative cursor-pointer">
           <CartIcon />
           <CartBadge />
         </Link>
-        <Link href="/cuenta" className="cursor-pointer">
+        <Link href="/cuenta" className="cursor-pointer hidden sm:block">
           <UserIcon />
         </Link>
         <a
           href={`https://wa.me/${settings.whatsapp}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-diose-amber text-white px-5 py-2 text-xs font-medium tracking-[0.08em] cursor-pointer hidden sm:inline-block"
+          className="bg-diose-amber text-white px-4 py-2 text-xs font-medium tracking-[0.08em] cursor-pointer hidden md:inline-block"
         >
           WhatsApp
         </a>
+
+        {/* Hamburger — mobile only */}
+        <MobileMenu links={LINKS} whatsapp={settings.whatsapp} active={active} />
       </div>
     </nav>
   );

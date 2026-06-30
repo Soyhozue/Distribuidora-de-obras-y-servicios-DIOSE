@@ -25,12 +25,12 @@ export default async function Home() {
       <Navbar />
 
       {/* HERO */}
-      <section className="relative bg-diose-black overflow-hidden aspect-[3/4] md:aspect-[29/10]">
+      <section className="relative bg-diose-black overflow-hidden min-h-[420px] md:min-h-0 aspect-[3/4] md:aspect-[29/10]">
         <HeroCarousel slides={heroSlides} />
-        <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-20 max-w-3xl">
-          <div className="w-12 h-0.5 bg-diose-amber mb-3" />
+        <div className="relative z-10 h-full flex flex-col justify-end md:justify-center px-5 md:px-20 pb-10 md:pb-0 max-w-3xl">
+          <div className="w-10 h-0.5 bg-diose-amber mb-3" />
           <div
-            className="text-[11px] text-white/80 tracking-[0.2em] uppercase mb-2.5"
+            className="text-[10px] text-white/80 tracking-[0.2em] uppercase mb-2"
             style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
           >
             {settings.heroEyebrow}
@@ -39,24 +39,24 @@ export default async function Home() {
             title={settings.heroTitle}
             highlight={settings.heroTitleHighlight}
             highlightColor={settings.heroTitleHighlightColor}
-            className="font-heading text-white text-[56px] md:text-[86px] leading-[0.9] tracking-[0.02em]"
+            className="font-heading text-white text-[42px] md:text-[86px] leading-[0.9] tracking-[0.02em]"
           />
           <p
-            className="text-[15px] text-white/80 font-light mt-3.5 mb-6 max-w-md leading-relaxed"
+            className="text-[13px] md:text-[15px] text-white/80 font-light mt-3 mb-5 max-w-sm md:max-w-md leading-relaxed"
             style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
           >
             {settings.heroSubtitle}
           </p>
-          <div className="flex flex-wrap gap-3.5">
+          <div className="flex flex-col sm:flex-row gap-2.5">
             <Link
               href={settings.heroCta1Link}
-              className="bg-white text-diose-black px-10 py-3.5 text-[13px] font-semibold tracking-[0.1em] uppercase cursor-pointer"
+              className="bg-white text-diose-black px-8 py-3 text-[12px] font-semibold tracking-[0.1em] uppercase text-center cursor-pointer"
             >
               {settings.heroCta1Label}
             </Link>
             <Link
               href={settings.heroCta2Link}
-              className="border border-diose-amber/60 text-diose-amber px-10 py-3.5 text-[13px] font-medium tracking-[0.1em] uppercase cursor-pointer"
+              className="border border-diose-amber/60 text-diose-amber px-8 py-3 text-[12px] font-medium tracking-[0.1em] uppercase text-center cursor-pointer"
             >
               {settings.heroCta2Label}
             </Link>
