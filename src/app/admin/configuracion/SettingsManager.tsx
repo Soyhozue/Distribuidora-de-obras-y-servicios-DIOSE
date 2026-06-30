@@ -5,48 +5,9 @@ import { useRouter } from "next/navigation";
 import type { HeroSlide } from "@/lib/data";
 import HeroSlideLayer from "@/components/HeroSlideLayer";
 import HeroTitle from "@/components/HeroTitle";
+import ConfirmModal from "@/components/ConfirmModal";
 
 type CatalogItem = { id: string; name: string; count: number };
-
-function ConfirmModal({
-  name,
-  onConfirm,
-  onCancel,
-}: {
-  name: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white border border-diose-border w-full max-w-sm mx-4 p-6 shadow-xl">
-        <div className="font-heading text-base text-diose-black tracking-[0.04em] mb-2">
-          Eliminar registro
-        </div>
-        <p className="text-sm text-gray-500 mb-6">
-          ¿Seguro que quieres eliminar{" "}
-          <span className="font-semibold text-diose-black">&ldquo;{name}&rdquo;</span>?
-          Esta acción no se puede deshacer.
-        </p>
-        <div className="flex gap-3 justify-end">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-xs text-gray-600 border border-diose-border hover:border-diose-black cursor-pointer transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 text-xs font-semibold text-white bg-diose-black hover:bg-red-600 cursor-pointer transition-colors"
-          >
-            Eliminar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function CatalogSection({
   title,
@@ -339,8 +300,9 @@ export default function SettingsManager({
     }
   }
 
+  const [confirmPromoId, setConfirmPromoId] = useState<string | null>(null);
+
   async function removePromo(id: string) {
-    if (!confirm("¿Eliminar esta promoción?")) return;
     await fetch(`/api/promos/${id}`, { method: "DELETE" });
     router.refresh();
   }
@@ -750,7 +712,7 @@ export default function SettingsManager({
                 </div>
                 {p.title && <div className="text-[11px] font-medium text-diose-black px-2 pt-1.5 truncate">{p.title}</div>}
                 <button
-                  onClick={() => removePromo(p.id)}
+                  onClick={() => setConfirmPromoId(p.id)}
                   className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
                 >
                   ✕
@@ -813,6 +775,13 @@ export default function SettingsManager({
           </div>
         </div>
       </div>
+      {confirmPromoId && (
+        <ConfirmModal
+          message="¿Eliminar esta promoción?"
+          onConfirm={() => { const id = confirmPromoId; setConfirmPromoId(null); removePromo(id); }}
+          onCancel={() => setConfirmPromoId(null)}
+        />
+      )}
     </>
   );
 }

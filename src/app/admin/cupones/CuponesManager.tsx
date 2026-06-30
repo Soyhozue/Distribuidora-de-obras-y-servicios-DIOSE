@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ConfirmModal from "@/components/ConfirmModal";
 
 type Coupon = { id: string; code: string; discount: number; active: boolean; createdAt: Date };
 
@@ -11,6 +12,7 @@ export default function CuponesManager({ cupones }: { cupones: Coupon[] }) {
   const [discount, setDiscount] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   async function create() {
     const pct = parseFloat(discount);
@@ -44,7 +46,6 @@ export default function CuponesManager({ cupones }: { cupones: Coupon[] }) {
   }
 
   async function remove(id: string) {
-    if (!confirm("¿Eliminar este cupón?")) return;
     await fetch(`/api/coupons/${id}`, { method: "DELETE" });
     router.refresh();
   }
@@ -119,7 +120,7 @@ export default function CuponesManager({ cupones }: { cupones: Coupon[] }) {
                 {c.active ? "Activo" : "Inactivo"}
               </button>
               <button
-                onClick={() => remove(c.id)}
+                onClick={() => setConfirmId(c.id)}
                 className="text-xs text-gray-400 hover:text-red-500 cursor-pointer text-left"
               >
                 Eliminar
@@ -128,6 +129,13 @@ export default function CuponesManager({ cupones }: { cupones: Coupon[] }) {
           ))}
         </div>
       </div>
+      {confirmId && (
+        <ConfirmModal
+          message="¿Eliminar este cupón?"
+          onConfirm={() => { const id = confirmId; setConfirmId(null); remove(id); }}
+          onCancel={() => setConfirmId(null)}
+        />
+      )}
     </>
   );
 }

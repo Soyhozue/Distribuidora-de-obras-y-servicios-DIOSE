@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ConfirmModal from "@/components/ConfirmModal";
 
 const EMPTY_ADDR = { street: "", city: "Ciudad Juárez", state: "Chihuahua", postalCode: "", isDefault: false };
 
@@ -84,8 +85,9 @@ export default function AccountClient({
     } finally { setAddrSaving(false); }
   }
 
+  const [confirmAddrId, setConfirmAddrId] = useState<string | null>(null);
+
   async function deleteAddress(id: string) {
-    if (!confirm("¿Eliminar esta dirección?")) return;
     await fetch(`/api/addresses/${id}`, { method: "DELETE" });
     setAddrList((prev) => prev.filter((a) => a.id !== id));
   }
@@ -284,7 +286,7 @@ export default function AccountClient({
                           Predeterminar
                         </button>
                       )}
-                      <button onClick={() => deleteAddress(a.id)}
+                      <button onClick={() => setConfirmAddrId(a.id)}
                         className="text-[11px] text-red-400 hover:text-red-600 cursor-pointer">
                         Eliminar
                       </button>
@@ -316,6 +318,13 @@ export default function AccountClient({
           </>
         )}
       </main>
+      {confirmAddrId && (
+        <ConfirmModal
+          message="¿Eliminar esta dirección?"
+          onConfirm={() => { const id = confirmAddrId; setConfirmAddrId(null); deleteAddress(id); }}
+          onCancel={() => setConfirmAddrId(null)}
+        />
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProductIcon } from "@/components/icons";
+import ConfirmModal from "@/components/ConfirmModal";
 import type { Product } from "@/data/products";
 import type { ManagedProduct } from "@/lib/data";
 
@@ -229,8 +230,9 @@ export default function ProductsManager({
     }
   }
 
+  const [confirmProductId, setConfirmProductId] = useState<string | null>(null);
+
   async function removeProduct(id: string) {
-    if (!confirm("¿Eliminar este producto? No se puede deshacer.")) return;
     await fetch(`/api/products/${id}`, { method: "DELETE" });
     router.refresh();
   }
@@ -396,7 +398,7 @@ export default function ProductsManager({
                     Editar
                   </span>
                   <span
-                    onClick={() => removeProduct(p.id)}
+                    onClick={() => setConfirmProductId(p.id)}
                     className="text-xs text-gray-300 cursor-pointer hover:text-diose-danger"
                   >
                     ✕
@@ -632,6 +634,13 @@ export default function ProductsManager({
             </div>
           </div>
         </div>
+      )}
+      {confirmProductId && (
+        <ConfirmModal
+          message="¿Eliminar este producto? No se puede deshacer."
+          onConfirm={() => { const id = confirmProductId; setConfirmProductId(null); removeProduct(id); }}
+          onCancel={() => setConfirmProductId(null)}
+        />
       )}
     </>
   );

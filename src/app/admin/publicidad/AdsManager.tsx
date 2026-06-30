@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons";
+import ConfirmModal from "@/components/ConfirmModal";
 import type { Product } from "@/data/products";
 
 const POST_TYPE_OPTIONS = [
@@ -148,8 +149,9 @@ export default function AdsManager({
     }
   }
 
+  const [confirmComboId, setConfirmComboId] = useState<string | null>(null);
+
   async function removeCombo(id: string) {
-    if (!confirm("¿Eliminar este combo guardado?")) return;
     await fetch(`/api/combos/${id}`, { method: "DELETE" });
     await loadHistory();
   }
@@ -544,7 +546,7 @@ export default function AdsManager({
                     )}
                   </div>
                   <span
-                    onClick={() => removeCombo(c.id)}
+                    onClick={() => setConfirmComboId(c.id)}
                     className="text-xs text-gray-300 cursor-pointer hover:text-diose-danger shrink-0"
                   >
                     ✕
@@ -557,6 +559,13 @@ export default function AdsManager({
             </div>
           </div>
         </div>
+      )}
+      {confirmComboId && (
+        <ConfirmModal
+          message="¿Eliminar este combo guardado?"
+          onConfirm={() => { const id = confirmComboId; setConfirmComboId(null); removeCombo(id); }}
+          onCancel={() => setConfirmComboId(null)}
+        />
       )}
     </div>
   );
