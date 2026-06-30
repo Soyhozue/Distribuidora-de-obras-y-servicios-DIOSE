@@ -359,6 +359,7 @@ export async function getUserOrders(userId: string) {
     orderBy: { createdAt: "desc" },
   });
   return orders.map((o) => ({
+    id: o.id,
     number: o.number,
     date: o.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }),
     products: o.items.map((i) => i.product.name).join(", "),

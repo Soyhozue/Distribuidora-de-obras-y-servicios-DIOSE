@@ -7,6 +7,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 const EMPTY_ADDR = { street: "", city: "Ciudad Juárez", state: "Chihuahua", postalCode: "", isDefault: false };
 
 type Order = {
+  id: string;
   number: number;
   date: string;
   products: string;
@@ -58,6 +59,22 @@ export default function AccountClient({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("Mis pedidos");
+  const [orderList, setOrderList] = useState<Order[]>(orders);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+
+  async function cancelOrder(id: string) {
+    setCancelingId(id);
+    try {
+      const res = await fetch(`/api/me/orders/${id}/cancel`, { method: "POST" });
+      if (res.ok) {
+        setOrderList((prev) => prev.map((o) => (o.id === id ? { ...o, status: "Cancelado" } : o)));
+      }
+    } finally {
+      setCancelingId(null);
+    }
+  }
+
   const [addrList, setAddrList] = useState<Address[]>(addresses);
   const [showForm, setShowForm] = useState(false);
   const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
@@ -147,18 +164,18 @@ export default function AccountClient({
               <h2 className="font-heading text-3xl text-diose-black tracking-[0.04em] mb-1">Mis pedidos</h2>
               <span className="text-xs text-gray-400 tracking-[0.04em]">Historial de compras</span>
             </div>
-            <div className="min-w-[640px]">
-              <div className="grid grid-cols-[80px_120px_1fr_100px_120px] border-b-2 border-diose-black pb-2.5">
-                {["Pedido", "Fecha", "Productos", "Total", "Estado"].map((h) => (
+            <div className="min-w-[700px]">
+              <div className="grid grid-cols-[80px_120px_1fr_100px_120px_90px] border-b-2 border-diose-black pb-2.5">
+                {["Pedido", "Fecha", "Productos", "Total", "Estado", ""].map((h) => (
                   <span key={h} className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400">
                     {h}
                   </span>
                 ))}
               </div>
-              {orders.map((order) => (
+              {orderList.map((order) => (
                 <div
-                  key={order.number}
-                  className={`grid grid-cols-[80px_120px_1fr_100px_120px] border-b border-gray-100 py-3.5 items-center ${
+                  key={order.id}
+                  className={`grid grid-cols-[80px_120px_1fr_100px_120px_90px] border-b border-gray-100 py-3.5 items-center ${
                     order.status === "Cancelado" ? "opacity-50" : ""
                   }`}
                 >
@@ -167,9 +184,20 @@ export default function AccountClient({
                   <span className="text-[13px] text-gray-500 truncate pr-4">{order.products}</span>
                   <span className="text-[13px] font-semibold text-diose-black">{formatPrice(order.total)}</span>
                   <StatusBadge status={order.status} />
+                  {order.status === "Pendiente" ? (
+                    <button
+                      onClick={() => setConfirmCancelId(order.id)}
+                      disabled={cancelingId === order.id}
+                      className="text-[11px] text-red-400 hover:text-red-600 cursor-pointer disabled:opacity-50 text-left"
+                    >
+                      {cancelingId === order.id ? "Cancelando..." : "Cancelar"}
+                    </button>
+                  ) : (
+                    <span />
+                  )}
                 </div>
               ))}
-              {orders.length === 0 && (
+              {orderList.length === 0 && (
                 <div className="text-center text-gray-400 text-sm py-16">Todavía no tienes pedidos.</div>
               )}
             </div>
@@ -323,6 +351,13 @@ export default function AccountClient({
           message="¿Eliminar esta dirección?"
           onConfirm={() => { const id = confirmAddrId; setConfirmAddrId(null); deleteAddress(id); }}
           onCancel={() => setConfirmAddrId(null)}
+        />
+      )}
+      {confirmCancelId && (
+        <ConfirmModal
+          message="¿Cancelar este pedido? No se puede deshacer."
+          onConfirm={() => { const id = confirmCancelId; setConfirmCancelId(null); cancelOrder(id); }}
+          onCancel={() => setConfirmCancelId(null)}
         />
       )}
     </div>

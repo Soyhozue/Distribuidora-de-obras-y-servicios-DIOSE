@@ -10,6 +10,7 @@ const STATUSES = [
   { key: "CONFIRMADO", label: "Confirmado" },
   { key: "EN_CAMINO", label: "Enviado" },
   { key: "ENTREGADO", label: "Entregado" },
+  { key: "CANCELADO", label: "Cancelado" },
 ];
 
 const STATUS_LABELS: Record<string, string> = {
