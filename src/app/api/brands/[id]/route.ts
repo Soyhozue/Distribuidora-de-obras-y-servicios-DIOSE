@@ -11,12 +11,16 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   return new NextResponse(null, { status: 204 });
 }
 
+function toSlug(str: string) {
+  return str.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { name } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
   try {
-    const brand = await prisma.brand.update({ where: { id }, data: { name: name.trim().toUpperCase() } });
+    const brand = await prisma.brand.update({ where: { id }, data: { name: name.trim().toUpperCase(), slug: toSlug(name) } });
     return NextResponse.json(brand);
   } catch {
     return NextResponse.json({ error: "Ya existe una marca con ese nombre" }, { status: 409 });

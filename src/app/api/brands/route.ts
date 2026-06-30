@@ -9,11 +9,15 @@ export async function GET() {
   return NextResponse.json(brands.map((b) => ({ id: b.id, name: b.name, count: b._count.products })));
 }
 
+function toSlug(str: string) {
+  return str.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
 export async function POST(req: Request) {
   const { name } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
   try {
-    const brand = await prisma.brand.create({ data: { name: name.trim().toUpperCase() } });
+    const brand = await prisma.brand.create({ data: { name: name.trim().toUpperCase(), slug: toSlug(name) } });
     return NextResponse.json(brand, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Ya existe una marca con ese nombre" }, { status: 409 });
