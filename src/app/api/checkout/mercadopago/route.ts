@@ -52,16 +52,21 @@ export async function POST(request: Request) {
           email: body.customerEmail,
           ...(body.customerPhone ? { phone: { number: body.customerPhone } } : {}),
         },
-        items: body.items.map((item) => {
-          const p = dbProducts.find((x) => x.id === item.productId);
-          return {
-            id: item.productId,
-            title: p?.name ?? "Producto",
-            quantity: item.quantity,
-            unit_price: Number(item.unitPrice),
-            currency_id: "MXN",
-          };
-        }),
+        items: [
+          ...body.items.map((item) => {
+            const p = dbProducts.find((x) => x.id === item.productId);
+            return {
+              id: item.productId,
+              title: p?.name ?? "Producto",
+              quantity: item.quantity,
+              unit_price: Number(item.unitPrice),
+              currency_id: "MXN",
+            };
+          }),
+          ...(Number(order.shipping) > 0
+            ? [{ id: "envio", title: "Envío", quantity: 1, unit_price: Number(order.shipping), currency_id: "MXN" }]
+            : []),
+        ],
         back_urls: {
           success: `${BASE_URL}/pedido-confirmado?n=${order.number}&mp=ok`,
           failure: `${BASE_URL}/checkout?mp=error`,

@@ -160,9 +160,35 @@ export type CreateOrderInput = {
   items: { productId: string; quantity: number; unitPrice: number }[];
 };
 
+const SHIPPING_RATES = [
+  { max: 1, p: 120 }, { max: 3, p: 180 }, { max: 5, p: 250 },
+  { max: 10, p: 350 }, { max: 20, p: 500 }, { max: Infinity, p: 700 },
+];
+
+function isJuarezCity(city: string) {
+  return ["juárez", "juarez", "cd. juárez", "ciudad juárez", "ciudad juarez"].some((k) =>
+    city.toLowerCase().includes(k)
+  );
+}
+
 export async function createOrder(input: CreateOrderInput, sessionUserId?: string) {
   const subtotal = input.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-  const shipping = input.items.length > 0 ? 280 : 0;
+
+  let shipping = 0;
+  if (input.items.length > 0 && !isJuarezCity(input.city)) {
+    const weights = await prisma.product.findMany({
+      where: { id: { in: input.items.map((i) => i.productId) } },
+      select: { id: true, weight: true },
+    });
+    const totalWeight = input.items.reduce((sum, i) => {
+      const w = weights.find((p) => p.id === i.productId)?.weight ?? 0;
+      return sum + w * i.quantity;
+    }, 0);
+    if (totalWeight > 0) {
+      shipping = (SHIPPING_RATES.find((r) => totalWeight <= r.max) ?? SHIPPING_RATES[SHIPPING_RATES.length - 1]).p;
+    }
+  }
+
   const total = subtotal + shipping;
 
   let userId: string;
