@@ -22,6 +22,7 @@ type DbProduct = {
   description: string | null;
   price: { toString(): string };
   unit: string | null;
+  weight: number | null;
   stock: number;
   stockStatus: string;
   categoryId: string;
