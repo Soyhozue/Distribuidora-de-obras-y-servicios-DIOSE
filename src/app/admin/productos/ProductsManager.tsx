@@ -53,7 +53,7 @@ type FormState = {
 function parseDescriptionField(raw: string | null | undefined) {
   if (!raw) return { main: "", benefits: "", applications: "", characteristics: "" };
   const lower = raw.toLowerCase();
-  const charIdx  = lower.indexOf("[caracteristicas]");
+  const charIdx  = lower.indexOf("[especificaciones-lista]");
   const benefIdx = lower.indexOf("[beneficios]");
   const appIdx   = lower.indexOf("[aplicaciones]");
 
@@ -70,7 +70,7 @@ function parseDescriptionField(raw: string | null | undefined) {
 
   return {
     main,
-    characteristics: extractBlock(charIdx, "[caracteristicas]".length),
+    characteristics: extractBlock(charIdx, "[especificaciones-lista]".length),
     benefits:        extractBlock(benefIdx, "[beneficios]".length),
     applications:    extractBlock(appIdx,   "[aplicaciones]".length),
   };
@@ -78,7 +78,7 @@ function parseDescriptionField(raw: string | null | undefined) {
 
 function serializeDescription(main: string, benefits: string, applications: string, characteristics: string): string {
   let result = main.trim();
-  if (characteristics.trim()) result += `\n\n[caracteristicas]\n${characteristics.trim()}`;
+  if (characteristics.trim()) result += `\n\n[especificaciones-lista]\n${characteristics.trim()}`;
   if (benefits.trim()) result += `\n\n[beneficios]\n${benefits.trim()}`;
   if (applications.trim()) result += `\n\n[aplicaciones]\n${applications.trim()}`;
   return result;
@@ -558,7 +558,7 @@ export default function ProductsManager({
               </label>
               <label className="flex flex-col gap-1 col-span-2">
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
-                  Características <span className="normal-case text-gray-300">(una por línea — aparecen debajo de la imagen)</span>
+                  Especificaciones <span className="normal-case text-gray-300">(una por línea — aparecen debajo de la imagen)</span>
                 </span>
                 <textarea
                   value={form.characteristics}

@@ -40,7 +40,7 @@ function parseDescription(raw: string | null | undefined) {
 
   const markerBenef = lower.indexOf("[beneficios]");
   const markerApp   = lower.indexOf("[aplicaciones]");
-  const markerChar  = lower.indexOf("[caracteristicas]");
+  const markerChar  = lower.indexOf("[especificaciones-lista]");
 
   const naturalBenef = BENEFIT_RE.exec(raw);
   const naturalApp   = APP_RE.exec(raw);
@@ -79,7 +79,7 @@ function parseDescription(raw: string | null | undefined) {
   }
 
   if (charIdx !== -1) {
-    const block = extractBlock(charIdx, "[caracteristicas]".length, [benefIdx, appIdx, specIdx].filter((i) => i !== -1));
+    const block = extractBlock(charIdx, "[especificaciones-lista]".length, [benefIdx, appIdx, specIdx].filter((i) => i !== -1));
     characteristics = block.split("\n").map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter((l) => l.length > 2);
   }
 
@@ -128,7 +128,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             {characteristics.length > 0 && (
               <div>
                 <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-2">
-                  Características
+                  Especificaciones
                 </div>
                 <ul className="flex flex-col gap-1.5">
                   {characteristics.map((c, i) => (
