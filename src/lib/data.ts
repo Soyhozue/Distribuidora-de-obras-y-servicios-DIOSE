@@ -270,6 +270,10 @@ export async function getOrderById(id: string) {
       address: order.address
         ? `${order.address.street}, ${order.address.city}, ${order.address.state}`
         : "",
+      street: order.address?.street ?? "",
+      city: order.address?.city ?? "",
+      state: order.address?.state ?? "",
+      postalCode: order.address?.postalCode ?? "",
     },
     items: order.items.map((i) => ({
       id: i.id,

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import OrderStatusPanel from "./OrderStatusPanel";
 import { getOrderById } from "@/lib/data";
 
@@ -31,7 +32,14 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           <span className="text-xs text-gray-400">
             · {order.customer.name} · {order.createdAt}
           </span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <Link
+              href={`/admin/pedidos/${order.id}/guia`}
+              target="_blank"
+              className="text-[10px] border border-diose-black text-diose-black px-3 py-1 tracking-[0.1em] uppercase hover:bg-diose-black hover:text-white transition-colors"
+            >
+              Generar guía
+            </Link>
             <span className="text-[10px] bg-diose-amber/10 text-diose-amber border border-diose-amber px-3 py-1 tracking-[0.1em] uppercase">
               {order.statusLabel}
             </span>
