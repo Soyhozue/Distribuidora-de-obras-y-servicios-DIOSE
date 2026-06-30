@@ -37,6 +37,8 @@ type FormState = {
   sku: string;
   name: string;
   description: string;
+  benefits: string;
+  applications: string;
   price: string;
   unit: string;
   stock: string;
@@ -47,11 +49,42 @@ type FormState = {
   images: string[];
 };
 
+function parseDescriptionField(raw: string | null | undefined) {
+  if (!raw) return { main: "", benefits: "", applications: "" };
+  const beneficiosIdx = raw.toLowerCase().indexOf("[beneficios]");
+  const aplicacionesIdx = raw.toLowerCase().indexOf("[aplicaciones]");
+  const firstMarker = Math.min(
+    beneficiosIdx === -1 ? Infinity : beneficiosIdx,
+    aplicacionesIdx === -1 ? Infinity : aplicacionesIdx,
+  );
+  const main = firstMarker !== Infinity ? raw.slice(0, firstMarker).trim() : raw.trim();
+  let benefits = "";
+  let applications = "";
+  if (beneficiosIdx !== -1) {
+    const end = aplicacionesIdx !== -1 && aplicacionesIdx > beneficiosIdx ? aplicacionesIdx : raw.length;
+    benefits = raw.slice(beneficiosIdx + "[beneficios]".length, end).trim();
+  }
+  if (aplicacionesIdx !== -1) {
+    const end = beneficiosIdx !== -1 && beneficiosIdx > aplicacionesIdx ? beneficiosIdx : raw.length;
+    applications = raw.slice(aplicacionesIdx + "[aplicaciones]".length, end).trim();
+  }
+  return { main, benefits, applications };
+}
+
+function serializeDescription(main: string, benefits: string, applications: string): string {
+  let result = main.trim();
+  if (benefits.trim()) result += `\n\n[beneficios]\n${benefits.trim()}`;
+  if (applications.trim()) result += `\n\n[aplicaciones]\n${applications.trim()}`;
+  return result;
+}
+
 function emptyForm(categories: Option[], brands: Option[]): FormState {
   return {
     sku: "",
     name: "",
     description: "",
+    benefits: "",
+    applications: "",
     price: "",
     unit: "",
     stock: "0",
@@ -112,11 +145,14 @@ export default function ProductsManager({
   }
 
   function openEdit(p: ManagedProduct) {
+    const { main, benefits, applications } = parseDescriptionField(p.description);
     setForm({
       id: p.id,
       sku: p.sku,
       name: p.name,
-      description: p.description ?? "",
+      description: main,
+      benefits,
+      applications,
       price: String(p.price),
       unit: p.unit ?? "",
       stock: String(p.stock),
@@ -147,10 +183,11 @@ export default function ProductsManager({
   async function save() {
     setSaving(true);
     try {
+      const fullDescription = serializeDescription(form.description, form.benefits, form.applications);
       const payload = {
         sku: form.sku,
         name: form.name,
-        description: form.description || undefined,
+        description: fullDescription || undefined,
         price: Number(form.price),
         unit: form.unit || undefined,
         stock: Number(form.stock),
@@ -485,7 +522,30 @@ export default function ProductsManager({
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Descripción general del producto..."
                   className="border border-diose-border px-3 py-2 text-sm outline-none h-20 resize-none"
+                />
+              </label>
+              <label className="flex flex-col gap-1 col-span-2">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                  Beneficios <span className="normal-case text-gray-300">(uno por línea)</span>
+                </span>
+                <textarea
+                  value={form.benefits}
+                  onChange={(e) => setForm({ ...form, benefits: e.target.value })}
+                  placeholder={"Reduce la fricción durante la instalación\nProtege el neumático y el rin\nFácil de aplicar"}
+                  className="border border-diose-border px-3 py-2 text-sm outline-none h-20 resize-none"
+                />
+              </label>
+              <label className="flex flex-col gap-1 col-span-2">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                  Aplicaciones <span className="normal-case text-gray-300">(una por línea)</span>
+                </span>
+                <textarea
+                  value={form.applications}
+                  onChange={(e) => setForm({ ...form, applications: e.target.value })}
+                  placeholder={"Talleres de llantas\nVulcanizadoras\nCentros de servicio automotriz"}
+                  className="border border-diose-border px-3 py-2 text-sm outline-none h-16 resize-none"
                 />
               </label>
               <div className="flex flex-col gap-1.5 col-span-2">

@@ -1,10 +1,148 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { HeroSlide } from "@/lib/data";
 import HeroSlideLayer from "@/components/HeroSlideLayer";
 import HeroTitle from "@/components/HeroTitle";
+
+type CatalogItem = { id: string; name: string; count: number };
+
+function CatalogSection({
+  title,
+  description,
+  endpoint,
+  namePlaceholder,
+}: {
+  title: string;
+  description: string;
+  endpoint: string;
+  namePlaceholder: string;
+}) {
+  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [newName, setNewName] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const load = useCallback(async () => {
+    const res = await fetch(endpoint);
+    setItems(await res.json());
+  }, [endpoint]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function create() {
+    if (!newName.trim()) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!res.ok) { const d = await res.json(); setError(d.error); return; }
+      setNewName("");
+      await load();
+    } finally { setSaving(false); }
+  }
+
+  async function remove(id: string) {
+    const item = items.find((i) => i.id === id);
+    if (!confirm(`¿Eliminar "${item?.name}"?`)) return;
+    const res = await fetch(`${endpoint}/${id}`, { method: "DELETE" });
+    if (!res.ok) { const d = await res.json(); setError(d.error); return; }
+    await load();
+  }
+
+  async function saveEdit(id: string) {
+    if (!editName.trim()) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`${endpoint}/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName }),
+      });
+      if (!res.ok) { const d = await res.json(); setError(d.error); return; }
+      setEditId(null);
+      await load();
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div className="bg-white border border-diose-border p-6">
+      <div className="font-heading text-lg text-diose-black mb-1">{title}</div>
+      <div className="text-xs text-gray-400 mb-5">{description}</div>
+
+      <div className="flex flex-col gap-1.5 mb-5">
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center gap-2 border border-diose-border-light px-3 py-2">
+            {editId === item.id ? (
+              <>
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") saveEdit(item.id); if (e.key === "Escape") setEditId(null); }}
+                  className="flex-1 text-sm outline-none border-b border-diose-amber"
+                  autoFocus
+                />
+                <button onClick={() => saveEdit(item.id)} disabled={saving} className="text-[11px] text-diose-amber font-semibold cursor-pointer">
+                  Guardar
+                </button>
+                <button onClick={() => setEditId(null)} className="text-[11px] text-gray-400 cursor-pointer">
+                  Cancelar
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="flex-1 text-sm text-diose-black">{item.name}</span>
+                <span className="text-[11px] text-gray-400">{item.count} productos</span>
+                <button
+                  onClick={() => { setEditId(item.id); setEditName(item.name); setError(""); }}
+                  className="text-[11px] text-gray-500 hover:text-diose-black cursor-pointer ml-2"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => remove(item.id)}
+                  disabled={item.count > 0}
+                  title={item.count > 0 ? "Reasigna o elimina los productos primero" : "Eliminar"}
+                  className="text-[11px] text-red-400 hover:text-red-600 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Eliminar
+                </button>
+              </>
+            )}
+          </div>
+        ))}
+        {items.length === 0 && <div className="text-xs text-gray-400">Sin registros aún.</div>}
+      </div>
+
+      {error && <div className="text-xs text-red-500 mb-3">{error}</div>}
+
+      <div className="flex gap-2">
+        <input
+          value={newName}
+          onChange={(e) => { setNewName(e.target.value); setError(""); }}
+          onKeyDown={(e) => { if (e.key === "Enter") create(); }}
+          placeholder={namePlaceholder}
+          className="flex-1 border border-diose-border px-3 py-2 text-sm outline-none"
+        />
+        <button
+          onClick={create}
+          disabled={saving || !newName.trim()}
+          className="bg-diose-black hover:bg-diose-amber text-white px-5 py-2 text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors"
+        >
+          {saving ? "..." : "Agregar"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 type Settings = {
   phone: string;
@@ -532,6 +670,20 @@ export default function SettingsManager({
           </button>
           {savedMsg && <span className="text-xs text-diose-success">Cambios guardados ✓</span>}
         </div>
+
+        <CatalogSection
+          title="Marcas"
+          description="Las marcas que aparecen al agregar o editar productos. Puedes agregar, renombrar o eliminar (solo si no tienen productos asignados)."
+          endpoint="/api/brands"
+          namePlaceholder="Ej: TRUPER"
+        />
+
+        <CatalogSection
+          title="Categorías"
+          description="Las categorías del catálogo. Puedes agregar, renombrar o eliminar (solo si no tienen productos asignados)."
+          endpoint="/api/categories"
+          namePlaceholder="Ej: Herramientas"
+        />
 
         {/* PROMOS */}
         <div className="bg-white border border-diose-border p-6">

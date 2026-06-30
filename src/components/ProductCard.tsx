@@ -46,7 +46,7 @@ export default function ProductCard({ product }: { product: Product }) {
       >
         {product.images && product.images[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+          <img src={product.images[0]} alt={product.name} className="w-full h-full object-contain p-3" />
         ) : (
           <ProductIcon icon={product.icon} />
         )}
