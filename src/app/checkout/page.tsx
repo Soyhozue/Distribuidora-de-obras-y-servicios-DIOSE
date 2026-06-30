@@ -21,7 +21,6 @@ export default function CheckoutPage() {
   const router = useRouter();
   const lines = useCartStore((s) => s.lines);
   const clear = useCartStore((s) => s.clear);
-  const { subtotal, shipping, total, totalWeight, isJuarez } = cartTotals(lines, form.city);
   const [payment, setPayment] = useState("transferencia");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +34,8 @@ export default function CheckoutPage() {
     state: "Chihuahua",
     zip: "",
   });
+
+  const { subtotal, shipping, total, totalWeight, isJuarez } = cartTotals(lines, form.city);
 
   function update(field: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
