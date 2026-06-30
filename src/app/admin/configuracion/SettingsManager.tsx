@@ -8,6 +8,46 @@ import HeroTitle from "@/components/HeroTitle";
 
 type CatalogItem = { id: string; name: string; count: number };
 
+function ConfirmModal({
+  name,
+  onConfirm,
+  onCancel,
+}: {
+  name: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+      <div className="relative bg-white border border-diose-border w-full max-w-sm mx-4 p-6 shadow-xl">
+        <div className="font-heading text-base text-diose-black tracking-[0.04em] mb-2">
+          Eliminar registro
+        </div>
+        <p className="text-sm text-gray-500 mb-6">
+          ¿Seguro que quieres eliminar{" "}
+          <span className="font-semibold text-diose-black">&ldquo;{name}&rdquo;</span>?
+          Esta acción no se puede deshacer.
+        </p>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-xs text-gray-600 border border-diose-border hover:border-diose-black cursor-pointer transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 text-xs font-semibold text-white bg-diose-black hover:bg-red-600 cursor-pointer transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CatalogSection({
   title,
   description,
@@ -25,6 +65,7 @@ function CatalogSection({
   const [editName, setEditName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [confirmItem, setConfirmItem] = useState<CatalogItem | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch(endpoint);
@@ -50,9 +91,8 @@ function CatalogSection({
   }
 
   async function remove(id: string) {
-    const item = items.find((i) => i.id === id);
-    if (!confirm(`¿Eliminar "${item?.name}"?`)) return;
     const res = await fetch(`${endpoint}/${id}`, { method: "DELETE" });
+    setConfirmItem(null);
     if (!res.ok) { const d = await res.json(); setError(d.error); return; }
     await load();
   }
@@ -74,6 +114,14 @@ function CatalogSection({
   }
 
   return (
+    <>
+      {confirmItem && (
+        <ConfirmModal
+          name={confirmItem.name}
+          onConfirm={() => remove(confirmItem.id)}
+          onCancel={() => setConfirmItem(null)}
+        />
+      )}
     <div className="bg-white border border-diose-border p-6">
       <div className="font-heading text-lg text-diose-black mb-1">{title}</div>
       <div className="text-xs text-gray-400 mb-5">{description}</div>
@@ -108,7 +156,7 @@ function CatalogSection({
                   Editar
                 </button>
                 <button
-                  onClick={() => remove(item.id)}
+                  onClick={() => setConfirmItem(item)}
                   disabled={item.count > 0}
                   title={item.count > 0 ? "Reasigna o elimina los productos primero" : "Eliminar"}
                   className="text-[11px] text-red-400 hover:text-red-600 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
@@ -141,6 +189,7 @@ function CatalogSection({
         </button>
       </div>
     </div>
+    </>
   );
 }
 
