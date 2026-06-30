@@ -56,6 +56,7 @@ model Product {
   description String?
   price       Decimal     @db.Decimal(10, 2)
   unit        String?
+  weight      Float?
   stock       Int         @default(0)
   stockStatus StockStatus @default(EN_STOCK)
   images      String[]    @default([])

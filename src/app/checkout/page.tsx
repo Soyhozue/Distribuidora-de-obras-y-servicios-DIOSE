@@ -21,7 +21,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const lines = useCartStore((s) => s.lines);
   const clear = useCartStore((s) => s.clear);
-  const { subtotal, shipping, total } = cartTotals(lines);
+  const { subtotal, shipping, total, totalWeight, isJuarez } = cartTotals(lines, form.city);
   const [payment, setPayment] = useState("transferencia");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -217,9 +217,22 @@ export default function CheckoutPage() {
             <span className="text-[13px] text-gray-500">Subtotal</span>
             <span className="text-[13px] text-diose-black">{formatPrice(subtotal)}</span>
           </div>
-          <div className="flex justify-between mb-5">
-            <span className="text-[13px] text-gray-500">Envío estimado</span>
-            <span className="text-[13px] text-diose-black">{formatPrice(shipping)}</span>
+          <div className="flex justify-between items-start mb-5 gap-2">
+            <div>
+              <span className="text-[13px] text-gray-500">Envío estimado</span>
+              {isJuarez && (
+                <div className="text-[10px] text-green-600 font-medium tracking-[0.04em] mt-0.5">Envío local · Ciudad Juárez</div>
+              )}
+              {!isJuarez && totalWeight === 0 && (
+                <div className="text-[10px] text-gray-400 mt-0.5">Sin peso registrado — a confirmar</div>
+              )}
+              {!isJuarez && totalWeight > 0 && (
+                <div className="text-[10px] text-gray-400 mt-0.5">{totalWeight.toFixed(2)} kg · envío nacional</div>
+              )}
+            </div>
+            <span className={`text-[13px] font-medium shrink-0 ${isJuarez ? "text-green-600" : "text-diose-black"}`}>
+              {isJuarez ? "Gratis" : shipping > 0 ? formatPrice(shipping) : "Por cotizar"}
+            </span>
           </div>
           <div className="h-px bg-gray-300 mb-5" />
           <div className="flex justify-between mb-9">

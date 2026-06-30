@@ -42,6 +42,7 @@ type FormState = {
   characteristics: string;
   price: string;
   unit: string;
+  weight: string;
   stock: string;
   stockStatus: Product["stockStatus"];
   categoryId: string;
@@ -94,6 +95,7 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     characteristics: "",
     price: "",
     unit: "",
+    weight: "",
     stock: "0",
     stockStatus: "EN_STOCK",
     categoryId: categories[0]?.id ?? "",
@@ -163,6 +165,7 @@ export default function ProductsManager({
       characteristics,
       price: String(p.price),
       unit: p.unit ?? "",
+      weight: p.weight != null ? String(p.weight) : "",
       stock: String(p.stock),
       stockStatus: p.stockStatus,
       categoryId: p.categoryId,
@@ -198,6 +201,7 @@ export default function ProductsManager({
         description: fullDescription || undefined,
         price: Number(form.price),
         unit: form.unit || undefined,
+        weight: form.weight ? Number(form.weight) : undefined,
         stock: Number(form.stock),
         stockStatus: form.stockStatus,
         categoryId: form.categoryId,
@@ -456,6 +460,18 @@ export default function ProductsManager({
                   value={form.unit}
                   onChange={(e) => setForm({ ...form, unit: e.target.value })}
                   placeholder="/m, /kg..."
+                  className="border border-diose-border px-3 py-2 text-sm outline-none"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Peso (kg) — para calcular envío</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={form.weight}
+                  onChange={(e) => setForm({ ...form, weight: e.target.value })}
+                  placeholder="Ej: 19"
                   className="border border-diose-border px-3 py-2 text-sm outline-none"
                 />
               </label>

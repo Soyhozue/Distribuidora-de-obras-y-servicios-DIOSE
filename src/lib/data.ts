@@ -43,6 +43,7 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
     brandId: p.brandId,
     price: Number(p.price.toString()),
     unit: p.unit ?? undefined,
+    weight: p.weight ?? undefined,
     stock: p.stock,
     stockStatus: p.stockStatus as Product["stockStatus"],
     icon: pickIcon(p.category.name),
@@ -94,6 +95,7 @@ export type ProductInput = {
   description?: string;
   price: number;
   unit?: string;
+  weight?: number;
   stock: number;
   stockStatus: "EN_STOCK" | "STOCK_BAJO" | "AGOTADO";
   categoryId: string;

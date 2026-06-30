@@ -8,6 +8,7 @@ export type Product = {
   category: string;
   price: number;
   unit?: string;
+  weight?: number;
   stock: number;
   stockStatus: StockStatus;
   icon: "drill" | "saw" | "cement" | "hose" | "paint" | "wrench" | "cable" | "rod" | "fire";
