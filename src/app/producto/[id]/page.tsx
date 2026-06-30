@@ -31,29 +31,53 @@ function formatPrice(price: number) {
 
 function parseDescription(raw: string | null | undefined) {
   if (!raw) return { main: "", benefits: [], applications: [] };
-  const beneficiosIdx = raw.toLowerCase().indexOf("[beneficios]");
-  const aplicacionesIdx = raw.toLowerCase().indexOf("[aplicaciones]");
 
-  let main = raw;
+  // Detect both marker format [beneficios] and natural language headers
+  const lower = raw.toLowerCase();
+
+  // Natural headers: "Beneficios", "Aplicaciones" as standalone words (may be preceded by a period/space)
+  const BENEFIT_RE = /\.\s*(beneficios)\s+/i;
+  const APP_RE = /\.\s*(aplicaciones)\s+/i;
+  const SPEC_RE = /\.\s*(especificaciones)\s+/i;
+
+  const markerBenef = lower.indexOf("[beneficios]");
+  const markerApp = lower.indexOf("[aplicaciones]");
+
+  const naturalBenef = BENEFIT_RE.exec(raw);
+  const naturalApp = APP_RE.exec(raw);
+  const naturalSpec = SPEC_RE.exec(raw);
+
+  // Prefer explicit markers; fall back to natural detection
+  const benefIdx = markerBenef !== -1 ? markerBenef : (naturalBenef ? naturalBenef.index + 1 : -1);
+  const appIdx   = markerApp   !== -1 ? markerApp   : (naturalApp   ? naturalApp.index   + 1 : -1);
+  const specIdx  = naturalSpec ? naturalSpec.index + 1 : -1;
+
+  const markers = [benefIdx, appIdx, specIdx].filter((i) => i !== -1);
+  const firstMarker = markers.length ? Math.min(...markers) : Infinity;
+
+  const main = firstMarker !== Infinity ? raw.slice(0, firstMarker).trim() : raw.trim();
+
+  function extractBlock(startIdx: number, markerLen: number, others: number[]): string {
+    const start = startIdx + markerLen;
+    const nextMarker = others.filter((i) => i > startIdx).sort((a, b) => a - b)[0] ?? raw!.length;
+    return raw!.slice(start, nextMarker).trim();
+  }
+
   let benefits: string[] = [];
   let applications: string[] = [];
 
-  const firstMarker = Math.min(
-    beneficiosIdx === -1 ? Infinity : beneficiosIdx,
-    aplicacionesIdx === -1 ? Infinity : aplicacionesIdx,
-  );
-  if (firstMarker !== Infinity) main = raw.slice(0, firstMarker).trim();
-
-  if (beneficiosIdx !== -1) {
-    const end = aplicacionesIdx !== -1 && aplicacionesIdx > beneficiosIdx ? aplicacionesIdx : raw.length;
-    const block = raw.slice(beneficiosIdx + "[beneficios]".length, end).trim();
-    benefits = block.split("\n").map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter(Boolean);
+  if (benefIdx !== -1) {
+    const markerLen = markerBenef !== -1 ? "[beneficios]".length
+      : (naturalBenef ? naturalBenef[0].length - 1 : 0);
+    const block = extractBlock(benefIdx, markerLen, [appIdx, specIdx].filter((i) => i !== -1));
+    benefits = block.split(/[\n.]+/).map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter((l) => l.length > 4);
   }
 
-  if (aplicacionesIdx !== -1) {
-    const end = beneficiosIdx !== -1 && beneficiosIdx > aplicacionesIdx ? beneficiosIdx : raw.length;
-    const block = raw.slice(aplicacionesIdx + "[aplicaciones]".length, end).trim();
-    applications = block.split("\n").map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter(Boolean);
+  if (appIdx !== -1) {
+    const markerLen = markerApp !== -1 ? "[aplicaciones]".length
+      : (naturalApp ? naturalApp[0].length - 1 : 0);
+    const block = extractBlock(appIdx, markerLen, [benefIdx, specIdx].filter((i) => i !== -1));
+    applications = block.split(/[\n.]+/).map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter((l) => l.length > 4);
   }
 
   return { main, benefits, applications };

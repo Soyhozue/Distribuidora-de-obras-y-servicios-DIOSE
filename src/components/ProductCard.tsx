@@ -38,12 +38,12 @@ export default function ProductCard({ product }: { product: Product }) {
       }`}
     >
       {product.images && product.images[0] ? (
-        <div className="relative w-full aspect-square bg-white flex items-center justify-center overflow-hidden">
+        <div className="relative w-full aspect-square bg-white overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={product.images[0]}
             alt={product.name}
-            className="w-full h-full object-contain p-5 transition-transform duration-300 group-hover:scale-105"
+            className="absolute inset-0 w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
           />
         </div>
       ) : (
