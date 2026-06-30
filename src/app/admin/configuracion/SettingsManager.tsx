@@ -78,8 +78,8 @@ function CatalogSection({
     <>
       {confirmItem && (
         <ConfirmModal
-          name={confirmItem.name}
-          onConfirm={() => remove(confirmItem.id)}
+          message={`¿Eliminar "${confirmItem.name}"?`}
+          onConfirm={() => { const id = confirmItem.id; setConfirmItem(null); remove(id); }}
           onCancel={() => setConfirmItem(null)}
         />
       )}
