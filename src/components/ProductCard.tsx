@@ -38,15 +38,19 @@ export default function ProductCard({ product }: { product: Product }) {
       }`}
     >
       <div
-        className="h-[130px] flex items-center justify-center bg-[#F0F0F0] overflow-hidden"
+        className="relative w-full aspect-square bg-[#F5F5F5] flex items-center justify-center overflow-hidden"
         style={{
-          backgroundImage: "radial-gradient(#DCDCDC 1px,transparent 1px)",
+          backgroundImage: "radial-gradient(#E0E0E0 1px,transparent 1px)",
           backgroundSize: "18px 18px",
         }}
       >
         {product.images && product.images[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.images[0]} alt={product.name} className="w-full h-full object-contain p-3" />
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="w-full h-full object-contain p-5 transition-transform duration-300 group-hover:scale-105"
+          />
         ) : (
           <ProductIcon icon={product.icon} />
         )}
