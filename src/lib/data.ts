@@ -259,10 +259,10 @@ export async function getOrderById(id: string) {
     items: order.items.map((i) => ({
       id: i.id,
       name: i.product.name,
-      brand: "",
       sku: i.product.sku,
       quantity: i.quantity,
       price: `$${Number(i.unitPrice.toString()).toLocaleString("es-MX")}`,
+      image: i.product.images?.[0] ?? null,
     })),
   };
 }

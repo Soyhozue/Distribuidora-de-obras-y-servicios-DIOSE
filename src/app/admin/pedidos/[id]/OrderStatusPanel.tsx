@@ -11,16 +11,28 @@ const STATUSES = [
   { key: "ENTREGADO", label: "Entregado" },
 ];
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDIENTE: "Pendiente",
+  CONFIRMADO: "Confirmado",
+  EN_CAMINO: "Enviado / En camino",
+  ENTREGADO: "Entregado",
+  CANCELADO: "Cancelado",
+};
+
 export default function OrderStatusPanel({
   orderId,
   initialStatus,
   initialNotes,
   initialNotify,
+  customerPhone,
+  orderNumber,
 }: {
   orderId: string;
   initialStatus: string;
   initialNotes: string;
   initialNotify: boolean;
+  customerPhone?: string;
+  orderNumber?: number;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
@@ -37,6 +49,15 @@ export default function OrderStatusPanel({
         body: JSON.stringify({ status, internalNotes: notes, notifyWhatsapp: notify }),
       });
       router.refresh();
+
+      // Abrir WhatsApp con mensaje pre-llenado si notify está activado
+      if (notify && customerPhone) {
+        const phone = customerPhone.replace(/\D/g, "");
+        const msg = encodeURIComponent(
+          `Hola 👋 Te informamos que tu pedido #${orderNumber ?? ""} de DIOSE ha sido actualizado.\n\nEstado actual: *${STATUS_LABELS[status] ?? status}*\n\nGracias por tu compra 🙌`
+        );
+        window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+      }
     } finally {
       setSaving(false);
     }

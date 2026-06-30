@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { SearchIcon } from "@/components/icons";
 import { getOrders } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
+import AdminSearch from "@/components/admin/AdminSearch";
 
 export const revalidate = 30;
 
@@ -42,10 +42,7 @@ export default async function AdminDashboardPage() {
         <div className="flex items-baseline gap-4">
           <span className="font-heading text-xl text-diose-black tracking-[0.06em]">Dashboard</span>
         </div>
-        <div className="border border-diose-border px-3.5 py-1.5 flex items-center gap-2 bg-[#FAFAFA]">
-          <SearchIcon size={13} color="#999" />
-          <span className="text-xs text-gray-400">Buscar...</span>
-        </div>
+        <AdminSearch />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-9 pb-0 shrink-0">

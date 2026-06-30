@@ -7,6 +7,7 @@ import type { Product } from "@/data/products";
 
 type CategoryCount = { name: string; count: number };
 type BrandCount = { name: string; count: number };
+type Combo = { id: string; title: string; subtitle: string | null; products: string[]; comboPrice: number | null; savings: number | null };
 
 const SORT_OPTIONS = [
   { key: "relevancia", label: "Relevancia" },
@@ -22,12 +23,14 @@ export default function CatalogoClient({
   products,
   categories,
   brands,
+  combos = [],
   initialCategory,
   initialQuery = "",
 }: {
   products: Product[];
   categories: CategoryCount[];
   brands: BrandCount[];
+  combos?: Combo[];
   initialCategory?: string | null;
   initialQuery?: string;
 }) {
@@ -200,6 +203,37 @@ export default function CatalogoClient({
 
         {/* PRODUCT GRID */}
         <main className="flex-1 p-6">
+          {/* Combos / paquetes */}
+          {combos.length > 0 && !query && !category && !brand && (
+            <div className="mb-7">
+              <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-3">
+                Paquetes especiales
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {combos.map((c) => (
+                  <div key={c.id} className="bg-diose-black text-white p-5 flex flex-col gap-2">
+                    <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-white/40">Paquete</div>
+                    <div className="font-heading text-xl tracking-[0.04em]">{c.title}</div>
+                    {c.subtitle && <div className="text-[13px] text-white/50">{c.subtitle}</div>}
+                    <div className="text-[12px] text-white/40 mt-1">{c.products.join(" · ")}</div>
+                    <div className="mt-auto pt-3 flex items-end justify-between border-t border-white/10">
+                      {c.comboPrice ? (
+                        <span className="text-diose-amber font-semibold text-lg">
+                          ${c.comboPrice.toLocaleString("es-MX")}
+                        </span>
+                      ) : (
+                        <span className="text-white/40 text-sm">Precio especial</span>
+                      )}
+                      {c.savings && (
+                        <span className="text-[11px] text-green-400">Ahorra ${c.savings.toLocaleString("es-MX")}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
             {pageProducts.map((product) => (
               <ProductCard key={product.id} product={product} />

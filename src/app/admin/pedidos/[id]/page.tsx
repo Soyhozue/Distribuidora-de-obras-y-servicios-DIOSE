@@ -85,7 +85,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 Productos del pedido
               </div>
               {order.items.map((item) => (
-                <OrderLine key={item.id} name={item.name} sku={item.sku} qty={item.quantity} price={item.price} />
+                <OrderLine key={item.id} name={item.name} sku={item.sku} qty={item.quantity} price={item.price} image={item.image} />
               ))}
               <div className="bg-[#F9F9F9] px-6 py-3 border-t border-diose-border-light flex justify-between items-center">
                 <span className="text-xs text-gray-400">Total del pedido</span>
@@ -100,6 +100,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             initialStatus={order.status}
             initialNotes={order.internalNotes}
             initialNotify={order.notifyWhatsapp}
+            customerPhone={order.customer.phone}
+            orderNumber={order.number}
           />
         </div>
     </>
@@ -115,13 +117,15 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function OrderLine({ name, sku, qty, price }: { name: string; sku: string; qty: number; price: string }) {
+function OrderLine({ name, sku, qty, price, image }: { name: string; sku: string; qty: number; price: string; image?: string | null }) {
   return (
     <div className="px-6 py-4 flex items-center gap-4 border-b border-gray-50 last:border-b-0">
       <div
-        className="w-13 h-13 bg-[#F0F0F0] shrink-0 flex items-center justify-center"
+        className="w-13 h-13 bg-[#F0F0F0] shrink-0 flex items-center justify-center overflow-hidden"
         style={{ backgroundImage: "radial-gradient(#DCDCDC 1px,transparent 1px)", backgroundSize: "10px 10px" }}
-      />
+      >
+        {image && <img src={image} alt={name} className="w-full h-full object-cover" />}
+      </div>
       <div className="flex-1">
         <div className="text-sm font-medium text-diose-black">{name}</div>
         <div className="text-xs text-gray-400 mt-0.5">
