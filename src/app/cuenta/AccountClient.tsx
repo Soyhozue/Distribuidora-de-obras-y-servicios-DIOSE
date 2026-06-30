@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const EMPTY_ADDR = { street: "", city: "Ciudad Juárez", state: "Chihuahua", postalCode: "", isDefault: false };
+
 type Order = {
   number: number;
   date: string;
@@ -55,6 +57,43 @@ export default function AccountClient({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("Mis pedidos");
+  const [addrList, setAddrList] = useState<Address[]>(addresses);
+  const [showForm, setShowForm] = useState(false);
+  const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
+  const [addrSaving, setAddrSaving] = useState(false);
+  const [addrError, setAddrError] = useState("");
+
+  async function saveAddress() {
+    if (!addrForm.street || !addrForm.city || !addrForm.state || !addrForm.postalCode) {
+      setAddrError("Completa todos los campos."); return;
+    }
+    setAddrSaving(true); setAddrError("");
+    try {
+      const res = await fetch("/api/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(addrForm),
+      });
+      if (!res.ok) { const d = await res.json(); setAddrError(d.error); return; }
+      const created = await res.json();
+      setAddrList((prev) => addrForm.isDefault
+        ? [...prev.map((a) => ({ ...a, isDefault: false })), created]
+        : [...prev, created]);
+      setAddrForm(EMPTY_ADDR);
+      setShowForm(false);
+    } finally { setAddrSaving(false); }
+  }
+
+  async function deleteAddress(id: string) {
+    if (!confirm("¿Eliminar esta dirección?")) return;
+    await fetch(`/api/addresses/${id}`, { method: "DELETE" });
+    setAddrList((prev) => prev.filter((a) => a.id !== id));
+  }
+
+  async function setDefault(id: string) {
+    await fetch(`/api/addresses/${id}`, { method: "PATCH" });
+    setAddrList((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
+  }
   const initials = user.name
     .split(" ")
     .map((p) => p[0])
@@ -162,27 +201,100 @@ export default function AccountClient({
 
         {tab === "Direcciones" && (
           <>
-            <div className="mb-7">
-              <h2 className="font-heading text-3xl text-diose-black tracking-[0.04em] mb-1">Direcciones</h2>
-              <span className="text-xs text-gray-400 tracking-[0.04em]">Direcciones usadas en tus pedidos</span>
+            <div className="flex items-center justify-between mb-7">
+              <div>
+                <h2 className="font-heading text-3xl text-diose-black tracking-[0.04em] mb-1">Direcciones</h2>
+                <span className="text-xs text-gray-400 tracking-[0.04em]">Tus direcciones de envío guardadas</span>
+              </div>
+              {!showForm && (
+                <button
+                  onClick={() => { setShowForm(true); setAddrError(""); }}
+                  className="bg-diose-black hover:bg-diose-amber text-white px-5 py-2.5 text-xs font-semibold tracking-[0.08em] uppercase cursor-pointer transition-colors"
+                >
+                  + Añadir dirección
+                </button>
+              )}
             </div>
-            <div className="flex flex-col gap-3 max-w-md">
-              {addresses.map((a) => (
-                <div key={a.id} className="border border-diose-border-light p-4">
-                  <div className="text-sm text-diose-black">{a.street}</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {a.city}, {a.state}, CP {a.postalCode}
+
+            {showForm && (
+              <div className="border border-diose-border p-5 mb-6 max-w-md">
+                <div className="font-heading text-base text-diose-black tracking-[0.04em] mb-4">Nueva dirección</div>
+                <div className="flex flex-col gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400">Calle y número</span>
+                    <input value={addrForm.street} onChange={(e) => setAddrForm((f) => ({ ...f, street: e.target.value }))}
+                      placeholder="Av. de las Torres 1234, Col. Industrial"
+                      className="border border-diose-border px-3.5 py-2.5 text-sm outline-none focus:border-diose-black" />
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-1">
+                      <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400">Ciudad</span>
+                      <input value={addrForm.city} onChange={(e) => setAddrForm((f) => ({ ...f, city: e.target.value }))}
+                        className="border border-diose-border px-3.5 py-2.5 text-sm outline-none focus:border-diose-black" />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400">Estado</span>
+                      <input value={addrForm.state} onChange={(e) => setAddrForm((f) => ({ ...f, state: e.target.value }))}
+                        className="border border-diose-border px-3.5 py-2.5 text-sm outline-none focus:border-diose-black" />
+                    </label>
                   </div>
-                  {a.isDefault && (
-                    <span className="text-[10px] text-diose-amber uppercase tracking-[0.08em] mt-1.5 inline-block">
-                      Predeterminada
-                    </span>
-                  )}
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400">Código postal</span>
+                    <input value={addrForm.postalCode} onChange={(e) => setAddrForm((f) => ({ ...f, postalCode: e.target.value }))}
+                      placeholder="32000"
+                      className="border border-diose-border px-3.5 py-2.5 text-sm outline-none focus:border-diose-black" />
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={addrForm.isDefault}
+                      onChange={(e) => setAddrForm((f) => ({ ...f, isDefault: e.target.checked }))} />
+                    <span className="text-xs text-gray-600">Usar como dirección predeterminada</span>
+                  </label>
+                  {addrError && <p className="text-xs text-red-500">{addrError}</p>}
+                  <div className="flex gap-2 mt-1">
+                    <button onClick={saveAddress} disabled={addrSaving}
+                      className="flex-1 bg-diose-black hover:bg-diose-amber text-white py-2.5 text-xs font-semibold tracking-[0.08em] uppercase cursor-pointer disabled:opacity-50 transition-colors">
+                      {addrSaving ? "Guardando..." : "Guardar dirección"}
+                    </button>
+                    <button onClick={() => { setShowForm(false); setAddrForm(EMPTY_ADDR); setAddrError(""); }}
+                      className="px-4 py-2.5 text-xs border border-diose-border text-gray-600 hover:border-diose-black cursor-pointer">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3 max-w-md">
+              {addrList.map((a) => (
+                <div key={a.id} className={`border p-4 ${a.isDefault ? "border-diose-black" : "border-diose-border-light"}`}>
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <div className="text-sm font-medium text-diose-black">{a.street}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{a.city}, {a.state} · CP {a.postalCode}</div>
+                      {a.isDefault && (
+                        <span className="text-[10px] text-diose-amber uppercase tracking-[0.08em] mt-1.5 inline-block font-semibold">
+                          Predeterminada
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5 items-end shrink-0">
+                      {!a.isDefault && (
+                        <button onClick={() => setDefault(a.id)}
+                          className="text-[11px] text-gray-500 hover:text-diose-black cursor-pointer underline underline-offset-2">
+                          Predeterminar
+                        </button>
+                      )}
+                      <button onClick={() => deleteAddress(a.id)}
+                        className="text-[11px] text-red-400 hover:text-red-600 cursor-pointer">
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
-              {addresses.length === 0 && (
+              {addrList.length === 0 && !showForm && (
                 <div className="text-center text-gray-400 text-sm py-16">
-                  Aún no tienes direcciones guardadas. Se agregan automáticamente al hacer un pedido.
+                  Aún no tienes direcciones guardadas.
                 </div>
               )}
             </div>
