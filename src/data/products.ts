@@ -13,6 +13,9 @@ export type Product = {
   stockStatus: StockStatus;
   icon: "drill" | "saw" | "cement" | "hose" | "paint" | "wrench" | "cable" | "rod" | "fire";
   description?: string;
+  benefits?: string[];
+  applications?: string[];
+  characteristics?: string[];
   specs?: Record<string, string>;
   featured?: boolean;
   images?: string[];

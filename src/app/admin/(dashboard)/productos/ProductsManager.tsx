@@ -53,38 +53,12 @@ type FormState = {
   images: string[];
 };
 
-function parseDescriptionField(raw: string | null | undefined) {
-  if (!raw) return { main: "", benefits: "", applications: "", characteristics: "" };
-  const lower = raw.toLowerCase();
-  const charIdx  = lower.indexOf("[especificaciones-lista]");
-  const benefIdx = lower.indexOf("[beneficios]");
-  const appIdx   = lower.indexOf("[aplicaciones]");
-
-  const markers = [charIdx, benefIdx, appIdx].filter((i) => i !== -1);
-  const firstMarker = markers.length ? Math.min(...markers) : Infinity;
-  const main = firstMarker !== Infinity ? raw.slice(0, firstMarker).trim() : raw.trim();
-
-  function extractBlock(idx: number, markerLen: number) {
-    if (idx === -1) return "";
-    const start = idx + markerLen;
-    const next = [charIdx, benefIdx, appIdx].filter((i) => i !== -1 && i > idx).sort((a, b) => a - b)[0] ?? raw!.length;
-    return raw!.slice(start, next).trim();
-  }
-
-  return {
-    main,
-    characteristics: extractBlock(charIdx, "[especificaciones-lista]".length),
-    benefits:        extractBlock(benefIdx, "[beneficios]".length),
-    applications:    extractBlock(appIdx,   "[aplicaciones]".length),
-  };
+function linesToText(lines: string[] | undefined): string {
+  return (lines ?? []).join("\n");
 }
 
-function serializeDescription(main: string, benefits: string, applications: string, characteristics: string): string {
-  let result = main.trim();
-  if (characteristics.trim()) result += `\n\n[especificaciones-lista]\n${characteristics.trim()}`;
-  if (benefits.trim()) result += `\n\n[beneficios]\n${benefits.trim()}`;
-  if (applications.trim()) result += `\n\n[aplicaciones]\n${applications.trim()}`;
-  return result;
+function textToLines(text: string): string[] {
+  return text.split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
 function emptyForm(categories: Option[], brands: Option[]): FormState {
@@ -162,15 +136,14 @@ export default function ProductsManager({
   }
 
   function openEdit(p: ManagedProduct) {
-    const { main, benefits, applications, characteristics } = parseDescriptionField(p.description);
     setForm({
       id: p.id,
       sku: p.sku,
       name: p.name,
-      description: main,
-      benefits,
-      applications,
-      characteristics,
+      description: p.description ?? "",
+      benefits: linesToText(p.benefits),
+      applications: linesToText(p.applications),
+      characteristics: linesToText(p.characteristics),
       price: String(p.price),
       unit: p.unit ?? "",
       weight: p.weight != null ? String(p.weight) : "",
@@ -216,11 +189,13 @@ export default function ProductsManager({
     }
     setSaving(true);
     try {
-      const fullDescription = serializeDescription(form.description, form.benefits, form.applications, form.characteristics);
       const payload = {
         sku: form.sku,
         name: form.name,
-        description: fullDescription || undefined,
+        description: form.description.trim() || undefined,
+        benefits: textToLines(form.benefits),
+        applications: textToLines(form.applications),
+        characteristics: textToLines(form.characteristics),
         price: Number(form.price),
         unit: form.unit || undefined,
         weight: form.weight ? Number(form.weight) : undefined,

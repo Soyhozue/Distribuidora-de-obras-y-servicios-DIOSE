@@ -54,6 +54,9 @@ model Product {
   sku         String      @unique
   name        String
   description String?
+  benefits        String[]    @default([])
+  applications    String[]    @default([])
+  characteristics String[]    @default([])
   price       Decimal     @db.Decimal(10, 2)
   unit        String?
   weight      Float?

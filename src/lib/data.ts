@@ -21,6 +21,9 @@ type DbProduct = {
   sku: string;
   name: string;
   description: string | null;
+  benefits: string[];
+  applications: string[];
+  characteristics: string[];
   price: { toString(): string };
   unit: string | null;
   weight?: number | null;
@@ -50,6 +53,9 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
     stockStatus: p.stockStatus as Product["stockStatus"],
     icon: pickIcon(p.category.name),
     description: p.description ?? undefined,
+    benefits: p.benefits,
+    applications: p.applications,
+    characteristics: p.characteristics,
     featured: p.featured,
     images: p.images,
   };
@@ -95,6 +101,9 @@ export type ProductInput = {
   sku: string;
   name: string;
   description?: string;
+  benefits?: string[];
+  applications?: string[];
+  characteristics?: string[];
   price: number;
   unit?: string;
   weight?: number;

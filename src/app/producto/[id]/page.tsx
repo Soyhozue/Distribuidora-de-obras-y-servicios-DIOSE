@@ -29,63 +29,6 @@ function formatPrice(price: number) {
   return `$${price.toLocaleString("es-MX")}`;
 }
 
-function parseDescription(raw: string | null | undefined) {
-  if (!raw) return { main: "", benefits: [], applications: [], characteristics: [] };
-
-  const lower = raw.toLowerCase();
-
-  const BENEFIT_RE = /\.\s*(beneficios)\s+/i;
-  const APP_RE = /\.\s*(aplicaciones)\s+/i;
-  const SPEC_RE = /\.\s*(especificaciones)\s+/i;
-
-  const markerBenef = lower.indexOf("[beneficios]");
-  const markerApp   = lower.indexOf("[aplicaciones]");
-  const markerChar  = lower.indexOf("[especificaciones-lista]");
-
-  const naturalBenef = BENEFIT_RE.exec(raw);
-  const naturalApp   = APP_RE.exec(raw);
-  const naturalSpec  = SPEC_RE.exec(raw);
-
-  const benefIdx = markerBenef !== -1 ? markerBenef : (naturalBenef ? naturalBenef.index + 1 : -1);
-  const appIdx   = markerApp   !== -1 ? markerApp   : (naturalApp   ? naturalApp.index   + 1 : -1);
-  const specIdx  = naturalSpec ? naturalSpec.index + 1 : -1;
-  const charIdx  = markerChar  !== -1 ? markerChar  : -1;
-
-  const markers = [benefIdx, appIdx, specIdx, charIdx].filter((i) => i !== -1);
-  const firstMarker = markers.length ? Math.min(...markers) : Infinity;
-
-  const main = firstMarker !== Infinity ? raw.slice(0, firstMarker).trim() : raw.trim();
-
-  function extractBlock(startIdx: number, markerLen: number, others: number[]): string {
-    const start = startIdx + markerLen;
-    const nextMarker = others.filter((i) => i > startIdx).sort((a, b) => a - b)[0] ?? raw!.length;
-    return raw!.slice(start, nextMarker).trim();
-  }
-
-  let benefits: string[] = [];
-  let applications: string[] = [];
-  let characteristics: string[] = [];
-
-  if (benefIdx !== -1) {
-    const markerLen = markerBenef !== -1 ? "[beneficios]".length : (naturalBenef ? naturalBenef[0].length - 1 : 0);
-    const block = extractBlock(benefIdx, markerLen, [appIdx, specIdx, charIdx].filter((i) => i !== -1));
-    benefits = block.split(/[\n.]+/).map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter((l) => l.length > 4);
-  }
-
-  if (appIdx !== -1) {
-    const markerLen = markerApp !== -1 ? "[aplicaciones]".length : (naturalApp ? naturalApp[0].length - 1 : 0);
-    const block = extractBlock(appIdx, markerLen, [benefIdx, specIdx, charIdx].filter((i) => i !== -1));
-    applications = block.split(/[\n.]+/).map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter((l) => l.length > 4);
-  }
-
-  if (charIdx !== -1) {
-    const block = extractBlock(charIdx, "[especificaciones-lista]".length, [benefIdx, appIdx, specIdx].filter((i) => i !== -1));
-    characteristics = block.split("\n").map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter((l) => l.length > 2);
-  }
-
-  return { main, benefits, applications, characteristics };
-}
-
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = await getProductById(id);
@@ -93,7 +36,10 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   const related = await getRelatedProducts(product.category, product.id);
   const settings = await getSiteSettings();
-  const { main, benefits, applications, characteristics } = parseDescription(product.description);
+  const main = product.description ?? "";
+  const benefits = product.benefits ?? [];
+  const applications = product.applications ?? [];
+  const characteristics = product.characteristics ?? [];
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
