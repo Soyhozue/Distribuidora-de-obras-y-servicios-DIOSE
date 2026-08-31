@@ -353,6 +353,9 @@ export async function createContactMessage(input: {
 }
 
 export async function registerUser(input: { name: string; email: string; phone?: string; password: string }) {
+  if (input.password.length < 8) {
+    throw new Error("La contraseña debe tener al menos 8 caracteres");
+  }
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) {
     throw new Error("Ya existe una cuenta con ese correo");

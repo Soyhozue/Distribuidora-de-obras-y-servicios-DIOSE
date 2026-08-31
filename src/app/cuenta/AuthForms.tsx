@@ -22,6 +22,10 @@ export default function AuthForms() {
       setError("Debes aceptar los Términos y Condiciones y el Aviso de Privacidad.");
       return;
     }
+    if (mode === "register" && form.password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/auth/${mode === "login" ? "login" : "register"}`, {
@@ -86,13 +90,19 @@ export default function AuthForms() {
               className="border border-diose-border px-3.5 py-2.5 text-[13px] outline-none focus:border-diose-black"
             />
           )}
-          <input
-            type="password"
-            value={form.password}
-            onChange={(e) => update("password", e.target.value)}
-            placeholder="Contraseña"
-            className="border border-diose-border px-3.5 py-2.5 text-[13px] outline-none focus:border-diose-black"
-          />
+          <div>
+            <input
+              type="password"
+              value={form.password}
+              onChange={(e) => update("password", e.target.value)}
+              placeholder="Contraseña"
+              minLength={mode === "register" ? 8 : undefined}
+              className="w-full border border-diose-border px-3.5 py-2.5 text-[13px] outline-none focus:border-diose-black"
+            />
+            {mode === "register" && (
+              <div className="text-[10px] text-gray-400 mt-1">Mínimo 8 caracteres.</div>
+            )}
+          </div>
 
           {mode === "login" && (
             <div className="text-right">
