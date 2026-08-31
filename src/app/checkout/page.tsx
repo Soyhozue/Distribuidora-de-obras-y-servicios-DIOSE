@@ -25,6 +25,28 @@ const PAYMENT_MAP: Record<string, string> = {
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RFC_RE = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/i;
+
+const TAX_REGIMES = [
+  { code: "601", label: "601 · General de Ley Personas Morales" },
+  { code: "603", label: "603 · Personas Morales con Fines no Lucrativos" },
+  { code: "605", label: "605 · Sueldos y Salarios" },
+  { code: "606", label: "606 · Arrendamiento" },
+  { code: "608", label: "608 · Demás ingresos" },
+  { code: "612", label: "612 · Personas Físicas con Actividades Empresariales y Profesionales" },
+  { code: "616", label: "616 · Sin obligaciones fiscales" },
+  { code: "621", label: "621 · Incorporación Fiscal" },
+  { code: "625", label: "625 · Plataformas Tecnológicas" },
+  { code: "626", label: "626 · Régimen Simplificado de Confianza (RESICO)" },
+];
+
+const CFDI_USES = [
+  { code: "G01", label: "G01 · Adquisición de mercancías" },
+  { code: "G03", label: "G03 · Gastos en general" },
+  { code: "I01", label: "I01 · Construcciones" },
+  { code: "I08", label: "I08 · Otra maquinaria y equipo" },
+  { code: "P01", label: "P01 · Por definir" },
+];
 
 type SavedAddress = {
   id: string;
@@ -50,6 +72,12 @@ export default function CheckoutPage() {
   const [zip, setZip] = useState("");
   const [payment, setPayment] = useState("transferencia");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [wantsInvoice, setWantsInvoice] = useState(false);
+  const [invoiceRfc, setInvoiceRfc] = useState("");
+  const [invoiceName, setInvoiceName] = useState("");
+  const [invoiceZip, setInvoiceZip] = useState("");
+  const [invoiceRegime, setInvoiceRegime] = useState("");
+  const [invoiceCfdiUse, setInvoiceCfdiUse] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -127,8 +155,22 @@ export default function CheckoutPage() {
       setError("Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar.");
       return;
     }
+    if (wantsInvoice) {
+      if (!invoiceRfc || !invoiceName || !invoiceZip || !invoiceRegime || !invoiceCfdiUse) {
+        setError("Completa todos los datos de facturación o desmarca \"Necesito factura\".");
+        return;
+      }
+      if (!RFC_RE.test(invoiceRfc)) {
+        setError("El RFC no tiene un formato válido.");
+        return;
+      }
+    }
     setSubmitting(true);
     setError(null);
+
+    const invoice = wantsInvoice
+      ? { rfc: invoiceRfc.toUpperCase(), name: invoiceName, zip: invoiceZip, regime: invoiceRegime, cfdiUse: invoiceCfdiUse }
+      : undefined;
 
     try {
       if (payment === "mercadopago") {
@@ -145,6 +187,7 @@ export default function CheckoutPage() {
             zip,
             paymentMethod: "TARJETA",
             items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity, unitPrice: l.product.price })),
+            invoice,
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -165,6 +208,7 @@ export default function CheckoutPage() {
           zip,
           paymentMethod: PAYMENT_MAP[payment] ?? "TRANSFERENCIA",
           items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity, unitPrice: l.product.price })),
+          invoice,
         }),
       });
       if (!res.ok) {
@@ -307,6 +351,35 @@ export default function CheckoutPage() {
               </button>
             ))}
           </div>
+
+          {/* Facturación */}
+          <div className="mb-7" />
+          <label className="flex items-center gap-2.5 mb-4 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={wantsInvoice}
+              onChange={(e) => setWantsInvoice(e.target.checked)}
+              className="w-4 h-4 shrink-0 accent-diose-black cursor-pointer"
+            />
+            <span className="font-heading text-xl text-diose-black tracking-[0.04em]">¿Necesitas factura?</span>
+          </label>
+
+          {wantsInvoice && (
+            <div className="flex flex-col gap-4 mb-2 border border-diose-border p-5">
+              <p className="text-xs text-gray-400">
+                Emitimos tu CFDI normalmente en menos de una hora tras confirmar el pedido, y te lo enviamos al correo indicado arriba.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="RFC" value={invoiceRfc} onChange={(v) => setInvoiceRfc(v.toUpperCase())} />
+                <Field label="CP fiscal" value={invoiceZip} onChange={setInvoiceZip} />
+              </div>
+              <Field label="Nombre o razón social (como en tu constancia fiscal)" value={invoiceName} onChange={setInvoiceName} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Select label="Régimen fiscal" value={invoiceRegime} onChange={setInvoiceRegime} options={TAX_REGIMES} />
+                <Select label="Uso de CFDI" value={invoiceCfdiUse} onChange={setInvoiceCfdiUse} options={CFDI_USES} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* RESUMEN */}
@@ -363,7 +436,12 @@ export default function CheckoutPage() {
 
           {error && <p className="text-xs text-diose-danger mb-3">{error}</p>}
           <button
-            disabled={lines.length === 0 || submitting || !acceptedTerms}
+            disabled={
+              lines.length === 0 ||
+              submitting ||
+              !acceptedTerms ||
+              (wantsInvoice && (!invoiceRfc || !invoiceName || !invoiceZip || !invoiceRegime || !invoiceCfdiUse))
+            }
             onClick={confirmOrder}
             className="w-full bg-diose-black hover:bg-diose-amber text-white p-4 text-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
@@ -389,6 +467,26 @@ function Field({ label, value, onChange, type = "text" }: {
         onChange={(e) => onChange(e.target.value)}
         className="w-full border border-diose-border px-3.5 py-2.5 text-[13px] text-diose-black outline-none focus:border-diose-black"
       />
+    </div>
+  );
+}
+
+function Select({ label, value, onChange, options }: {
+  label: string; value: string; onChange: (v: string) => void; options: { code: string; label: string }[];
+}) {
+  return (
+    <div>
+      <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-1.5">{label}</div>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full border border-diose-border px-3.5 py-2.5 text-[13px] text-diose-black outline-none focus:border-diose-black bg-white"
+      >
+        <option value="">Selecciona...</option>
+        {options.map((o) => (
+          <option key={o.code} value={o.code}>{o.label}</option>
+        ))}
+      </select>
     </div>
   );
 }

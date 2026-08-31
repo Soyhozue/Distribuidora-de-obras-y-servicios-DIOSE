@@ -159,6 +159,13 @@ export type CreateOrderInput = {
   zip: string;
   paymentMethod: "TARJETA" | "TRANSFERENCIA" | "EFECTIVO" | "WHATSAPP";
   items: { productId: string; quantity: number; unitPrice: number }[];
+  invoice?: {
+    rfc: string;
+    name: string;
+    zip: string;
+    regime: string;
+    cfdiUse: string;
+  };
 };
 
 const SHIPPING_RATES = [
@@ -240,6 +247,12 @@ export async function createOrder(input: CreateOrderInput, sessionUserId?: strin
       subtotal,
       shipping,
       total,
+      wantsInvoice: !!input.invoice,
+      invoiceRfc: input.invoice?.rfc,
+      invoiceName: input.invoice?.name,
+      invoiceZip: input.invoice?.zip,
+      invoiceRegime: input.invoice?.regime,
+      invoiceCfdiUse: input.invoice?.cfdiUse,
       items: {
         create: input.items.map((i) => ({
           productId: i.productId,
@@ -279,6 +292,7 @@ export async function getOrders() {
     total: Number(o.total.toString()),
     status: o.status,
     statusLabel: statusLabel(o.status),
+    wantsInvoice: o.wantsInvoice,
   }));
 }
 
@@ -295,6 +309,15 @@ export async function getOrderById(id: string) {
     statusLabel: statusLabel(order.status),
     internalNotes: order.internalNotes ?? "",
     notifyWhatsapp: order.notifyWhatsapp,
+    invoice: order.wantsInvoice
+      ? {
+          rfc: order.invoiceRfc ?? "",
+          name: order.invoiceName ?? "",
+          zip: order.invoiceZip ?? "",
+          regime: order.invoiceRegime ?? "",
+          cfdiUse: order.invoiceCfdiUse ?? "",
+        }
+      : null,
     total: Number(order.total.toString()),
     createdAt: order.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }),
     customer: {

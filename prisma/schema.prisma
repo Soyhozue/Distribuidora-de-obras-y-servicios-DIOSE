@@ -112,6 +112,12 @@ model Order {
   total          Decimal       @db.Decimal(10, 2)
   internalNotes  String?
   notifyWhatsapp Boolean       @default(false)
+  wantsInvoice   Boolean       @default(false)
+  invoiceRfc     String?
+  invoiceName    String?
+  invoiceZip     String?
+  invoiceRegime  String?
+  invoiceCfdiUse String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }

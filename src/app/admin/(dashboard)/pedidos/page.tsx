@@ -32,8 +32,8 @@ export default async function AdminOrdersPage() {
       </div>
       <div className="p-9">
         <div className="bg-white border border-diose-border overflow-hidden">
-          <div className="grid grid-cols-[80px_100px_1fr_100px_140px_80px] px-6 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black">
-            {["#", "Fecha", "Cliente", "Total", "Estado", ""].map((h) => (
+          <div className="grid grid-cols-[80px_100px_1fr_100px_140px_70px_80px] px-6 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black">
+            {["#", "Fecha", "Cliente", "Total", "Estado", "", ""].map((h) => (
               <span key={h} className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400">
                 {h}
               </span>
@@ -45,7 +45,7 @@ export default async function AdminOrdersPage() {
             </div>
           )}
           {orders.map((o) => (
-            <div key={o.id} className="grid grid-cols-[80px_100px_1fr_100px_140px_80px] px-6 py-3 border-b border-gray-100 items-center">
+            <div key={o.id} className="grid grid-cols-[80px_100px_1fr_100px_140px_70px_80px] px-6 py-3 border-b border-gray-100 items-center">
               <span className="text-[13px] font-semibold text-diose-black">#{o.number}</span>
               <span className="text-xs text-gray-500">{o.date}</span>
               <span className="text-[13px] text-gray-700">{o.client}</span>
@@ -53,6 +53,11 @@ export default async function AdminOrdersPage() {
               <span className={`text-[10px] px-2.5 py-1 tracking-[0.08em] uppercase inline-block w-fit ${STATUS_STYLE[o.status]}`}>
                 {o.statusLabel}
               </span>
+              {o.wantsInvoice ? (
+                <span className="text-[10px] px-2 py-1 tracking-[0.06em] uppercase inline-block w-fit border border-diose-amber text-diose-amber">
+                  Factura
+                </span>
+              ) : <span />}
               <Link href={`/admin/pedidos/${o.id}`} className="text-xs text-gray-400 underline cursor-pointer">
                 Ver
               </Link>

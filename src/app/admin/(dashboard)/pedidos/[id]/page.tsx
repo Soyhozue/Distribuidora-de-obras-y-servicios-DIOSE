@@ -40,6 +40,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             >
               Generar guía
             </Link>
+            {order.invoice && (
+              <span className="text-[10px] bg-diose-black text-white px-3 py-1 tracking-[0.1em] uppercase">
+                Factura
+              </span>
+            )}
             <span className="text-[10px] bg-diose-amber/10 text-diose-amber border border-diose-amber px-3 py-1 tracking-[0.1em] uppercase">
               {order.statusLabel}
             </span>
@@ -87,6 +92,21 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 <Field label="Dirección" value={order.customer.address || "—"} />
               </div>
             </div>
+
+            {order.invoice && (
+              <div className="bg-white border border-diose-amber p-6">
+                <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-diose-amber mb-3.5">
+                  Requiere factura (CFDI)
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <Field label="RFC" value={order.invoice.rfc} />
+                  <Field label="CP fiscal" value={order.invoice.zip} />
+                  <Field label="Nombre / Razón social" value={order.invoice.name} />
+                  <Field label="Régimen fiscal" value={order.invoice.regime} />
+                  <Field label="Uso de CFDI" value={order.invoice.cfdiUse} />
+                </div>
+              </div>
+            )}
 
             <div className="bg-white border border-diose-border overflow-hidden">
               <div className="px-6 py-3.5 border-b border-gray-100 text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400">

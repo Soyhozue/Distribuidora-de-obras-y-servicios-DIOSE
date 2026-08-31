@@ -12,7 +12,7 @@ export async function GET() {
   });
 
   const rows: string[] = [
-    ["#", "Fecha", "Cliente", "Email", "Teléfono", "Dirección", "Ciudad", "Estado", "CP", "Productos", "Subtotal", "Envío", "Total", "Estatus", "Pago"].join(","),
+    ["#", "Fecha", "Cliente", "Email", "Teléfono", "Dirección", "Ciudad", "Estado", "CP", "Productos", "Subtotal", "Envío", "Total", "Estatus", "Pago", "Factura", "RFC", "Nombre fiscal", "CP fiscal", "Régimen", "Uso CFDI"].join(","),
   ];
 
   for (const o of orders) {
@@ -35,6 +35,12 @@ export async function GET() {
         Number(o.total).toFixed(2),
         o.status,
         o.paymentMethod,
+        o.wantsInvoice ? "Sí" : "No",
+        o.invoiceRfc ?? "",
+        o.invoiceName ? `"${o.invoiceName}"` : "",
+        o.invoiceZip ?? "",
+        o.invoiceRegime ?? "",
+        o.invoiceCfdiUse ?? "",
       ].join(",")
     );
   }
