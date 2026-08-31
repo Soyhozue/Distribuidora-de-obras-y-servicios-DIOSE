@@ -201,6 +201,7 @@ export type CreateOrderInput = {
   zip: string;
   paymentMethod: "TARJETA" | "TRANSFERENCIA" | "EFECTIVO" | "WHATSAPP";
   items: { productId: string; quantity: number; unitPrice: number }[];
+  couponCode?: string;
   invoice?: {
     rfc: string;
     name: string;
@@ -239,16 +240,31 @@ export async function createOrder(input: CreateOrderInput, sessionUserId?: strin
     }
   }
 
-  const total = subtotal + shipping;
+  // Never trust a client-supplied discount amount — re-derive it here from
+  // the coupon's real, current record.
+  let discount = 0;
+  if (input.couponCode) {
+    const coupon = await prisma.coupon.findUnique({ where: { code: input.couponCode.toUpperCase() } });
+    if (coupon && coupon.active) {
+      discount = Math.round(subtotal * Number(coupon.discount));
+    }
+  }
+
+  const total = Math.max(0, subtotal + shipping - discount);
+
+  // A session can outlive the account it points to (e.g. the user record
+  // was deleted while the browser still holds a valid signed cookie) —
+  // treat that the same as no session instead of crashing the order.
+  const sessionUser = sessionUserId
+    ? await prisma.user.update({
+        where: { id: sessionUserId },
+        data: { phone: input.customerPhone ?? undefined },
+      }).catch(() => null)
+    : null;
 
   let userId: string;
-  if (sessionUserId) {
-    // Logged-in user — link directly, update contact info
-    await prisma.user.update({
-      where: { id: sessionUserId },
-      data: { phone: input.customerPhone ?? undefined },
-    });
-    userId = sessionUserId;
+  if (sessionUser) {
+    userId = sessionUser.id;
   } else {
     // Guest checkout — reuse the account if this email already exists, but
     // never overwrite an existing user's stored name/phone from an
@@ -288,6 +304,7 @@ export async function createOrder(input: CreateOrderInput, sessionUserId?: strin
       paymentMethod: input.paymentMethod,
       subtotal,
       shipping,
+      discount,
       total,
       wantsInvoice: !!input.invoice,
       invoiceRfc: input.invoice?.rfc,

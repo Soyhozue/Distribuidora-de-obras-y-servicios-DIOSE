@@ -13,15 +13,16 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
   const lines = useCartStore((s) => s.lines);
   const setQuantity = useCartStore((s) => s.setQuantity);
   const remove = useCartStore((s) => s.remove);
+  const coupon = useCartStore((s) => s.coupon);
+  const setCoupon = useCartStore((s) => s.setCoupon);
+  const clearCoupon = useCartStore((s) => s.clearCoupon);
   const { subtotal, shipping, total: rawTotal, pieceCount } = cartTotals(lines);
 
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
-  const [discountRate, setDiscountRate] = useState(0);
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
 
-  const discount = Math.round(subtotal * discountRate);
+  const discount = Math.round(subtotal * (coupon?.discount ?? 0));
   const total = rawTotal - discount;
 
   async function applyCoupon() {
@@ -32,14 +33,12 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
     try {
       const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}`);
       if (!res.ok) {
-        setAppliedCoupon(null);
-        setDiscountRate(0);
         setCouponError("Código no válido o inactivo");
         return;
       }
       const data = await res.json();
-      setAppliedCoupon(data.code);
-      setDiscountRate(data.discount);
+      setCoupon({ code: data.code, discount: data.discount });
+      setCouponInput("");
     } finally {
       setCouponLoading(false);
     }
@@ -102,8 +101,9 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
                     {line.quantity}
                   </div>
                   <button
-                    onClick={() => setQuantity(line.product.id, line.quantity + 1)}
-                    className="w-8 h-8 flex items-center justify-center cursor-pointer border-l border-diose-border text-gray-600 font-light"
+                    onClick={() => setQuantity(line.product.id, Math.min(line.product.stock, line.quantity + 1))}
+                    disabled={line.quantity >= line.product.stock}
+                    className="w-8 h-8 flex items-center justify-center cursor-pointer border-l border-diose-border text-gray-600 font-light disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     +
                   </button>
@@ -136,30 +136,37 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
                 <span className="text-[13px] text-gray-500">Envío</span>
                 <span className="text-[13px] text-diose-black font-medium">{formatPrice(shipping)}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[13px] text-gray-500">¿Tienes un código?</span>
-                <div className="flex">
-                  <input
-                    value={couponInput}
-                    onChange={(e) => setCouponInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
-                    placeholder="Cupón"
-                    className="border border-diose-border border-r-0 px-2.5 py-1.5 text-xs w-30 outline-none bg-white"
-                  />
-                  <button
-                    onClick={applyCoupon}
-                    disabled={couponLoading}
-                    className="bg-gray-800 text-white px-3 py-1.5 text-xs font-medium cursor-pointer tracking-[0.06em] disabled:opacity-60"
-                  >
-                    {couponLoading ? "..." : "Aplicar"}
-                  </button>
+              {!coupon && (
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-gray-500">¿Tienes un código?</span>
+                  <div className="flex">
+                    <input
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                      placeholder="Cupón"
+                      className="border border-diose-border border-r-0 px-2.5 py-1.5 text-xs w-30 outline-none bg-white"
+                    />
+                    <button
+                      onClick={applyCoupon}
+                      disabled={couponLoading}
+                      className="bg-gray-800 text-white px-3 py-1.5 text-xs font-medium cursor-pointer tracking-[0.06em] disabled:opacity-60"
+                    >
+                      {couponLoading ? "..." : "Aplicar"}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
               {couponError && <div className="text-xs text-diose-danger text-right">{couponError}</div>}
-              {appliedCoupon && (
-                <div className="flex justify-between">
-                  <span className="text-[13px] text-gray-500">Descuento ({appliedCoupon})</span>
-                  <span className="text-[13px] text-diose-success font-medium">-{formatPrice(discount)}</span>
+              {coupon && (
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-gray-500">Descuento ({coupon.code})</span>
+                  <span className="text-[13px] text-diose-success font-medium flex items-center gap-2">
+                    -{formatPrice(discount)}
+                    <button onClick={clearCoupon} className="text-gray-400 hover:text-diose-danger cursor-pointer text-xs underline">
+                      Quitar
+                    </button>
+                  </span>
                 </div>
               )}
             </div>

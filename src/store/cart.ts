@@ -9,11 +9,16 @@ export type CartLine = {
   quantity: number;
 };
 
+export type CartCoupon = { code: string; discount: number };
+
 type CartState = {
   lines: CartLine[];
+  coupon: CartCoupon | null;
   add: (product: Product, quantity?: number) => void;
   remove: (productId: string) => void;
   setQuantity: (productId: string, quantity: number) => void;
+  setCoupon: (coupon: CartCoupon) => void;
+  clearCoupon: () => void;
   clear: () => void;
 };
 
@@ -21,6 +26,7 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       lines: [],
+      coupon: null,
       add: (product, quantity = 1) => {
         const existing = get().lines.find((l) => l.product.id === product.id);
         if (existing) {
@@ -40,7 +46,9 @@ export const useCartStore = create<CartState>()(
             l.product.id === productId ? { ...l, quantity: Math.max(1, quantity) } : l
           ),
         }),
-      clear: () => set({ lines: [] }),
+      setCoupon: (coupon) => set({ coupon }),
+      clearCoupon: () => set({ coupon: null }),
+      clear: () => set({ lines: [], coupon: null }),
     }),
     { name: "diose-cart" }
   )

@@ -61,6 +61,8 @@ export default function CheckoutPage() {
   const router = useRouter();
   const lines = useCartStore((s) => s.lines);
   const clear = useCartStore((s) => s.clear);
+  const coupon = useCartStore((s) => s.coupon);
+  const clearCoupon = useCartStore((s) => s.clearCoupon);
 
   const [name, setName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -85,7 +87,16 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [useNewAddress, setUseNewAddress] = useState(false);
 
-  const { subtotal, shipping, total, totalWeight, isJuarez } = cartTotals(lines, city);
+  const { subtotal, shipping, total: preDiscountTotal, totalWeight, isJuarez } = cartTotals(lines, city);
+  const discount = Math.round(subtotal * (coupon?.discount ?? 0));
+  const total = Math.max(0, preDiscountTotal - discount);
+
+  function applyAddress(a: SavedAddress) {
+    setAddress(a.street);
+    setCity(a.city);
+    setState(a.state);
+    setZip(a.postalCode);
+  }
 
   useEffect(() => {
     fetch("/api/me")
@@ -113,15 +124,7 @@ export default function CheckoutPage() {
         }
       })
       .catch(() => setUseNewAddress(true));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  function applyAddress(a: SavedAddress) {
-    setAddress(a.street);
-    setCity(a.city);
-    setState(a.state);
-    setZip(a.postalCode);
-  }
 
   function selectAddress(a: SavedAddress) {
     setSelectedAddressId(a.id);
@@ -187,6 +190,7 @@ export default function CheckoutPage() {
             zip,
             paymentMethod: "TARJETA",
             items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity, unitPrice: l.product.price })),
+            couponCode: coupon?.code,
             invoice,
           }),
         });
@@ -208,6 +212,7 @@ export default function CheckoutPage() {
           zip,
           paymentMethod: PAYMENT_MAP[payment] ?? "TRANSFERENCIA",
           items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity, unitPrice: l.product.price })),
+          couponCode: coupon?.code,
           invoice,
         }),
       });
@@ -410,6 +415,17 @@ export default function CheckoutPage() {
               {isJuarez ? "Gratis" : shipping > 0 ? formatPrice(shipping) : "Por cotizar"}
             </span>
           </div>
+          {coupon && (
+            <div className="flex justify-between items-center mb-5">
+              <span className="text-[13px] text-gray-500">Descuento ({coupon.code})</span>
+              <span className="text-[13px] text-diose-success font-medium flex items-center gap-2">
+                -{formatPrice(discount)}
+                <button onClick={clearCoupon} className="text-gray-400 hover:text-diose-danger cursor-pointer text-xs underline">
+                  Quitar
+                </button>
+              </span>
+            </div>
+          )}
           <div className="h-px bg-gray-300 mb-5" />
           <div className="flex justify-between mb-9">
             <span className="text-base font-semibold text-diose-black">Total</span>

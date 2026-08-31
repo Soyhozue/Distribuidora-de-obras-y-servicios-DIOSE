@@ -880,7 +880,7 @@ export default function SettingsManager({
                   <input
                     value={promoForm.link}
                     onChange={(e) => setPromoForm((f) => ({ ...f, link: e.target.value }))}
-                    placeholder="Enlace al hacer clic, ej: /catalogo?categoria=herramientas"
+                    placeholder="Enlace al hacer clic, ej: /catalogo o /catalogo?categoria=NOMBRE DE LA CATEGORÍA"
                     className="border border-diose-border px-3 py-2 text-sm outline-none"
                   />
                 </div>

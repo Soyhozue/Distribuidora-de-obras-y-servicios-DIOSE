@@ -12,6 +12,7 @@ export default function ProductPurchasePanel({ product, whatsapp }: { product: P
   const add = useCartStore((s) => s.add);
   const showToast = useToastStore((s) => s.show);
   const agotado = product.stockStatus === "AGOTADO";
+  const maxQty = Math.max(1, product.stock);
 
   return (
     <>
@@ -27,8 +28,9 @@ export default function ProductPurchasePanel({ product, whatsapp }: { product: P
             {quantity}
           </div>
           <button
-            onClick={() => setQuantity((q) => q + 1)}
-            className="w-10 h-11 flex items-center justify-center cursor-pointer border-l border-diose-border text-lg text-gray-700 font-light"
+            onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
+            disabled={quantity >= maxQty}
+            className="w-10 h-11 flex items-center justify-center cursor-pointer border-l border-diose-border text-lg text-gray-700 font-light disabled:opacity-30 disabled:cursor-not-allowed"
           >
             +
           </button>

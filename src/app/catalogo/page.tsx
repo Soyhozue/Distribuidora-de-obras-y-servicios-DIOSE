@@ -6,11 +6,6 @@ import { getAllProducts, getBrandsWithCounts, getCategoriesWithCounts, getCombos
 
 export const dynamic = "force-dynamic";
 
-const CATEGORY_SLUGS: Record<string, string> = {
-  herramientas: "Herramientas",
-  materiales: "Materiales",
-};
-
 export default async function CatalogoPage({
   searchParams,
 }: {
@@ -24,7 +19,7 @@ export default async function CatalogoPage({
     searchParams,
   ]);
 
-  const initialCategory = params.categoria ? CATEGORY_SLUGS[params.categoria] ?? null : null;
+  const initialCategory = params.categoria || null;
   const initialQuery = params.q ?? "";
 
   return (

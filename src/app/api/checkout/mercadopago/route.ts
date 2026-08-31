@@ -52,20 +52,18 @@ export async function POST(request: Request) {
           email: body.customerEmail,
           ...(body.customerPhone ? { phone: { number: body.customerPhone } } : {}),
         },
+        // A single line for the order's real total (as computed and stored
+        // server-side, discount included) — never rebuild the charge from
+        // client-supplied item prices, or a coupon discount silently
+        // wouldn't reach what Mercado Pago actually collects.
         items: [
-          ...body.items.map((item) => {
-            const p = dbProducts.find((x) => x.id === item.productId);
-            return {
-              id: item.productId,
-              title: p?.name ?? "Producto",
-              quantity: item.quantity,
-              unit_price: Number(item.unitPrice),
-              currency_id: "MXN",
-            };
-          }),
-          ...(Number(order.shipping) > 0
-            ? [{ id: "envio", title: "Envío", quantity: 1, unit_price: Number(order.shipping), currency_id: "MXN" }]
-            : []),
+          {
+            id: order.id,
+            title: `Pedido DIOSE #${order.number}`,
+            quantity: 1,
+            unit_price: Number(order.total),
+            currency_id: "MXN",
+          },
         ],
         back_urls: {
           success: `${BASE_URL}/pedido-confirmado?n=${order.number}&mp=ok`,
