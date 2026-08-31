@@ -16,11 +16,18 @@ export async function POST(request: Request) {
   if (!file.type.startsWith("image/")) {
     return NextResponse.json({ error: "El archivo debe ser una imagen" }, { status: 400 });
   }
+  const MAX_SIZE = 8 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    return NextResponse.json({ error: "La imagen no puede pesar más de 8 MB" }, { status: 400 });
+  }
 
-  const blob = await put(`diose/${Date.now()}-${file.name}`, file, {
-    access: "public",
-    addRandomSuffix: true,
-  });
-
-  return NextResponse.json({ url: blob.url });
+  try {
+    const blob = await put(`diose/${Date.now()}-${file.name}`, file, {
+      access: "public",
+      addRandomSuffix: true,
+    });
+    return NextResponse.json({ url: blob.url });
+  } catch {
+    return NextResponse.json({ error: "No se pudo subir la imagen. Intenta de nuevo." }, { status: 500 });
+  }
 }

@@ -106,12 +106,40 @@ export type ProductInput = {
   images?: string[];
 };
 
+function validateProductInput(input: ProductInput) {
+  if (!input.name?.trim()) throw new Error("El nombre es obligatorio.");
+  if (!input.sku?.trim()) throw new Error("El SKU es obligatorio.");
+  if (!input.categoryId) throw new Error("Selecciona una categoría.");
+  if (!input.brandId) throw new Error("Selecciona una marca.");
+  if (!Number.isFinite(input.price) || input.price <= 0) throw new Error("El precio debe ser mayor a 0.");
+  if (!Number.isFinite(input.stock) || input.stock < 0) throw new Error("El stock no puede ser negativo.");
+  if (input.weight != null && (!Number.isFinite(input.weight) || input.weight < 0)) {
+    throw new Error("El peso no puede ser negativo.");
+  }
+}
+
 export async function createProduct(input: ProductInput) {
-  return prisma.product.create({ data: input });
+  validateProductInput(input);
+  try {
+    return await prisma.product.create({ data: input });
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2002") {
+      throw new Error("Ya existe un producto con ese SKU.");
+    }
+    throw err;
+  }
 }
 
 export async function updateProduct(id: string, input: ProductInput) {
-  return prisma.product.update({ where: { id }, data: input });
+  validateProductInput(input);
+  try {
+    return await prisma.product.update({ where: { id }, data: input });
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2002") {
+      throw new Error("Ya existe un producto con ese SKU.");
+    }
+    throw err;
+  }
 }
 
 export async function updateProductStock(id: string, stock: number) {
@@ -120,7 +148,12 @@ export async function updateProductStock(id: string, stock: number) {
 }
 
 export async function deleteProduct(id: string) {
-  await prisma.orderItem.deleteMany({ where: { productId: id } });
+  const hasOrderHistory = await prisma.orderItem.findFirst({ where: { productId: id } });
+  if (hasOrderHistory) {
+    throw new Error(
+      "No se puede eliminar: este producto aparece en pedidos ya realizados. Márcalo como \"Agotado\" en vez de eliminarlo para conservar el historial de esos pedidos."
+    );
+  }
   await prisma.comboItem.deleteMany({ where: { productId: id } });
   await prisma.product.delete({ where: { id } });
 }

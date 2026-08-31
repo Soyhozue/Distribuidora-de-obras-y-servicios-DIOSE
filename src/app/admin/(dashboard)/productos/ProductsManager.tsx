@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProductIcon } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useToastStore } from "@/store/toastStore";
 import type { Product } from "@/data/products";
 import type { ManagedProduct } from "@/lib/data";
 
@@ -110,8 +111,8 @@ async function uploadImage(file: File): Promise<string> {
   const body = new FormData();
   body.append("file", file);
   const res = await fetch("/api/upload", { method: "POST", body });
-  if (!res.ok) throw new Error("Error al subir la imagen");
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? "Error al subir la imagen");
   return data.url as string;
 }
 
@@ -125,6 +126,7 @@ export default function ProductsManager({
   brands: Option[];
 }) {
   const router = useRouter();
+  const showToast = useToastStore((s) => s.show);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [brandFilter, setBrandFilter] = useState<string>("");
@@ -132,8 +134,12 @@ export default function ProductsManager({
   const [showFilters, setShowFilters] = useState<"category" | "brand" | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(categories, brands));
+  const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -151,6 +157,7 @@ export default function ProductsManager({
 
   function openCreate() {
     setForm(emptyForm(categories, brands));
+    setFormError("");
     setModalOpen(true);
   }
 
@@ -174,6 +181,7 @@ export default function ProductsManager({
       featured: !!p.featured,
       images: p.images ?? [],
     });
+    setFormError("");
     setModalOpen(true);
   }
 
@@ -181,8 +189,16 @@ export default function ProductsManager({
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
-      const uploaded = await Promise.all(Array.from(files).map(uploadImage));
-      setForm((f) => ({ ...f, images: [...f.images, ...uploaded].slice(0, 6) }));
+      const results = await Promise.allSettled(Array.from(files).map(uploadImage));
+      const uploaded = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
+      const failed = results.filter((r) => r.status === "rejected");
+      if (uploaded.length > 0) {
+        setForm((f) => ({ ...f, images: [...f.images, ...uploaded].slice(0, 6) }));
+      }
+      if (failed.length > 0) {
+        const reason = (failed[0] as PromiseRejectedResult).reason;
+        showToast(`${failed.length} imagen(es) no se pudieron subir: ${reason instanceof Error ? reason.message : "error desconocido"}`, "error");
+      }
     } finally {
       setUploading(false);
     }
@@ -193,6 +209,11 @@ export default function ProductsManager({
   }
 
   async function save() {
+    setFormError("");
+    if (!Number(form.price) || Number(form.price) <= 0) {
+      setFormError("El precio debe ser mayor a 0.");
+      return;
+    }
     setSaving(true);
     try {
       const fullDescription = serializeDescription(form.description, form.benefits, form.applications, form.characteristics);
@@ -210,19 +231,23 @@ export default function ProductsManager({
         featured: form.featured,
         images: form.images,
       };
-      if (form.id) {
-        await fetch(`/api/products/${form.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        await fetch("/api/products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+      const res = form.id
+        ? await fetch(`/api/products/${form.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        : await fetch("/api/products", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFormError(data.error ?? "No se pudo guardar el producto.");
+        return;
       }
+      showToast(form.id ? "Producto actualizado" : "Producto creado", "success");
       setModalOpen(false);
       router.refresh();
     } finally {
@@ -233,7 +258,56 @@ export default function ProductsManager({
   const [confirmProductId, setConfirmProductId] = useState<string | null>(null);
 
   async function removeProduct(id: string) {
-    await fetch(`/api/products/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.error ?? "No se pudo eliminar el producto.", "error");
+      return;
+    }
+    showToast("Producto eliminado", "success");
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    router.refresh();
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectPage() {
+    const pageIds = pageItems.map((p) => p.id);
+    const allSelected = pageIds.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+
+  async function bulkDelete() {
+    setBulkDeleting(true);
+    const ids = [...selectedIds];
+    let failCount = 0;
+    for (const id of ids) {
+      const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+      if (!res.ok) failCount++;
+    }
+    setBulkDeleting(false);
+    setSelectedIds(new Set());
+    if (failCount > 0) {
+      showToast(`${ids.length - failCount} eliminados, ${failCount} no se pudieron eliminar (tienen pedidos asociados).`, "error");
+    } else {
+      showToast(`${ids.length} producto(s) eliminado(s)`, "success");
+    }
     router.refresh();
   }
 
@@ -338,11 +412,35 @@ export default function ProductsManager({
         </div>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="bg-diose-black px-9 py-2.5 flex items-center gap-4 shrink-0">
+          <span className="text-xs text-white/70">{selectedIds.size} seleccionado(s)</span>
+          <button
+            onClick={() => setConfirmBulkDelete(true)}
+            disabled={bulkDeleting}
+            className="text-[11px] font-semibold uppercase tracking-[0.06em] text-diose-danger bg-white px-3 py-1.5 cursor-pointer disabled:opacity-50"
+          >
+            {bulkDeleting ? "Eliminando..." : "Eliminar seleccionados"}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-[11px] text-white/50 underline cursor-pointer ml-auto"
+          >
+            Cancelar selección
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 p-9 pt-5 overflow-hidden">
         <div className="bg-white border border-diose-border overflow-hidden">
           <div className="min-w-[820px] overflow-x-auto">
             <div className="grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_90px] px-4 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black items-center gap-2">
-              <div className="w-3.5 h-3.5 border-[1.5px] border-gray-300" />
+              <input
+                type="checkbox"
+                className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
+                checked={pageItems.length > 0 && pageItems.every((p) => selectedIds.has(p.id))}
+                onChange={toggleSelectPage}
+              />
               {["Img", "Nombre / SKU", "Categoría", "Marca", "Precio", "Stock", "Estado", "Acciones"].map((h) => (
                 <span key={h} className="text-[9px] font-semibold tracking-[0.12em] uppercase text-gray-400">
                   {h}
@@ -357,7 +455,12 @@ export default function ProductsManager({
                   p.stockStatus === "AGOTADO" ? "opacity-70" : ""
                 }`}
               >
-                <div className="w-3.5 h-3.5 border-[1.5px] border-gray-300" />
+                <input
+                  type="checkbox"
+                  className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
+                  checked={selectedIds.has(p.id)}
+                  onChange={() => toggleSelect(p.id)}
+                />
                 <div
                   className="w-10 h-10 bg-[#F0F0F0] flex items-center justify-center shrink-0 overflow-hidden"
                   style={{ backgroundImage: "radial-gradient(#DCDCDC 1px,transparent 1px)", backgroundSize: "10px 10px" }}
@@ -481,6 +584,8 @@ export default function ProductsManager({
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Precio</span>
                 <input
                   type="number"
+                  min="0.01"
+                  step="0.01"
                   value={form.price}
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
                   className="border border-diose-border px-3 py-2 text-sm outline-none"
@@ -490,6 +595,8 @@ export default function ProductsManager({
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Stock</span>
                 <input
                   type="number"
+                  min="0"
+                  step="1"
                   value={form.stock}
                   onChange={(e) => setForm({ ...form, stock: e.target.value })}
                   className="border border-diose-border px-3 py-2 text-sm outline-none"
@@ -617,6 +724,7 @@ export default function ProductsManager({
                 </div>
               </div>
             </div>
+            {formError && <p className="text-xs text-diose-danger mt-4">{formError}</p>}
             <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={() => setModalOpen(false)}
@@ -640,6 +748,13 @@ export default function ProductsManager({
           message="¿Eliminar este producto? No se puede deshacer."
           onConfirm={() => { const id = confirmProductId; setConfirmProductId(null); removeProduct(id); }}
           onCancel={() => setConfirmProductId(null)}
+        />
+      )}
+      {confirmBulkDelete && (
+        <ConfirmModal
+          message={`¿Eliminar ${selectedIds.size} producto(s) seleccionado(s)? No se puede deshacer. Los que tengan pedidos asociados no se eliminarán.`}
+          onConfirm={() => { setConfirmBulkDelete(false); bulkDelete(); }}
+          onCancel={() => setConfirmBulkDelete(false)}
         />
       )}
     </>
