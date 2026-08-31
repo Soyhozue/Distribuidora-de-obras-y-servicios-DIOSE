@@ -55,6 +55,9 @@ export default async function TerminosPage() {
             <h2 className="font-semibold text-diose-black mb-2">1. Quiénes somos</h2>
             <p>Este sitio es operado por <strong>DIOSE</strong> (Distribuidora de Obras y Servicios Especializados).</p>
             <dl className="flex flex-col gap-1 text-[13px] mt-1">
+              <div><dt className="inline font-medium text-diose-black">Titular: </dt><dd className="inline">Marine Gabriela Torres Muñiz</dd></div>
+              <div><dt className="inline font-medium text-diose-black">RFC: </dt><dd className="inline">TOMM770929764</dd></div>
+              <div><dt className="inline font-medium text-diose-black">Régimen fiscal: </dt><dd className="inline">612 – Personas Físicas con Actividades Empresariales y Profesionales</dd></div>
               <div><dt className="inline font-medium text-diose-black">Domicilio: </dt><dd className="inline">{settings.address}</dd></div>
               <div><dt className="inline font-medium text-diose-black">Correo: </dt><dd className="inline">{settings.email}</dd></div>
               <div><dt className="inline font-medium text-diose-black">Teléfono: </dt><dd className="inline">{settings.phone}</dd></div>
@@ -124,7 +127,10 @@ export default async function TerminosPage() {
           <section id="facturacion">
             <h2 className="font-semibold text-diose-black mb-2">9. Facturación</h2>
             <p>
-              Si necesitas factura fiscal (CFDI) por tu compra, escríbenos a <strong>{settings.email}</strong> con tu número de pedido y datos fiscales; te confirmaremos el plazo y procedimiento disponibles.
+              Sí emitimos factura fiscal (CFDI) para tu compra. Si la necesitas, escríbenos a{" "}
+              <strong>{settings.email}</strong> con tu número de pedido y tus datos fiscales: RFC, nombre o razón
+              social, código postal fiscal, régimen fiscal y uso de CFDI. Normalmente la recibirás en un plazo de
+              una hora o menos.
             </p>
           </section>
 

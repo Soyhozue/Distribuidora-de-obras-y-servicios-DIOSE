@@ -51,6 +51,8 @@ export default async function PrivacidadPage() {
             <h2 className="font-semibold text-diose-black mb-2">1. Responsable del tratamiento</h2>
             <p>DIOSE es responsable del tratamiento de tus datos personales recabados a través de este sitio.</p>
             <dl className="flex flex-col gap-1 text-[13px] mt-1">
+              <div><dt className="inline font-medium text-diose-black">Titular: </dt><dd className="inline">Marine Gabriela Torres Muñiz</dd></div>
+              <div><dt className="inline font-medium text-diose-black">RFC: </dt><dd className="inline">TOMM770929764</dd></div>
               <div><dt className="inline font-medium text-diose-black">Domicilio: </dt><dd className="inline">{settings.address}</dd></div>
               <div><dt className="inline font-medium text-diose-black">Correo: </dt><dd className="inline">{settings.email}</dd></div>
               <div><dt className="inline font-medium text-diose-black">Teléfono: </dt><dd className="inline">{settings.phone}</dd></div>
