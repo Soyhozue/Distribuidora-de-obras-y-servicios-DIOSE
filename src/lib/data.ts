@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { randomUUID } from "crypto";
+import { randomUUID, randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import type { Product } from "@/data/products";
 import type { ProductIconKey } from "@/components/icons";
@@ -366,20 +366,88 @@ export async function registerUser(input: { name: string; email: string; phone?:
   });
 }
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
+
+function lockoutMessage(lockedUntil: Date) {
+  const minutesLeft = Math.max(1, Math.ceil((lockedUntil.getTime() - Date.now()) / 60_000));
+  return `Demasiados intentos fallidos. Intenta de nuevo en ${minutesLeft} minuto${minutesLeft === 1 ? "" : "s"}.`;
+}
+
 export async function verifyUserCredentials(email: string, password: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return null;
+
+  if (user.lockedUntil && user.lockedUntil > new Date()) {
+    throw new Error(lockoutMessage(user.lockedUntil));
+  }
+
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return null;
+  if (!valid) {
+    const attempts = user.failedLoginAttempts + 1;
+    const locked = attempts >= MAX_LOGIN_ATTEMPTS;
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: locked ? 0 : attempts,
+        lockedUntil: locked ? new Date(Date.now() + LOCKOUT_MINUTES * 60_000) : null,
+      },
+    });
+    if (locked) throw new Error(lockoutMessage(new Date(Date.now() + LOCKOUT_MINUTES * 60_000)));
+    return null;
+  }
+
+  if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+    await prisma.user.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, lockedUntil: null } });
+  }
   return user;
 }
 
 export async function verifyAdminCredentials(email: string, password: string) {
   const admin = await prisma.admin.findUnique({ where: { email } });
   if (!admin) return null;
+
+  if (admin.lockedUntil && admin.lockedUntil > new Date()) {
+    throw new Error(lockoutMessage(admin.lockedUntil));
+  }
+
   const valid = await bcrypt.compare(password, admin.password);
-  if (!valid) return null;
+  if (!valid) {
+    const attempts = admin.failedLoginAttempts + 1;
+    const locked = attempts >= MAX_LOGIN_ATTEMPTS;
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: {
+        failedLoginAttempts: locked ? 0 : attempts,
+        lockedUntil: locked ? new Date(Date.now() + LOCKOUT_MINUTES * 60_000) : null,
+      },
+    });
+    if (locked) throw new Error(lockoutMessage(new Date(Date.now() + LOCKOUT_MINUTES * 60_000)));
+    return null;
+  }
+
+  if (admin.failedLoginAttempts > 0 || admin.lockedUntil) {
+    await prisma.admin.update({ where: { id: admin.id }, data: { failedLoginAttempts: 0, lockedUntil: null } });
+  }
   return admin;
+}
+
+export async function createEmailVerification(userId: string) {
+  const token = randomBytes(32).toString("hex");
+  await prisma.emailVerification.create({
+    data: { userId, token, expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000) },
+  });
+  return token;
+}
+
+export async function verifyEmailToken(token: string) {
+  const record = await prisma.emailVerification.findUnique({ where: { token } });
+  if (!record || record.used || record.expiresAt < new Date()) return false;
+  await Promise.all([
+    prisma.user.update({ where: { id: record.userId }, data: { emailVerified: true } }),
+    prisma.emailVerification.update({ where: { id: record.id }, data: { used: true } }),
+  ]);
+  return true;
 }
 
 export async function getUserById(id: string) {

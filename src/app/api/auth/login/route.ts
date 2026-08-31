@@ -7,10 +7,14 @@ export async function POST(request: Request) {
   if (!body.email || !body.password) {
     return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
   }
-  const user = await verifyUserCredentials(body.email, body.password);
-  if (!user) {
-    return NextResponse.json({ error: "Correo o contraseña incorrectos" }, { status: 401 });
+  try {
+    const user = await verifyUserCredentials(body.email, body.password);
+    if (!user) {
+      return NextResponse.json({ error: "Correo o contraseña incorrectos" }, { status: 401 });
+    }
+    await createSession(user.id);
+    return NextResponse.json({ id: user.id, name: user.name, email: user.email });
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 429 });
   }
-  await createSession(user.id);
-  return NextResponse.json({ id: user.id, name: user.name, email: user.email });
 }

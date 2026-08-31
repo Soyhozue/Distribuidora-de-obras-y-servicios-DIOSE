@@ -22,7 +22,7 @@ export default async function AccountPage() {
       const [orders, addresses] = await Promise.all([getUserOrders(userId), getUserAddresses(userId)]);
       content = (
         <AccountClient
-          user={{ name: user.name, email: user.email, phone: user.phone }}
+          user={{ name: user.name, email: user.email, phone: user.phone, emailVerified: user.emailVerified }}
           orders={orders}
           addresses={addresses}
         />

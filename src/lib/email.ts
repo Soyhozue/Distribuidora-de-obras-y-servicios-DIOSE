@@ -99,3 +99,30 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
 </html>`,
   });
 }
+
+export async function sendVerificationEmail(email: string, name: string, token: string) {
+  if (!process.env.RESEND_API_KEY) return;
+  const link = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://diose.vercel.app"}/verificar?token=${token}`;
+  await getResend().emails.send({
+    from: FROM,
+    to: email,
+    subject: "DIOSE – Confirma tu correo",
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px;">
+  <div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;">
+    <div style="background:#0A0A0A;padding:24px 32px;text-align:center;">
+      <span style="font-size:22px;font-weight:bold;color:#fff;letter-spacing:6px;">DIOSE</span>
+    </div>
+    <div style="padding:32px;">
+      <h2 style="font-size:18px;font-weight:600;margin:0 0 8px;">¡Hola, ${name}!</h2>
+      <p style="color:#666;font-size:14px;margin:0 0 24px;">Gracias por crear una cuenta en DIOSE. Confirma que este correo es tuyo (válido por 48 horas):</p>
+      <a href="${link}" style="display:inline-block;background:#0A0A0A;color:#fff;padding:14px 32px;font-size:13px;font-weight:600;letter-spacing:2px;text-decoration:none;text-transform:uppercase;">Confirmar correo</a>
+      <p style="color:#aaa;font-size:12px;margin:24px 0 0;">Si tú no creaste esta cuenta, ignora este correo.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+  });
+}

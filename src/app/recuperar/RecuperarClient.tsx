@@ -29,7 +29,7 @@ export default function RecuperarClient({ token }: { token?: string }) {
 
   async function doReset() {
     if (password !== confirm) { setError("Las contraseñas no coinciden"); return; }
-    if (password.length < 6) { setError("Mínimo 6 caracteres"); return; }
+    if (password.length < 8) { setError("Mínimo 8 caracteres"); return; }
     setLoading(true);
     setError("");
     try {

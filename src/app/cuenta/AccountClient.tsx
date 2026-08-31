@@ -24,7 +24,7 @@ type Address = {
   isDefault: boolean;
 };
 
-type UserInfo = { name: string; email: string; phone: string | null };
+type UserInfo = { name: string; email: string; phone: string | null; emailVerified: boolean };
 
 function formatPrice(price: number) {
   return `$${price.toLocaleString("es-MX")}`;
@@ -78,6 +78,17 @@ export default function AccountClient({
   const [addrList, setAddrList] = useState<Address[]>(addresses);
   const [showForm, setShowForm] = useState(false);
   const [addrForm, setAddrForm] = useState(EMPTY_ADDR);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+
+  async function resendVerification() {
+    setResendState("sending");
+    try {
+      await fetch("/api/auth/resend-verification", { method: "POST" });
+      setResendState("sent");
+    } catch {
+      setResendState("idle");
+    }
+  }
   const [addrSaving, setAddrSaving] = useState(false);
   const [addrError, setAddrError] = useState("");
 
@@ -158,6 +169,24 @@ export default function AccountClient({
       </aside>
 
       <main className="flex-1 p-6 md:px-13 md:py-9 overflow-x-auto">
+        {!user.emailVerified && (
+          <div className="flex flex-wrap items-center gap-3 bg-diose-amber/10 border border-diose-amber px-4 py-3 mb-7 min-w-[500px]">
+            <span className="text-[13px] text-diose-black">
+              Todavía no confirmas tu correo ({user.email}).
+            </span>
+            {resendState === "sent" ? (
+              <span className="text-[12px] text-green-700 ml-auto">Enlace reenviado, revisa tu bandeja.</span>
+            ) : (
+              <button
+                onClick={resendVerification}
+                disabled={resendState === "sending"}
+                className="ml-auto text-[11px] font-semibold uppercase tracking-[0.06em] text-diose-black underline cursor-pointer disabled:opacity-50"
+              >
+                {resendState === "sending" ? "Enviando..." : "Reenviar correo"}
+              </button>
+            )}
+          </div>
+        )}
         {tab === "Mis pedidos" && (
           <>
             <div className="mb-7">
