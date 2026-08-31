@@ -49,6 +49,7 @@ export default function CheckoutPage() {
   const [state, setState] = useState("Chihuahua");
   const [zip, setZip] = useState("");
   const [payment, setPayment] = useState("transferencia");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -120,6 +121,10 @@ export default function CheckoutPage() {
     }
     if (lines.length === 0) {
       setError("Tu carrito está vacío.");
+      return;
+    }
+    if (!acceptedTerms) {
+      setError("Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar.");
       return;
     }
     setSubmitting(true);
@@ -337,9 +342,28 @@ export default function CheckoutPage() {
             <span className="text-base font-semibold text-diose-black">Total</span>
             <span className="text-[22px] font-semibold text-diose-black">{formatPrice(total)}</span>
           </div>
+          <label className="flex items-start gap-2.5 mb-5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-diose-black cursor-pointer"
+            />
+            <span className="text-[12px] text-gray-500 leading-relaxed">
+              He leído y acepto los{" "}
+              <Link href="/terminos" target="_blank" className="underline text-diose-black hover:text-diose-amber">
+                Términos y Condiciones
+              </Link>{" "}
+              y el{" "}
+              <Link href="/privacidad" target="_blank" className="underline text-diose-black hover:text-diose-amber">
+                Aviso de Privacidad
+              </Link>.
+            </span>
+          </label>
+
           {error && <p className="text-xs text-diose-danger mb-3">{error}</p>}
           <button
-            disabled={lines.length === 0 || submitting}
+            disabled={lines.length === 0 || submitting || !acceptedTerms}
             onClick={confirmOrder}
             className="w-full bg-diose-black hover:bg-diose-amber text-white p-4 text-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >

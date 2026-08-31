@@ -8,6 +8,7 @@ export default function AuthForms() {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,6 +18,10 @@ export default function AuthForms() {
 
   async function submit() {
     setError("");
+    if (mode === "register" && !acceptedTerms) {
+      setError("Debes aceptar los Términos y Condiciones y el Aviso de Privacidad.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/auth/${mode === "login" ? "login" : "register"}`, {
@@ -97,11 +102,32 @@ export default function AuthForms() {
             </div>
           )}
 
+          {mode === "register" && (
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 shrink-0 accent-diose-black cursor-pointer"
+              />
+              <span className="text-[11px] text-gray-500 leading-relaxed">
+                Acepto los{" "}
+                <Link href="/terminos" target="_blank" className="underline text-diose-black hover:text-diose-amber">
+                  Términos y Condiciones
+                </Link>{" "}
+                y el{" "}
+                <Link href="/privacidad" target="_blank" className="underline text-diose-black hover:text-diose-amber">
+                  Aviso de Privacidad
+                </Link>.
+              </span>
+            </label>
+          )}
+
           {error && <div className="text-xs text-diose-danger">{error}</div>}
 
           <button
             onClick={submit}
-            disabled={loading}
+            disabled={loading || (mode === "register" && !acceptedTerms)}
             className="bg-diose-black hover:bg-diose-amber text-white py-3 text-[13px] font-semibold tracking-[0.1em] uppercase cursor-pointer transition-colors disabled:opacity-50 mt-2"
           >
             {loading ? "Cargando..." : mode === "login" ? "Iniciar sesión" : "Crear cuenta"}

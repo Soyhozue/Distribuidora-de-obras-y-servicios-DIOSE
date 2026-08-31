@@ -70,6 +70,10 @@ export default function ContactForm({ settings }: { settings: SiteSettings }) {
       >
         {sending ? "Enviando..." : sent ? "Mensaje enviado ✓" : "Enviar mensaje"}
       </button>
+      <p className="text-[11px] text-gray-400 mt-3">
+        Al enviar este formulario, tus datos se tratan conforme a nuestro{" "}
+        <a href="/privacidad" className="underline hover:text-diose-black">Aviso de Privacidad</a>.
+      </p>
 
       <div className="mt-7 pt-7 border-t border-gray-100">
         <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-4">

@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import type { Product } from "@/data/products";
 import type { ProductIconKey } from "@/components/icons";
@@ -200,18 +201,25 @@ export async function createOrder(input: CreateOrderInput, sessionUserId?: strin
     });
     userId = sessionUserId;
   } else {
-    // Guest checkout — upsert by email
-    const user = await prisma.user.upsert({
-      where: { email: input.customerEmail },
-      update: { name: input.customerName, phone: input.customerPhone },
-      create: {
-        name: input.customerName,
-        email: input.customerEmail,
-        phone: input.customerPhone,
-        password: "guest-checkout",
-      },
-    });
-    userId = user.id;
+    // Guest checkout — reuse the account if this email already exists, but
+    // never overwrite an existing user's stored name/phone from an
+    // unauthenticated request (anyone could type someone else's email).
+    const existing = await prisma.user.findUnique({ where: { email: input.customerEmail } });
+    if (existing) {
+      userId = existing.id;
+    } else {
+      // Unguessable per-account password; guests never log in with it directly.
+      const guestPassword = await bcrypt.hash(randomUUID(), 10);
+      const user = await prisma.user.create({
+        data: {
+          name: input.customerName,
+          email: input.customerEmail,
+          phone: input.customerPhone,
+          password: guestPassword,
+        },
+      });
+      userId = user.id;
+    }
   }
 
   const address = await prisma.address.create({

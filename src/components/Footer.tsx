@@ -79,12 +79,15 @@ export default async function Footer() {
         <span className="text-[11px] text-white/30 tracking-[0.04em]">
           © {new Date().getFullYear()} DIOSE — Ciudad Juárez, Chihuahua
         </span>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/privacidad" className="text-[11px] text-white/25 hover:text-white/60 transition-colors">
             Aviso de privacidad
           </Link>
           <Link href="/terminos" className="text-[11px] text-white/25 hover:text-white/60 transition-colors">
             Términos y condiciones
+          </Link>
+          <Link href="/devoluciones" className="text-[11px] text-white/25 hover:text-white/60 transition-colors">
+            Envíos y devoluciones
           </Link>
         </div>
       </div>
