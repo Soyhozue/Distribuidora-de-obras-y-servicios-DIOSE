@@ -7,7 +7,7 @@ import { getSiteSettings } from "@/lib/data";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "Nosotros | DIOSE",
+  title: "Nosotros",
   description: "Conoce la historia de DIOSE, distribuidora de materiales de construcción y herramientas en Ciudad Juárez.",
 };
 

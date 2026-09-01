@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const product = await getProductById(id);
   if (!product) return {};
   return {
-    title: `${product.name} | DIOSE`,
+    title: product.name,
     description: product.description ?? `Compra ${product.name} en DIOSE. ${product.brand} · ${product.category}`,
     openGraph: {
       title: product.name,
