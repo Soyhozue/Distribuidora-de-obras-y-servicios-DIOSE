@@ -16,7 +16,7 @@ type Order = {
   items: { id: string; quantity: number }[];
 };
 
-export default function PrintGuia({ order }: { order: Order }) {
+export default function PrintGuia({ order, sender }: { order: Order; sender: { address: string; phone: string } }) {
   useEffect(() => { window.print(); }, []);
 
   const totalPieces = order.items.reduce((s, i) => s + i.quantity, 0);
@@ -92,11 +92,8 @@ export default function PrintGuia({ order }: { order: Order }) {
             </div>
             <div style={{ fontSize: "10px", fontWeight: "bold", marginBottom: "2px" }}>DIOSE</div>
             <div style={{ fontSize: "8.5px", color: "#444", lineHeight: "1.6" }}>
-              Av. de las Torres 1234<br />
-              Col. Industrial<br />
-              Ciudad Juárez, Chih.<br />
-              CP 32320<br />
-              Tel: (656) 000-0000
+              {sender.address}<br />
+              Tel: {sender.phone || "—"}
             </div>
           </div>
 

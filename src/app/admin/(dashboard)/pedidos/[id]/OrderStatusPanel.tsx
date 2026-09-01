@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { WhatsAppIcon } from "@/components/icons";
-import ConfirmModal from "@/components/ConfirmModal";
+import { useToastStore } from "@/store/toastStore";
 
 const STATUSES = [
   { key: "PENDIENTE", label: "Pendiente" },
@@ -37,20 +37,26 @@ export default function OrderStatusPanel({
   orderNumber?: number;
 }) {
   const router = useRouter();
+  const showToast = useToastStore((s) => s.show);
   const [status, setStatus] = useState(initialStatus);
   const [notes, setNotes] = useState(initialNotes);
   const [notify, setNotify] = useState(initialNotify);
   const [saving, setSaving] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   async function save() {
     setSaving(true);
     try {
-      await fetch(`/api/orders/${orderId}`, {
+      const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, internalNotes: notes, notifyWhatsapp: notify }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error ?? "No se pudo guardar el pedido.", "error");
+        return;
+      }
+      showToast("Pedido actualizado", "success");
       router.refresh();
 
       // Abrir WhatsApp con mensaje pre-llenado si notify está activado
@@ -64,11 +70,6 @@ export default function OrderStatusPanel({
     } finally {
       setSaving(false);
     }
-  }
-
-  async function removeOrder() {
-    await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
-    router.push("/admin/pedidos");
   }
 
   return (
@@ -142,20 +143,7 @@ export default function OrderStatusPanel({
             {saving ? "Guardando..." : "Guardar cambios"}
           </span>
         </button>
-        <button
-          onClick={() => setConfirmDelete(true)}
-          className="border border-diose-border-light p-3 text-center cursor-pointer flex items-center justify-center gap-1.5 hover:bg-red-50"
-        >
-          <span className="text-xs text-diose-danger tracking-[0.04em]">Eliminar pedido</span>
-        </button>
       </div>
-      {confirmDelete && (
-        <ConfirmModal
-          message="¿Eliminar este pedido? No se puede deshacer."
-          onConfirm={() => { setConfirmDelete(false); removeOrder(); }}
-          onCancel={() => setConfirmDelete(false)}
-        />
-      )}
     </div>
   );
 }

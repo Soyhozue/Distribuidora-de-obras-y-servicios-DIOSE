@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getOrderById } from "@/lib/data";
+import { getOrderById, getSiteSettings } from "@/lib/data";
 import PrintGuia from "./PrintGuia";
 import { getAdminSessionId } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -10,7 +10,12 @@ export default async function GuiaPage({ params }: { params: Promise<{ id: strin
   const adminId = await getAdminSessionId();
   if (!adminId) redirect("/admin/login");
   const { id } = await params;
-  const order = await getOrderById(id);
+  const [order, settings] = await Promise.all([getOrderById(id), getSiteSettings()]);
   if (!order) notFound();
-  return <PrintGuia order={order} />;
+  return (
+    <PrintGuia
+      order={order}
+      sender={{ address: settings.address, phone: settings.phone }}
+    />
+  );
 }

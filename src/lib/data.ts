@@ -584,10 +584,15 @@ export async function deleteCombo(id: string) {
   await prisma.combo.delete({ where: { id } });
 }
 
+const VALID_ORDER_STATUSES = ["PENDIENTE", "CONFIRMADO", "EN_CAMINO", "ENTREGADO", "CANCELADO"];
+
 export async function updateOrderStatus(
   id: string,
   data: { status?: string; internalNotes?: string; notifyWhatsapp?: boolean }
 ) {
+  if (data.status && !VALID_ORDER_STATUSES.includes(data.status)) {
+    throw new Error("Estado de pedido inválido.");
+  }
   return prisma.order.update({
     where: { id },
     data: {
@@ -596,11 +601,6 @@ export async function updateOrderStatus(
       notifyWhatsapp: data.notifyWhatsapp,
     },
   });
-}
-
-export async function deleteOrder(id: string) {
-  await prisma.orderItem.deleteMany({ where: { orderId: id } });
-  await prisma.order.delete({ where: { id } });
 }
 
 export async function getSiteSettings() {
