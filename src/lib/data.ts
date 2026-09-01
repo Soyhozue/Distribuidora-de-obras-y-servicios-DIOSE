@@ -152,7 +152,10 @@ export async function updateProduct(id: string, input: ProductInput) {
 }
 
 export async function updateProductStock(id: string, stock: number) {
-  const stockStatus = stock <= 0 ? "AGOTADO" : stock <= 10 ? "STOCK_BAJO" : "EN_STOCK";
+  if (!Number.isFinite(stock) || stock < 0) {
+    throw new Error("El stock no puede ser negativo.");
+  }
+  const stockStatus = stock === 0 ? "AGOTADO" : stock <= 10 ? "STOCK_BAJO" : "EN_STOCK";
   return prisma.product.update({ where: { id }, data: { stock, stockStatus } });
 }
 
@@ -353,6 +356,22 @@ export async function getOrders() {
     statusLabel: statusLabel(o.status),
     wantsInvoice: o.wantsInvoice,
   }));
+}
+
+export async function getDashboardStats() {
+  const [totalOrders, pendingOrders, revenue] = await Promise.all([
+    prisma.order.count(),
+    prisma.order.count({ where: { status: "PENDIENTE" } }),
+    prisma.order.aggregate({
+      where: { status: { not: "CANCELADO" } },
+      _sum: { total: true },
+    }),
+  ]);
+  return {
+    totalOrders,
+    pendingOrders,
+    revenue: Number(revenue._sum.total ?? 0),
+  };
 }
 
 export async function getOrderById(id: string) {
@@ -711,6 +730,21 @@ export async function getCustomers() {
     phone: u.phone ?? "",
     createdAt: u.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }),
     orderCount: u.orders.length,
-    totalSpent: u.orders.reduce((sum, o) => sum + Number(o.total.toString()), 0),
+    totalSpent: u.orders
+      .filter((o) => o.status !== "CANCELADO")
+      .reduce((sum, o) => sum + Number(o.total.toString()), 0),
   }));
+}
+
+export async function deleteCustomer(id: string) {
+  const hasOrders = await prisma.order.findFirst({ where: { userId: id } });
+  if (hasOrders) {
+    throw new Error(
+      "No se puede eliminar: este cliente tiene pedidos registrados. Eliminarlo borraría ese historial de compras y facturación."
+    );
+  }
+  await prisma.address.deleteMany({ where: { userId: id } });
+  await prisma.passwordReset.deleteMany({ where: { userId: id } });
+  await prisma.emailVerification.deleteMany({ where: { userId: id } });
+  await prisma.user.delete({ where: { id } });
 }

@@ -3,6 +3,10 @@ import { deleteCombo } from "@/lib/data";
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await deleteCombo(id);
-  return NextResponse.json({ ok: true });
+  try {
+    await deleteCombo(id);
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "No se pudo eliminar." }, { status: 400 });
+  }
 }

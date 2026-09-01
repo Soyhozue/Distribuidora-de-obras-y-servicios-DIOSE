@@ -20,6 +20,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const { code, discount } = await request.json();
   if (!code || !discount) return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
+  if (typeof discount !== "number" || discount <= 0 || discount > 1) {
+    return NextResponse.json({ error: "El descuento debe ser mayor a 0% y como máximo 100%." }, { status: 400 });
+  }
 
   const coupon = await prisma.coupon.upsert({
     where: { code: code.toUpperCase() },

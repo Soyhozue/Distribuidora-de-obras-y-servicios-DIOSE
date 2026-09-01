@@ -8,6 +8,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const combo = await createCombo(body);
-  return NextResponse.json(combo);
+  if (!body.title || !Array.isArray(body.productIds) || body.productIds.length === 0) {
+    return NextResponse.json({ error: "Selecciona al menos un producto y dale un título." }, { status: 400 });
+  }
+  try {
+    const combo = await createCombo(body);
+    return NextResponse.json(combo);
+  } catch {
+    return NextResponse.json({ error: "No se pudo guardar la publicidad." }, { status: 400 });
+  }
 }

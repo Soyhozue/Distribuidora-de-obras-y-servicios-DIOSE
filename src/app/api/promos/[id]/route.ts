@@ -8,6 +8,10 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const { id } = await params;
-  await deletePromoImage(id);
-  return NextResponse.json({ ok: true });
+  try {
+    await deletePromoImage(id);
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "No se pudo eliminar la promoción." }, { status: 400 });
+  }
 }

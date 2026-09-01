@@ -13,6 +13,10 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const body = await request.json();
-  const settings = await updateSiteSettings(body);
-  return NextResponse.json(settings);
+  try {
+    const settings = await updateSiteSettings(body);
+    return NextResponse.json(settings);
+  } catch {
+    return NextResponse.json({ error: "No se pudo guardar la configuración." }, { status: 400 });
+  }
 }

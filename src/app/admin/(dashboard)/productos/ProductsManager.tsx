@@ -109,6 +109,7 @@ export default function ProductsManager({
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(categories, brands));
   const [formError, setFormError] = useState("");
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -132,10 +133,12 @@ export default function ProductsManager({
   function openCreate() {
     setForm(emptyForm(categories, brands));
     setFormError("");
+    setIsDuplicating(false);
     setModalOpen(true);
   }
 
   function openEdit(p: ManagedProduct) {
+    setIsDuplicating(false);
     setForm({
       id: p.id,
       sku: p.sku,
@@ -152,6 +155,29 @@ export default function ProductsManager({
       categoryId: p.categoryId,
       brandId: p.brandId,
       featured: !!p.featured,
+      images: p.images ?? [],
+    });
+    setFormError("");
+    setModalOpen(true);
+  }
+
+  function openDuplicate(p: ManagedProduct) {
+    setIsDuplicating(true);
+    setForm({
+      sku: "",
+      name: `${p.name} (copia)`,
+      description: p.description ?? "",
+      benefits: linesToText(p.benefits),
+      applications: linesToText(p.applications),
+      characteristics: linesToText(p.characteristics),
+      price: String(p.price),
+      unit: p.unit ?? "",
+      weight: p.weight != null ? String(p.weight) : "",
+      stock: "0",
+      stockStatus: "EN_STOCK",
+      categoryId: p.categoryId,
+      brandId: p.brandId,
+      featured: false,
       images: p.images ?? [],
     });
     setFormError("");
@@ -408,8 +434,8 @@ export default function ProductsManager({
 
       <div className="flex-1 p-9 pt-5 overflow-hidden">
         <div className="bg-white border border-diose-border overflow-hidden">
-          <div className="min-w-[820px] overflow-x-auto">
-            <div className="grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_90px] px-4 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black items-center gap-2">
+          <div className="min-w-[870px] overflow-x-auto">
+            <div className="grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_140px] px-4 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black items-center gap-2">
               <input
                 type="checkbox"
                 className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
@@ -426,7 +452,7 @@ export default function ProductsManager({
             {pageItems.map((p) => (
               <div
                 key={p.id}
-                className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_90px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] ${
+                className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_140px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] ${
                   p.stockStatus === "AGOTADO" ? "opacity-70" : ""
                 }`}
               >
@@ -471,9 +497,12 @@ export default function ProductsManager({
                   {p.stock} uds
                 </span>
                 <StatusTag status={p.stockStatus} />
-                <div className="flex gap-3 items-center">
+                <div className="flex gap-2.5 items-center">
                   <span onClick={() => openEdit(p)} className="text-xs text-gray-600 underline cursor-pointer">
                     Editar
+                  </span>
+                  <span onClick={() => openDuplicate(p)} className="text-xs text-gray-400 underline cursor-pointer hover:text-diose-black">
+                    Duplicar
                   </span>
                   <span
                     onClick={() => setConfirmProductId(p.id)}
@@ -515,7 +544,7 @@ export default function ProductsManager({
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-lg p-7 max-h-[90vh] overflow-y-auto">
             <div className="font-heading text-lg text-diose-black mb-5">
-              {form.id ? "Editar producto" : "Añadir producto"}
+              {form.id ? "Editar producto" : isDuplicating ? "Duplicar producto" : "Añadir producto"}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <label className="flex flex-col gap-1 col-span-2">

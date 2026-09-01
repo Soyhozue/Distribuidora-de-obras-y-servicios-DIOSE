@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getAdminSessionId } from "@/lib/auth";
+import { deleteCustomer } from "@/lib/data";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const adminId = await getAdminSessionId();
   if (!adminId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   const { id } = await params;
 
-  // Delete in dependency order to avoid FK constraint errors
-  await prisma.orderItem.deleteMany({ where: { order: { userId: id } } });
-  await prisma.order.deleteMany({ where: { userId: id } });
-  await prisma.address.deleteMany({ where: { userId: id } });
-  await prisma.passwordReset.deleteMany({ where: { userId: id } });
-  await prisma.user.delete({ where: { id } });
-
-  return new NextResponse(null, { status: 204 });
+  try {
+    await deleteCustomer(id);
+    return new NextResponse(null, { status: 204 });
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message || "No se pudo eliminar el cliente." }, { status: 409 });
+  }
 }

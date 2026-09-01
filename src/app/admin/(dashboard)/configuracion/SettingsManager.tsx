@@ -6,6 +6,7 @@ import type { HeroSlide } from "@/lib/data";
 import HeroSlideLayer from "@/components/HeroSlideLayer";
 import HeroTitle from "@/components/HeroTitle";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useToastStore } from "@/store/toastStore";
 
 type CatalogItem = { id: string; name: string; count: number };
 
@@ -240,6 +241,7 @@ export default function SettingsManager({
   promos: Promo[];
 }) {
   const router = useRouter();
+  const showToast = useToastStore((s) => s.show);
   const [tab, setTab] = useState<TabKey>("contacto");
   const [form, setForm] = useState(settings);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(initialHeroSlides);
@@ -265,6 +267,8 @@ export default function SettingsManager({
     try {
       const url = await uploadImage(files[0]);
       setField("partnerLogoUrl", url);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo subir la imagen.", "error");
     } finally {
       setUploadingPartnerLogo(false);
     }
@@ -281,6 +285,8 @@ export default function SettingsManager({
         return next;
       });
       setDirty(true);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo subir alguna imagen.", "error");
     } finally {
       setUploadingHero(false);
     }
@@ -300,11 +306,16 @@ export default function SettingsManager({
   async function saveSettings() {
     setSaving(true);
     try {
-      await fetch("/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, heroSlides }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error ?? "No se pudo guardar la configuración.", "error");
+        return;
+      }
       setSavedMsg(true);
       setDirty(false);
       setTimeout(() => setSavedMsg(false), 2500);
@@ -320,6 +331,8 @@ export default function SettingsManager({
     try {
       const url = await uploadImage(files[0]);
       setPromoForm((f) => ({ ...f, imageUrl: url }));
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo subir la imagen.", "error");
     } finally {
       setUploadingPromo(false);
     }
@@ -329,7 +342,7 @@ export default function SettingsManager({
     if (!promoForm.imageUrl) return;
     setCreatingPromo(true);
     try {
-      await fetch("/api/promos", {
+      const res = await fetch("/api/promos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -339,6 +352,11 @@ export default function SettingsManager({
           link: promoForm.link || undefined,
         }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error ?? "No se pudo agregar la promoción.", "error");
+        return;
+      }
       setPromoForm({ imageUrl: "", title: "", subtitle: "", link: "" });
       router.refresh();
     } finally {
@@ -349,7 +367,11 @@ export default function SettingsManager({
   const [confirmPromoId, setConfirmPromoId] = useState<string | null>(null);
 
   async function removePromo(id: string) {
-    await fetch(`/api/promos/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/promos/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      showToast("No se pudo eliminar la promoción.", "error");
+      return;
+    }
     router.refresh();
   }
 

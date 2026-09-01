@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProductIcon } from "@/components/icons";
+import { useToastStore } from "@/store/toastStore";
 import type { ManagedProduct } from "@/lib/data";
 
 function StatusTag({ status }: { status: ManagedProduct["stockStatus"] }) {
@@ -29,6 +30,7 @@ function StatusTag({ status }: { status: ManagedProduct["stockStatus"] }) {
 
 export default function InventoryManager({ products }: { products: ManagedProduct[] }) {
   const router = useRouter();
+  const showToast = useToastStore((s) => s.show);
   const [onlyLow, setOnlyLow] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -40,14 +42,30 @@ export default function InventoryManager({ products }: { products: ManagedProduc
 
   async function saveStock(id: string) {
     const value = drafts[id];
-    if (value === undefined) return;
+    if (value === undefined || value === "") return;
+    const stock = Number(value);
+    if (!Number.isFinite(stock) || stock < 0) {
+      showToast("El stock no puede ser negativo.", "error");
+      return;
+    }
     setSavingId(id);
     try {
-      await fetch(`/api/products/${id}`, {
+      const res = await fetch(`/api/products/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stock: Number(value) }),
+        body: JSON.stringify({ stock }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error ?? "No se pudo actualizar el stock.", "error");
+        return;
+      }
+      setDrafts((d) => {
+        const next = { ...d };
+        delete next[id];
+        return next;
+      });
+      showToast("Stock actualizado", "success");
       router.refresh();
     } finally {
       setSavingId(null);

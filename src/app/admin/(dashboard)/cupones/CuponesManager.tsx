@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useToastStore } from "@/store/toastStore";
 
 type Coupon = { id: string; code: string; discount: number; active: boolean; createdAt: Date };
 
 export default function CuponesManager({ cupones }: { cupones: Coupon[] }) {
   const router = useRouter();
+  const showToast = useToastStore((s) => s.show);
   const [code, setCode] = useState("");
   const [discount, setDiscount] = useState("");
   const [saving, setSaving] = useState(false);
@@ -23,13 +25,19 @@ export default function CuponesManager({ cupones }: { cupones: Coupon[] }) {
     setSaving(true);
     setError("");
     try {
-      await fetch("/api/coupons", {
+      const res = await fetch("/api/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: code.trim().toUpperCase(), discount: pct / 100 }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "No se pudo crear el cupón.");
+        return;
+      }
       setCode("");
       setDiscount("");
+      showToast("Cupón guardado", "success");
       router.refresh();
     } finally {
       setSaving(false);
@@ -37,16 +45,25 @@ export default function CuponesManager({ cupones }: { cupones: Coupon[] }) {
   }
 
   async function toggle(id: string, active: boolean) {
-    await fetch(`/api/coupons/${id}`, {
+    const res = await fetch(`/api/coupons/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: !active }),
     });
+    if (!res.ok) {
+      showToast("No se pudo actualizar el cupón.", "error");
+      return;
+    }
     router.refresh();
   }
 
   async function remove(id: string) {
-    await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      showToast("No se pudo eliminar el cupón.", "error");
+      return;
+    }
+    showToast("Cupón eliminado", "success");
     router.refresh();
   }
 

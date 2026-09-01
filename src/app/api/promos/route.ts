@@ -13,6 +13,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const body = await request.json();
-  const promo = await createPromoImage(body);
-  return NextResponse.json(promo);
+  if (!body.imageUrl) {
+    return NextResponse.json({ error: "Falta la imagen de la promoción." }, { status: 400 });
+  }
+  try {
+    const promo = await createPromoImage(body);
+    return NextResponse.json(promo);
+  } catch {
+    return NextResponse.json({ error: "No se pudo guardar la promoción." }, { status: 400 });
+  }
 }

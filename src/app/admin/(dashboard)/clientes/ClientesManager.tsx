@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useToastStore } from "@/store/toastStore";
 
 type Customer = {
   id: string;
@@ -20,11 +21,18 @@ function formatPrice(n: number) {
 
 export default function ClientesManager({ customers: initial }: { customers: Customer[] }) {
   const router = useRouter();
+  const showToast = useToastStore((s) => s.show);
   const [customers, setCustomers] = useState(initial);
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   async function remove(id: string) {
-    await fetch(`/api/customers/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/customers/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.error ?? "No se pudo eliminar el cliente.", "error");
+      return;
+    }
+    showToast("Cliente eliminado", "success");
     setCustomers((prev) => prev.filter((c) => c.id !== id));
     router.refresh();
   }

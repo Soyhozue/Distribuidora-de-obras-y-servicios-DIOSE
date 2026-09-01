@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useToastStore } from "@/store/toastStore";
 import type { Product } from "@/data/products";
 
 const POST_TYPE_OPTIONS = [
@@ -67,6 +68,7 @@ function DioseLogoInline({ size = 28, textColor = "#fff" }: { size?: number; tex
 }
 
 export default function AdsManager({ products, settings }: { products: Product[]; settings: AdSettings }) {
+  const showToast = useToastStore((s) => s.show);
   const [postType, setPostType] = useState(POST_TYPE_OPTIONS[0].value);
   const maxSelected = postType === "COMBO" ? 4 : 1;
   const [selected, setSelected] = useState<string[]>(products.slice(0, 1).map((p) => p.id));
@@ -126,13 +128,23 @@ export default function AdsManager({ products, settings }: { products: Product[]
   async function handleCustomImage(files: FileList | null) {
     if (!files?.length) return;
     setUploadingImage(true);
-    try { setCustomImage(await uploadImage(files[0])); }
-    finally { setUploadingImage(false); }
+    try {
+      setCustomImage(await uploadImage(files[0]));
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "No se pudo subir la imagen.", "error");
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   async function loadHistory() {
-    const res = await fetch("/api/combos");
-    setHistory(await res.json());
+    try {
+      const res = await fetch("/api/combos");
+      if (!res.ok) return;
+      setHistory(await res.json());
+    } catch {
+      // Silent — the history panel just stays empty/unchanged.
+    }
   }
 
   useEffect(() => { loadHistory(); }, []);
@@ -140,17 +152,27 @@ export default function AdsManager({ products, settings }: { products: Product[]
   async function saveCombo() {
     setSaving(true);
     try {
-      await fetch("/api/combos", {
+      const res = await fetch("/api/combos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, subtitle, type: postType, format, background: finalBg, comboPrice: displayPrice, savings: 0, productIds: selected }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error ?? "No se pudo guardar.", "error");
+        return;
+      }
+      showToast("Guardado", "success");
       await loadHistory();
     } finally { setSaving(false); }
   }
 
   async function removeCombo(id: string) {
-    await fetch(`/api/combos/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/combos/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      showToast("No se pudo eliminar.", "error");
+      return;
+    }
     await loadHistory();
   }
 
@@ -164,6 +186,8 @@ export default function AdsManager({ products, settings }: { products: Product[]
       link.download = `diose-${title.toLowerCase().replace(/\s+/g, "-")}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
+    } catch {
+      showToast("No se pudo generar la imagen.", "error");
     } finally { setDownloading(false); }
   }
 

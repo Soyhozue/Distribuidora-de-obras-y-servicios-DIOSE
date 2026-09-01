@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getOrders } from "@/lib/data";
+import { getOrders, getDashboardStats } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import AdminSearch from "@/components/admin/AdminSearch";
 
@@ -18,22 +18,20 @@ function formatPrice(price: number) {
 }
 
 export default async function AdminDashboardPage() {
-  const [orders, productCount, lowStockCount, lowStockProductsCount] = await Promise.all([
+  const [orders, productCount, lowStockCount, dashboardStats] = await Promise.all([
     getOrders(),
     prisma.product.count(),
     prisma.product.count({ where: { stockStatus: "STOCK_BAJO" } }),
-    prisma.product.count({ where: { stockStatus: { in: ["STOCK_BAJO", "AGOTADO"] } } }),
+    getDashboardStats(),
   ]);
 
-  const pendingCount = orders.filter((o) => o.status === "PENDIENTE").length;
-  const monthRevenue = orders.reduce((sum, o) => sum + o.total, 0);
   const recentOrders = orders.slice(0, 5);
 
   const stats = [
-    { label: "Total de pedidos", value: String(orders.length), hint: `${pendingCount} pendientes`, dark: false },
-    { label: "Ingresos totales", value: formatPrice(monthRevenue), hint: "Todos los pedidos", dark: true },
+    { label: "Total de pedidos", value: String(dashboardStats.totalOrders), hint: `${dashboardStats.pendingOrders} pendientes`, dark: false },
+    { label: "Ingresos totales", value: formatPrice(dashboardStats.revenue), hint: "Excluye cancelados", dark: true },
     { label: "Productos activos", value: String(productCount), hint: `${lowStockCount} con stock bajo`, dark: false },
-    { label: "Pedidos pendientes", value: String(pendingCount), hint: "Requieren atención", dark: false },
+    { label: "Pedidos pendientes", value: String(dashboardStats.pendingOrders), hint: "Requieren atención", dark: false },
   ];
 
   return (
