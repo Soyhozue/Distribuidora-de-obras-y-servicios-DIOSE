@@ -13,6 +13,7 @@ export default function PromoSection({ promos }: { promos: Promo[] }) {
 
   return (
     <section className="bg-white px-6 md:px-20 py-10 border-b border-diose-border-light">
+      <div className="max-w-7xl mx-auto">
       <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-1.5">
         Ofertas
       </div>
@@ -43,6 +44,7 @@ export default function PromoSection({ promos }: { promos: Promo[] }) {
             <div key={promo.id}>{card}</div>
           );
         })}
+      </div>
       </div>
     </section>
   );

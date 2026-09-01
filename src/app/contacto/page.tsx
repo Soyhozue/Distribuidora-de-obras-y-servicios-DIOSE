@@ -42,14 +42,16 @@ export default async function ContactPage() {
     <div className="flex flex-col min-h-screen">
       <Navbar active="Contacto" />
 
-      <div className="bg-diose-black flex flex-wrap items-baseline gap-5 px-6 md:px-20 py-6">
+      <div className="bg-diose-black px-6 md:px-20 py-6">
+      <div className="max-w-7xl mx-auto flex flex-wrap items-baseline gap-5">
         <h1 className="font-heading text-4xl text-white tracking-[0.06em]">Contacto</h1>
         <span className="text-[13px] text-white/40 tracking-[0.04em]">
           Estamos en Ciudad Juárez, Chihuahua
         </span>
       </div>
+      </div>
 
-      <div className="flex flex-col md:flex-row flex-1">
+      <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row flex-1">
         <ContactForm settings={settings} />
 
         {/* MAP */}

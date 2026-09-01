@@ -137,7 +137,7 @@ export default function AccountClient({
   }
 
   return (
-    <div className="flex flex-col md:flex-row flex-1">
+    <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row flex-1">
       <aside className="w-full md:w-62 bg-[#F9F9F9] border-b md:border-b-0 md:border-r border-diose-border-light p-7 shrink-0">
         <div className="flex items-center gap-3.5 mb-9">
           <div className="w-12 h-12 bg-diose-black rounded-full flex items-center justify-center shrink-0">
@@ -170,17 +170,17 @@ export default function AccountClient({
 
       <main className="flex-1 p-6 md:px-13 md:py-9 overflow-x-auto">
         {!user.emailVerified && (
-          <div className="flex flex-wrap items-center gap-3 bg-diose-amber/10 border border-diose-amber px-4 py-3 mb-7 min-w-[500px]">
-            <span className="text-[13px] text-diose-black">
+          <div className="flex flex-wrap items-center gap-3 bg-diose-amber/10 border border-diose-amber px-4 py-3 mb-7">
+            <span className="text-[13px] text-diose-black break-all">
               Todavía no confirmas tu correo ({user.email}).
             </span>
             {resendState === "sent" ? (
-              <span className="text-[12px] text-green-700 ml-auto">Enlace reenviado, revisa tu bandeja.</span>
+              <span className="text-[12px] text-green-700 sm:ml-auto">Enlace reenviado, revisa tu bandeja.</span>
             ) : (
               <button
                 onClick={resendVerification}
                 disabled={resendState === "sending"}
-                className="ml-auto text-[11px] font-semibold uppercase tracking-[0.06em] text-diose-black underline cursor-pointer disabled:opacity-50"
+                className="sm:ml-auto text-[11px] font-semibold uppercase tracking-[0.06em] text-diose-black underline cursor-pointer disabled:opacity-50"
               >
                 {resendState === "sending" ? "Enviando..." : "Reenviar correo"}
               </button>

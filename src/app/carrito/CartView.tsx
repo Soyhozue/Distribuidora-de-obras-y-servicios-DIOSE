@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CloseIcon, ProductIcon, WhatsAppIcon } from "@/components/icons";
 import { cartTotals, useCartStore } from "@/store/cart";
@@ -16,11 +16,17 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
   const coupon = useCartStore((s) => s.coupon);
   const setCoupon = useCartStore((s) => s.setCoupon);
   const clearCoupon = useCartStore((s) => s.clearCoupon);
+  const revalidateCoupon = useCartStore((s) => s.revalidateCoupon);
   const { subtotal, shipping, total: rawTotal, pieceCount } = cartTotals(lines);
 
   const [couponInput, setCouponInput] = useState("");
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
+
+  useEffect(() => {
+    revalidateCoupon();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const discount = Math.round(subtotal * (coupon?.discount ?? 0));
   const total = rawTotal - discount;
@@ -46,9 +52,11 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
 
   return (
     <>
-      <div className="h-16 border-b border-diose-border-light flex items-center px-6 md:px-16 gap-4">
+      <div className="h-16 border-b border-diose-border-light px-6 md:px-16">
+      <div className="max-w-7xl mx-auto h-full flex items-center gap-4">
         <h1 className="font-heading text-3xl md:text-4xl text-diose-black tracking-[0.04em]">Mi carrito</h1>
         <span className="text-sm text-gray-400">{lines.length} productos</span>
+      </div>
       </div>
 
       {lines.length === 0 ? (
@@ -62,7 +70,7 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col md:flex-row flex-1">
+        <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row flex-1">
           {/* CART ITEMS */}
           <div className="flex-1 p-6 md:px-16 md:py-8">
             {lines.map((line) => (

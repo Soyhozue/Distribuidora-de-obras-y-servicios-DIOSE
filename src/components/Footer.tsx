@@ -13,6 +13,7 @@ export default async function Footer() {
   const settings = await getSiteSettings();
   return (
     <footer className="bg-diose-black text-white px-6 md:px-20 pt-10 pb-6">
+      <div className="max-w-7xl mx-auto">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
 
         {/* Marca */}
@@ -90,6 +91,7 @@ export default async function Footer() {
             Envíos y devoluciones
           </Link>
         </div>
+      </div>
       </div>
     </footer>
   );

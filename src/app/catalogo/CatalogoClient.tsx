@@ -41,6 +41,8 @@ export default function CatalogoClient({
   const [sort, setSort] = useState<SortKey>("relevancia");
   const [sortOpen, setSortOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const activeFilterCount = (category ? 1 : 0) + (brand ? 1 : 0) + (onlyInStock ? 1 : 0);
 
   const filtered = useMemo(() => {
     const result = products.filter((p) => {
@@ -66,7 +68,8 @@ export default function CatalogoClient({
   return (
     <>
       {/* SEARCH + BREADCRUMB BAR */}
-      <div className="bg-white border-b border-diose-border-light flex flex-wrap items-center gap-6 px-6 md:px-12 py-3">
+      <div className="bg-white border-b border-diose-border-light px-6 md:px-12 py-3">
+      <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-6">
         <span className="text-xs text-gray-400">Inicio</span>
         <span className="text-xs text-gray-300">/</span>
         <span className="text-xs text-diose-black font-medium">Catálogo</span>
@@ -80,6 +83,17 @@ export default function CatalogoClient({
             className="text-[13px] text-diose-black bg-transparent outline-none w-full placeholder:text-gray-400"
           />
         </div>
+        <button
+          onClick={() => setMobileFiltersOpen(true)}
+          className="lg:hidden flex items-center gap-2 border border-diose-border px-3.5 py-2 text-xs text-gray-700 cursor-pointer"
+        >
+          Filtros
+          {activeFilterCount > 0 && (
+            <span className="bg-diose-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
         <div className="flex items-center gap-2 relative">
           <span className="text-xs text-gray-400">Ordenar por</span>
           <div
@@ -107,99 +121,54 @@ export default function CatalogoClient({
           )}
         </div>
       </div>
+      </div>
 
-      <div className="flex flex-1">
+      <div className="max-w-7xl mx-auto w-full flex flex-1">
         {/* SIDEBAR */}
         <aside className="hidden lg:block w-64 bg-white border-r border-diose-border-light px-6 py-7 shrink-0">
-          <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-3.5">
-            Categorías
-          </div>
-          <div className="flex flex-col">
-            <button
-              onClick={() => setCategory(null)}
-              className="flex items-center gap-2.5 py-2 border-b border-gray-100 cursor-pointer text-left"
-            >
-              <div
-                className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 ${
-                  category === null ? "bg-diose-black border-diose-black" : "border-gray-300"
-                }`}
-              />
-              <span className={`text-[13px] ${category === null ? "text-diose-black font-medium" : "text-gray-600"}`}>
-                Todas
-              </span>
-              <span className="text-[11px] text-gray-300 ml-auto">{products.length}</span>
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.name}
-                onClick={() => setCategory(cat.name)}
-                className="flex items-center gap-2.5 py-2 border-b border-gray-100 cursor-pointer text-left last:border-b-0"
-              >
-                <div
-                  className={`w-3.5 h-3.5 rounded-full border-[1.5px] shrink-0 ${
-                    category === cat.name ? "bg-diose-black border-diose-black" : "border-gray-300"
-                  }`}
-                />
-                <span className={`text-[13px] ${category === cat.name ? "text-diose-black font-medium" : "text-gray-600"}`}>
-                  {cat.name}
-                </span>
-                <span className="text-[11px] text-gray-300 ml-auto">{cat.count}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="h-px bg-diose-border-light my-5" />
-          <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-3.5">
-            Marcas
-          </div>
-          <div className="flex flex-col">
-            {brands.map((b) => (
-              <button
-                key={b.name}
-                onClick={() => setBrand(brand === b.name ? null : b.name)}
-                className="flex items-center gap-2.5 py-1.5 cursor-pointer text-left"
-              >
-                <div
-                  className={`w-3.5 h-3.5 border-[1.5px] shrink-0 flex items-center justify-center ${
-                    brand === b.name ? "bg-diose-black border-diose-black" : "border-gray-300"
-                  }`}
-                >
-                  {brand === b.name && (
-                    <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
-                      <polyline points="2,6 5,9 10,3" />
-                    </svg>
-                  )}
-                </div>
-                <span className={`text-[13px] ${brand === b.name ? "text-diose-black font-medium" : "text-gray-600"}`}>
-                  {b.name}
-                </span>
-                <span className="text-[11px] text-gray-300 ml-auto">{b.count}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="h-px bg-diose-border-light my-5" />
-          <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-3.5">
-            Disponibilidad
-          </div>
-          <button
-            onClick={() => setOnlyInStock((v) => !v)}
-            className="flex items-center gap-2.5 cursor-pointer"
-          >
-            <div
-              className={`w-9 h-5 rounded-full relative shrink-0 transition-colors ${
-                onlyInStock ? "bg-diose-black" : "bg-gray-300"
-              }`}
-            >
-              <div
-                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${
-                  onlyInStock ? "right-0.5" : "left-0.5"
-                }`}
-              />
-            </div>
-            <span className="text-[13px] text-diose-black font-medium">Solo en stock</span>
-          </button>
+          <FilterContent
+            products={products}
+            categories={categories}
+            category={category}
+            setCategory={setCategory}
+            brands={brands}
+            brand={brand}
+            setBrand={setBrand}
+            onlyInStock={onlyInStock}
+            setOnlyInStock={setOnlyInStock}
+          />
         </aside>
+
+        {mobileFiltersOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setMobileFiltersOpen(false)} />
+            <div className="absolute right-0 top-0 h-full w-[85%] max-w-sm bg-white overflow-y-auto px-6 py-7">
+              <div className="flex items-center justify-between mb-5">
+                <span className="font-heading text-xl text-diose-black tracking-[0.04em]">Filtros</span>
+                <button onClick={() => setMobileFiltersOpen(false)} className="text-2xl text-gray-400 cursor-pointer leading-none">
+                  ×
+                </button>
+              </div>
+              <FilterContent
+                products={products}
+                categories={categories}
+                category={category}
+                setCategory={setCategory}
+                brands={brands}
+                brand={brand}
+                setBrand={setBrand}
+                onlyInStock={onlyInStock}
+                setOnlyInStock={setOnlyInStock}
+              />
+              <button
+                onClick={() => setMobileFiltersOpen(false)}
+                className="w-full bg-diose-black text-white py-3.5 text-[13px] font-semibold tracking-[0.1em] uppercase cursor-pointer mt-7"
+              >
+                Ver {filtered.length} resultado{filtered.length === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* PRODUCT GRID */}
         <main className="flex-1 p-6">
@@ -263,6 +232,118 @@ export default function CatalogoClient({
           )}
         </main>
       </div>
+    </>
+  );
+}
+
+function FilterContent({
+  products,
+  categories,
+  category,
+  setCategory,
+  brands,
+  brand,
+  setBrand,
+  onlyInStock,
+  setOnlyInStock,
+}: {
+  products: Product[];
+  categories: CategoryCount[];
+  category: string | null;
+  setCategory: (c: string | null) => void;
+  brands: BrandCount[];
+  brand: string | null;
+  setBrand: (b: string | null) => void;
+  onlyInStock: boolean;
+  setOnlyInStock: (v: boolean | ((prev: boolean) => boolean)) => void;
+}) {
+  return (
+    <>
+      <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-3.5">
+        Categorías
+      </div>
+      <div className="flex flex-col">
+        <button
+          onClick={() => setCategory(null)}
+          className="flex items-center gap-2.5 py-2 border-b border-gray-100 cursor-pointer text-left"
+        >
+          <div
+            className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 ${
+              category === null ? "bg-diose-black border-diose-black" : "border-gray-300"
+            }`}
+          />
+          <span className={`text-[13px] ${category === null ? "text-diose-black font-medium" : "text-gray-600"}`}>
+            Todas
+          </span>
+          <span className="text-[11px] text-gray-300 ml-auto">{products.length}</span>
+        </button>
+        {categories.map((cat) => (
+          <button
+            key={cat.name}
+            onClick={() => setCategory(cat.name)}
+            className="flex items-center gap-2.5 py-2 border-b border-gray-100 cursor-pointer text-left last:border-b-0"
+          >
+            <div
+              className={`w-3.5 h-3.5 rounded-full border-[1.5px] shrink-0 ${
+                category === cat.name ? "bg-diose-black border-diose-black" : "border-gray-300"
+              }`}
+            />
+            <span className={`text-[13px] ${category === cat.name ? "text-diose-black font-medium" : "text-gray-600"}`}>
+              {cat.name}
+            </span>
+            <span className="text-[11px] text-gray-300 ml-auto">{cat.count}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="h-px bg-diose-border-light my-5" />
+      <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-3.5">
+        Marcas
+      </div>
+      <div className="flex flex-col">
+        {brands.map((b) => (
+          <button
+            key={b.name}
+            onClick={() => setBrand(brand === b.name ? null : b.name)}
+            className="flex items-center gap-2.5 py-1.5 cursor-pointer text-left"
+          >
+            <div
+              className={`w-3.5 h-3.5 border-[1.5px] shrink-0 flex items-center justify-center ${
+                brand === b.name ? "bg-diose-black border-diose-black" : "border-gray-300"
+              }`}
+            >
+              {brand === b.name && (
+                <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                  <polyline points="2,6 5,9 10,3" />
+                </svg>
+              )}
+            </div>
+            <span className={`text-[13px] ${brand === b.name ? "text-diose-black font-medium" : "text-gray-600"}`}>
+              {b.name}
+            </span>
+            <span className="text-[11px] text-gray-300 ml-auto">{b.count}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="h-px bg-diose-border-light my-5" />
+      <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-3.5">
+        Disponibilidad
+      </div>
+      <button onClick={() => setOnlyInStock((v) => !v)} className="flex items-center gap-2.5 cursor-pointer">
+        <div
+          className={`w-9 h-5 rounded-full relative shrink-0 transition-colors ${
+            onlyInStock ? "bg-diose-black" : "bg-gray-300"
+          }`}
+        >
+          <div
+            className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${
+              onlyInStock ? "right-0.5" : "left-0.5"
+            }`}
+          />
+        </div>
+        <span className="text-[13px] text-diose-black font-medium">Solo en stock</span>
+      </button>
     </>
   );
 }

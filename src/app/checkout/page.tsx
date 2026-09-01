@@ -63,6 +63,7 @@ export default function CheckoutPage() {
   const clear = useCartStore((s) => s.clear);
   const coupon = useCartStore((s) => s.coupon);
   const clearCoupon = useCartStore((s) => s.clearCoupon);
+  const revalidateCoupon = useCartStore((s) => s.revalidateCoupon);
 
   const [name, setName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -99,6 +100,7 @@ export default function CheckoutPage() {
   }
 
   useEffect(() => {
+    revalidateCoupon();
     fetch("/api/me")
       .then((r) => r.json())
       .then((u: { name: string; email: string; phone: string | null } | null) => {
@@ -124,7 +126,7 @@ export default function CheckoutPage() {
         }
       })
       .catch(() => setUseNewAddress(true));
-  }, []);
+  }, [revalidateCoupon]);
 
   function selectAddress(a: SavedAddress) {
     setSelectedAddressId(a.id);
@@ -234,7 +236,8 @@ export default function CheckoutPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <nav className="h-16 bg-white border-b border-diose-border-light flex items-center justify-between px-6 md:px-12">
+      <nav className="h-16 bg-white border-b border-diose-border-light px-6 md:px-12">
+      <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
         <Link href="/"><Logo invert /></Link>
         <div className="hidden md:flex items-center">
           <div className="flex items-center gap-2 px-5 py-2 border-b-2 border-gray-300">
@@ -257,9 +260,10 @@ export default function CheckoutPage() {
           </div>
         </div>
         <div className="w-30" />
+      </div>
       </nav>
 
-      <div className="flex flex-col md:flex-row flex-1">
+      <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row flex-1">
         <div className="flex-1 p-6 md:px-16 md:py-10">
 
           {/* Nombre y contacto — siempre visible */}

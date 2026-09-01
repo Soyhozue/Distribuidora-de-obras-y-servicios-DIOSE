@@ -56,7 +56,7 @@ export default async function AboutPage() {
       </section>
 
       {/* CONTENT */}
-      <div className="flex flex-col md:flex-row flex-1">
+      <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row flex-1">
         {/* Historia */}
         <div className="flex-1 p-8 md:p-16 border-b md:border-b-0 md:border-r border-diose-border-light">
           <div className="w-10 h-0.5 bg-diose-amber mb-6" />

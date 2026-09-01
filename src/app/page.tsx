@@ -66,22 +66,24 @@ export default async function Home() {
 
       {/* CATEGORIES STRIP */}
       {activeCategories.length > 0 && (
-        <section className="bg-white border-b border-diose-border-light px-6 md:px-20 py-5 flex flex-wrap items-center gap-4">
-          <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 whitespace-nowrap">
-            Categorías
-          </span>
-          <div className="flex flex-wrap gap-1">
-            {activeCategories.map((cat, i) => (
-              <Link
-                key={cat.name}
-                href={`/catalogo?categoria=${encodeURIComponent(cat.name)}`}
-                className={`px-6 py-2.5 text-[13px] tracking-[0.04em] cursor-pointer ${
-                  i === 0 ? "bg-diose-amber text-white font-medium" : "border border-diose-border text-gray-700"
-                }`}
-              >
-                {cat.name}
-              </Link>
-            ))}
+        <section className="bg-white border-b border-diose-border-light px-6 md:px-20 py-5">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-4">
+            <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 whitespace-nowrap">
+              Categorías
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {activeCategories.map((cat, i) => (
+                <Link
+                  key={cat.name}
+                  href={`/catalogo?categoria=${encodeURIComponent(cat.name)}`}
+                  className={`px-6 py-2.5 text-[13px] tracking-[0.04em] cursor-pointer ${
+                    i === 0 ? "bg-diose-amber text-white font-medium" : "border border-diose-border text-gray-700"
+                  }`}
+                >
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -89,7 +91,7 @@ export default async function Home() {
       {/* FEATURED PRODUCTS */}
       {featured.length > 0 && (
         <section className="bg-diose-gray px-6 md:px-20 py-8">
-          <div className="flex flex-col md:flex-row gap-5">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-5">
             <div className="md:min-w-[140px]">
               <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-500 mb-1.5">
                 Destacados

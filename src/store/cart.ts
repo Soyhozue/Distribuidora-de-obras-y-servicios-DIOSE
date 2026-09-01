@@ -19,6 +19,7 @@ type CartState = {
   setQuantity: (productId: string, quantity: number) => void;
   setCoupon: (coupon: CartCoupon) => void;
   clearCoupon: () => void;
+  revalidateCoupon: () => Promise<void>;
   clear: () => void;
 };
 
@@ -48,6 +49,22 @@ export const useCartStore = create<CartState>()(
         }),
       setCoupon: (coupon) => set({ coupon }),
       clearCoupon: () => set({ coupon: null }),
+      revalidateCoupon: async () => {
+        const current = get().coupon;
+        if (!current) return;
+        try {
+          const res = await fetch(`/api/coupons?code=${encodeURIComponent(current.code)}`);
+          if (!res.ok) {
+            set({ coupon: null });
+            return;
+          }
+          const data = await res.json();
+          set({ coupon: { code: data.code, discount: data.discount } });
+        } catch {
+          // Network hiccup — keep the coupon as-is; the order creation
+          // re-validates it server-side either way.
+        }
+      },
       clear: () => set({ lines: [], coupon: null }),
     }),
     { name: "diose-cart" }
