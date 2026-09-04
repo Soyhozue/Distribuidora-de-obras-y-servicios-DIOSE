@@ -132,6 +132,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   <Link
                     key={v.id}
                     href={`/producto/${v.id}`}
+                    scroll={false}
                     className={`px-4 py-2 text-sm font-medium border transition-colors ${
                       v.stockStatus === "AGOTADO"
                         ? "border-diose-border-light text-gray-300 line-through"
