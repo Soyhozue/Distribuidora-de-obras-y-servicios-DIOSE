@@ -97,24 +97,35 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
                     {line.product.name}
                   </div>
                   <div className="text-xs text-gray-300">SKU-{line.product.sku}</div>
+                  {line.product.packLabel && (
+                    <div className="text-[11px] text-diose-amber font-medium mt-1">{line.product.packLabel}</div>
+                  )}
                 </div>
                 <div className="flex items-center border border-diose-border shrink-0">
-                  <button
-                    onClick={() => setQuantity(line.product.id, line.quantity - 1)}
-                    className="w-8 h-8 flex items-center justify-center cursor-pointer border-r border-diose-border text-gray-600 font-light"
-                  >
-                    −
-                  </button>
-                  <div className="w-10 h-8 flex items-center justify-center text-[13px] font-medium">
-                    {line.quantity}
-                  </div>
-                  <button
-                    onClick={() => setQuantity(line.product.id, Math.min(line.product.stock, line.quantity + 1))}
-                    disabled={line.quantity >= line.product.stock}
-                    className="w-8 h-8 flex items-center justify-center cursor-pointer border-l border-diose-border text-gray-600 font-light disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    +
-                  </button>
+                  {(() => {
+                    const step = Math.max(1, line.product.minOrderQty ?? 1);
+                    return (
+                      <>
+                        <button
+                          onClick={() => setQuantity(line.product.id, line.quantity - step)}
+                          disabled={line.quantity <= step}
+                          className="w-8 h-8 flex items-center justify-center cursor-pointer border-r border-diose-border text-gray-600 font-light disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          −
+                        </button>
+                        <div className="w-10 h-8 flex items-center justify-center text-[13px] font-medium">
+                          {line.quantity}
+                        </div>
+                        <button
+                          onClick={() => setQuantity(line.product.id, Math.min(line.product.stock, line.quantity + step))}
+                          disabled={line.quantity >= line.product.stock}
+                          className="w-8 h-8 flex items-center justify-center cursor-pointer border-l border-diose-border text-gray-600 font-light disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          +
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div className="text-right shrink-0 min-w-20">
                   <div className="text-base font-semibold text-diose-amber">

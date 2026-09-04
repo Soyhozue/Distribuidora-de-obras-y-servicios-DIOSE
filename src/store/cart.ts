@@ -44,7 +44,9 @@ export const useCartStore = create<CartState>()(
       setQuantity: (productId, quantity) =>
         set({
           lines: get().lines.map((l) =>
-            l.product.id === productId ? { ...l, quantity: Math.max(1, quantity) } : l
+            l.product.id === productId
+              ? { ...l, quantity: Math.max(l.product.minOrderQty ?? 1, quantity) }
+              : l
           ),
         }),
       setCoupon: (coupon) => set({ coupon }),

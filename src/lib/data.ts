@@ -37,6 +37,8 @@ type DbProduct = {
   images: string[];
   variantGroupId?: string | null;
   variantLabel?: string | null;
+  minOrderQty?: number;
+  packLabel?: string | null;
 };
 
 function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: string } {
@@ -62,6 +64,8 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
     images: p.images,
     variantGroupId: p.variantGroupId ?? undefined,
     variantLabel: p.variantLabel ?? undefined,
+    minOrderQty: p.minOrderQty ?? 1,
+    packLabel: p.packLabel ?? undefined,
   };
 }
 
@@ -151,6 +155,8 @@ export type ProductInput = {
   images?: string[];
   variantGroupId?: string;
   variantLabel?: string;
+  minOrderQty?: number;
+  packLabel?: string;
 };
 
 function validateProductInput(input: ProductInput) {
@@ -162,6 +168,9 @@ function validateProductInput(input: ProductInput) {
   if (!Number.isFinite(input.stock) || input.stock < 0) throw new Error("El stock no puede ser negativo.");
   if (input.weight != null && (!Number.isFinite(input.weight) || input.weight < 0)) {
     throw new Error("El peso no puede ser negativo.");
+  }
+  if (input.minOrderQty != null && (!Number.isInteger(input.minOrderQty) || input.minOrderQty < 1)) {
+    throw new Error("La cantidad mínima de venta debe ser un número entero de al menos 1.");
   }
 }
 

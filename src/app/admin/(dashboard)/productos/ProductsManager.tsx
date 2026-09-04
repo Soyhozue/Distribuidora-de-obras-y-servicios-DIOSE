@@ -53,6 +53,8 @@ type FormState = {
   images: string[];
   variantGroupId: string;
   variantLabel: string;
+  minOrderQty: string;
+  packLabel: string;
 };
 
 function linesToText(lines: string[] | undefined): string {
@@ -82,6 +84,8 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     images: [],
     variantGroupId: "",
     variantLabel: "",
+    minOrderQty: "1",
+    packLabel: "",
   };
 }
 
@@ -167,6 +171,8 @@ export default function ProductsManager({
       images: p.images ?? [],
       variantGroupId: p.variantGroupId ?? "",
       variantLabel: p.variantLabel ?? "",
+      minOrderQty: String(p.minOrderQty ?? 1),
+      packLabel: p.packLabel ?? "",
     });
     setFormError("");
     setModalOpen(true);
@@ -193,6 +199,8 @@ export default function ProductsManager({
       images: p.images ?? [],
       variantGroupId: p.variantGroupId ?? "",
       variantLabel: "",
+      minOrderQty: String(p.minOrderQty ?? 1),
+      packLabel: p.packLabel ?? "",
     });
     setFormError("");
     setModalOpen(true);
@@ -220,6 +228,8 @@ export default function ProductsManager({
       images: [],
       variantGroupId: groupId,
       variantLabel: "",
+      minOrderQty: String(p.minOrderQty ?? 1),
+      packLabel: p.packLabel ?? "",
     });
     setFormError("");
     setModalOpen(true);
@@ -254,6 +264,10 @@ export default function ProductsManager({
       setFormError("El precio debe ser mayor a 0.");
       return;
     }
+    if (!Number.isInteger(Number(form.minOrderQty)) || Number(form.minOrderQty) < 1) {
+      setFormError("La cantidad mínima de venta debe ser un número entero de al menos 1.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -274,6 +288,8 @@ export default function ProductsManager({
         images: form.images,
         variantGroupId: form.variantGroupId.trim() || undefined,
         variantLabel: form.variantLabel.trim() || undefined,
+        minOrderQty: form.minOrderQty ? Number(form.minOrderQty) : 1,
+        packLabel: form.packLabel.trim() || undefined,
       };
       const res = form.id
         ? await fetch(`/api/products/${form.id}`, {
@@ -312,6 +328,8 @@ export default function ProductsManager({
             featured: originToBackfill.featured,
             images: originToBackfill.images ?? [],
             variantGroupId: form.variantGroupId.trim(),
+            minOrderQty: originToBackfill.minOrderQty ?? 1,
+            packLabel: originToBackfill.packLabel || undefined,
           }),
         });
         setOriginToBackfill(null);
@@ -754,6 +772,38 @@ export default function ProductsManager({
                       value={form.variantLabel}
                       onChange={(e) => setForm({ ...form, variantLabel: e.target.value })}
                       placeholder='Ej: 1", 1 1/2", 2"'
+                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                    />
+                  </label>
+                </div>
+
+                <div className="h-px bg-diose-border-light" />
+
+                <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                  Venta por mínimo o paquete (opcional)
+                </div>
+                <div className="text-[11px] text-gray-400 -mt-1.5">
+                  Útil en tornillería o piezas chicas: obliga a comprar en múltiplos de una cantidad, o véndelo por
+                  bolsa/caja en vez de por pieza suelta.
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Cantidad mínima / múltiplo</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={form.minOrderQty}
+                      onChange={(e) => setForm({ ...form, minOrderQty: e.target.value })}
+                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Etiqueta de venta (opcional)</span>
+                    <input
+                      value={form.packLabel}
+                      onChange={(e) => setForm({ ...form, packLabel: e.target.value })}
+                      placeholder="Ej: Bolsa de 100 piezas"
                       className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
                     />
                   </label>
