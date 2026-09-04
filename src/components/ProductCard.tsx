@@ -1,5 +1,10 @@
+"use client";
+
 import Link from "next/link";
-import { ProductIcon } from "./icons";
+import { useState } from "react";
+import { ProductIcon, CartIcon } from "./icons";
+import { useCartStore } from "@/store/cart";
+import { useToastStore } from "@/store/toastStore";
 import type { Product } from "@/data/products";
 
 function formatPrice(price: number) {
@@ -30,10 +35,24 @@ export function StockBadge({ status }: { status: Product["stockStatus"] }) {
 
 export default function ProductCard({ product }: { product: Product }) {
   const agotado = product.stockStatus === "AGOTADO";
+  const add = useCartStore((s) => s.add);
+  const showToast = useToastStore((s) => s.show);
+  const [added, setAdded] = useState(false);
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (agotado) return;
+    add(product, Math.max(1, product.minOrderQty ?? 1));
+    showToast(`${product.name} agregado al carrito`, "success");
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1400);
+  }
+
   return (
     <Link
       href={`/producto/${product.id}`}
-      className={`group block bg-white border border-diose-border overflow-hidden transition-all duration-200 hover:border-diose-amber hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] ${
+      className={`group relative block bg-white border border-diose-border overflow-hidden transition-all duration-300 hover:border-diose-amber hover:shadow-[0_10px_28px_rgba(0,0,0,0.12)] hover:-translate-y-1 ${
         agotado ? "opacity-60" : ""
       }`}
     >
@@ -45,6 +64,8 @@ export default function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             className="absolute inset-0 w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
           />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/[0.06] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <CartFab agotado={agotado} added={added} onClick={handleAddToCart} />
         </div>
       ) : (
         <div
@@ -55,6 +76,7 @@ export default function ProductCard({ product }: { product: Product }) {
           }}
         >
           <ProductIcon icon={product.icon} />
+          <CartFab agotado={agotado} added={added} onClick={handleAddToCart} />
         </div>
       )}
       <div className="p-3.5">
@@ -64,7 +86,7 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
           <StockBadge status={product.stockStatus} />
         </div>
-        <div className="text-[13px] font-medium text-diose-black leading-snug mb-2.5 line-clamp-2">
+        <div className="text-[13px] font-medium text-diose-black leading-snug mb-2.5 line-clamp-2 group-hover:text-diose-amber transition-colors">
           {product.name}
         </div>
         <div className="flex items-baseline justify-between gap-2">
@@ -80,5 +102,39 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
       </div>
     </Link>
+  );
+}
+
+function CartFab({
+  agotado,
+  added,
+  onClick,
+}: {
+  agotado: boolean;
+  added: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={agotado}
+      aria-label="Agregar al carrito"
+      title={agotado ? "Agotado" : "Agregar al carrito"}
+      className={`absolute bottom-2.5 right-2.5 w-10 h-10 rounded-full flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.28)] cursor-pointer transition-all duration-200 ${
+        agotado
+          ? "bg-gray-300 cursor-not-allowed"
+          : added
+            ? "bg-diose-success scale-110"
+            : "bg-diose-amber hover:bg-diose-amber-dark hover:scale-110"
+      }`}
+    >
+      {added ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20,6 9,17 4,12" />
+        </svg>
+      ) : (
+        <CartIcon size={16} color="#fff" strokeWidth={2} />
+      )}
+    </button>
   );
 }
