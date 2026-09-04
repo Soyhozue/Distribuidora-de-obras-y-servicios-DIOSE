@@ -48,7 +48,7 @@ type FormState = {
   stock: string;
   stockStatus: Product["stockStatus"];
   categoryId: string;
-  subcategoryId: string;
+  subcategoryName: string;
   brandId: string;
   featured: boolean;
   images: string[];
@@ -110,7 +110,7 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     stock: "0",
     stockStatus: "EN_STOCK",
     categoryId: categories[0]?.id ?? "",
-    subcategoryId: "",
+    subcategoryName: "",
     brandId: brands[0]?.id ?? "",
     featured: false,
     images: [],
@@ -201,7 +201,7 @@ export default function ProductsManager({
       stock: String(p.stock),
       stockStatus: p.stockStatus,
       categoryId: p.categoryId,
-      subcategoryId: p.subcategoryId ?? "",
+      subcategoryName: p.subcategory ?? "",
       brandId: p.brandId,
       featured: !!p.featured,
       images: p.images ?? [],
@@ -233,7 +233,7 @@ export default function ProductsManager({
       stock: "0",
       stockStatus: "EN_STOCK",
       categoryId: p.categoryId,
-      subcategoryId: p.subcategoryId ?? "",
+      subcategoryName: p.subcategory ?? "",
       brandId: p.brandId,
       featured: false,
       images: p.images ?? [],
@@ -282,7 +282,25 @@ export default function ProductsManager({
     setForm((f) => ({ ...f, images: f.images.filter((i) => i !== url) }));
   }
 
-  function sharedFields() {
+  async function resolveSubcategoryId(): Promise<string | undefined> {
+    const name = form.subcategoryName.trim();
+    if (!name) return undefined;
+    try {
+      const res = await fetch("/api/subcategories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, categoryId: form.categoryId }),
+      });
+      if (!res.ok) return undefined;
+      const data = await res.json();
+      return data.id as string;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async function sharedFields() {
+    const subcategoryId = await resolveSubcategoryId();
     return {
       name: form.name,
       description: form.description.trim() || undefined,
@@ -292,7 +310,7 @@ export default function ProductsManager({
       unit: form.unit || undefined,
       weight: form.weight ? Number(form.weight) : undefined,
       categoryId: form.categoryId,
-      subcategoryId: form.subcategoryId || undefined,
+      subcategoryId,
       brandId: form.brandId,
       featured: form.featured,
       images: form.images,
@@ -309,7 +327,7 @@ export default function ProductsManager({
       return;
     }
     const payload = {
-      ...sharedFields(),
+      ...(await sharedFields()),
       sku: form.sku,
       price: Number(form.price),
       stock: Number(form.stock),
@@ -362,7 +380,7 @@ export default function ProductsManager({
       }
     }
     const familyKey = form.name.trim();
-    const shared = sharedFields();
+    const shared = await sharedFields();
     const errors: string[] = [];
 
     for (const row of variantRows) {
@@ -800,7 +818,7 @@ export default function ProductsManager({
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Categoría</span>
                 <select
                   value={form.categoryId}
-                  onChange={(e) => setForm({ ...form, categoryId: e.target.value, subcategoryId: "" })}
+                  onChange={(e) => setForm({ ...form, categoryId: e.target.value, subcategoryName: "" })}
                   className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
                 >
                   {categories.map((c) => (
@@ -812,20 +830,20 @@ export default function ProductsManager({
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Subcategoría (opcional)</span>
-                <select
-                  value={form.subcategoryId}
-                  onChange={(e) => setForm({ ...form, subcategoryId: e.target.value })}
+                <input
+                  value={form.subcategoryName}
+                  onChange={(e) => setForm({ ...form, subcategoryName: e.target.value })}
+                  placeholder="Ej: Grado 8 — escribe una nueva o elige una existente"
+                  list="subcategory-options"
                   className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
-                >
-                  <option value="">Sin subcategoría</option>
+                />
+                <datalist id="subcategory-options">
                   {subcategories
                     .filter((s) => s.categoryId === form.categoryId)
                     .map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
+                      <option key={s.id} value={s.name} />
                     ))}
-                </select>
+                </datalist>
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Marca</span>

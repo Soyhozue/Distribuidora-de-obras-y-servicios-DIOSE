@@ -22,12 +22,18 @@ export async function POST(req: Request) {
   const { name, categoryId } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
   if (!categoryId) return NextResponse.json({ error: "Selecciona una categoría" }, { status: 400 });
+  const slug = toSlug(name);
   try {
     const subcategory = await prisma.subcategory.create({
-      data: { name: name.trim(), slug: toSlug(name), categoryId },
+      data: { name: name.trim(), slug, categoryId },
     });
     return NextResponse.json(subcategory, { status: 201 });
   } catch {
+    // Ya existe una con ese nombre en esta categoría — la devolvemos tal cual
+    // (get-or-create), útil cuando el formulario de producto crea la
+    // subcategoría al vuelo sin que el usuario tenga que ir a otra pantalla.
+    const existing = await prisma.subcategory.findUnique({ where: { categoryId_slug: { categoryId, slug } } });
+    if (existing) return NextResponse.json(existing);
     return NextResponse.json({ error: "Ya existe una subcategoría con ese nombre en esta categoría" }, { status: 409 });
   }
 }
