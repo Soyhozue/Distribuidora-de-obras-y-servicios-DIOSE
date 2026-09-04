@@ -51,11 +51,39 @@ type FormState = {
   brandId: string;
   featured: boolean;
   images: string[];
-  variantGroupId: string;
-  variantLabel: string;
   minOrderQty: string;
   packLabel: string;
 };
+
+type VariantRow = {
+  id?: string;
+  variantLabel: string;
+  sku: string;
+  price: string;
+  stock: string;
+  minOrderQty: string;
+};
+
+function emptyVariantRow(): VariantRow {
+  return { variantLabel: "", sku: "", price: "", stock: "0", minOrderQty: "1" };
+}
+
+function rowFromProduct(p: ManagedProduct): VariantRow {
+  return {
+    id: p.id,
+    variantLabel: p.variantLabel ?? "",
+    sku: p.sku,
+    price: String(p.price),
+    stock: String(p.stock),
+    minOrderQty: String(p.minOrderQty ?? 1),
+  };
+}
+
+function deriveStockStatus(stock: number): Product["stockStatus"] {
+  if (stock <= 0) return "AGOTADO";
+  if (stock <= 10) return "STOCK_BAJO";
+  return "EN_STOCK";
+}
 
 function linesToText(lines: string[] | undefined): string {
   return (lines ?? []).join("\n");
@@ -82,8 +110,6 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     brandId: brands[0]?.id ?? "",
     featured: false,
     images: [],
-    variantGroupId: "",
-    variantLabel: "",
     minOrderQty: "1",
     packLabel: "",
   };
@@ -125,7 +151,9 @@ export default function ProductsManager({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
-  const [originToBackfill, setOriginToBackfill] = useState<ManagedProduct | null>(null);
+  const [hasVariants, setHasVariants] = useState(false);
+  const [variantRows, setVariantRows] = useState<VariantRow[]>([emptyVariantRow()]);
+  const [originalVariantIds, setOriginalVariantIds] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -145,13 +173,14 @@ export default function ProductsManager({
     setForm(emptyForm(categories, brands));
     setFormError("");
     setIsDuplicating(false);
-    setOriginToBackfill(null);
+    setHasVariants(false);
+    setVariantRows([emptyVariantRow()]);
+    setOriginalVariantIds([]);
     setModalOpen(true);
   }
 
   function openEdit(p: ManagedProduct) {
     setIsDuplicating(false);
-    setOriginToBackfill(null);
     setForm({
       id: p.id,
       sku: p.sku,
@@ -169,18 +198,21 @@ export default function ProductsManager({
       brandId: p.brandId,
       featured: !!p.featured,
       images: p.images ?? [],
-      variantGroupId: p.variantGroupId ?? "",
-      variantLabel: p.variantLabel ?? "",
       minOrderQty: String(p.minOrderQty ?? 1),
       packLabel: p.packLabel ?? "",
     });
+    const siblings = p.variantGroupId ? products.filter((sib) => sib.variantGroupId === p.variantGroupId) : [];
+    const isFamily = siblings.length > 0;
+    setHasVariants(isFamily);
+    const rows = (isFamily ? siblings : [p]).map(rowFromProduct);
+    setVariantRows(rows);
+    setOriginalVariantIds(isFamily ? rows.map((r) => r.id!).filter(Boolean) : []);
     setFormError("");
     setModalOpen(true);
   }
 
   function openDuplicate(p: ManagedProduct) {
     setIsDuplicating(true);
-    setOriginToBackfill(null);
     setForm({
       sku: "",
       name: `${p.name} (copia)`,
@@ -197,42 +229,26 @@ export default function ProductsManager({
       brandId: p.brandId,
       featured: false,
       images: p.images ?? [],
-      variantGroupId: p.variantGroupId ?? "",
-      variantLabel: "",
       minOrderQty: String(p.minOrderQty ?? 1),
       packLabel: p.packLabel ?? "",
     });
+    setHasVariants(false);
+    setVariantRows([emptyVariantRow()]);
+    setOriginalVariantIds([]);
     setFormError("");
     setModalOpen(true);
   }
 
-  function openAddVariant(p: ManagedProduct) {
-    setIsDuplicating(true);
-    const groupId = p.variantGroupId || p.name;
-    setOriginToBackfill(p.variantGroupId ? null : p);
-    setForm({
-      sku: "",
-      name: p.name,
-      description: p.description ?? "",
-      benefits: linesToText(p.benefits),
-      applications: linesToText(p.applications),
-      characteristics: linesToText(p.characteristics),
-      price: String(p.price),
-      unit: p.unit ?? "",
-      weight: p.weight != null ? String(p.weight) : "",
-      stock: "0",
-      stockStatus: "EN_STOCK",
-      categoryId: p.categoryId,
-      brandId: p.brandId,
-      featured: false,
-      images: [],
-      variantGroupId: groupId,
-      variantLabel: "",
-      minOrderQty: String(p.minOrderQty ?? 1),
-      packLabel: p.packLabel ?? "",
-    });
-    setFormError("");
-    setModalOpen(true);
+  function addVariantRow() {
+    setVariantRows((rows) => [...rows, emptyVariantRow()]);
+  }
+
+  function removeVariantRow(index: number) {
+    setVariantRows((rows) => rows.filter((_, i) => i !== index));
+  }
+
+  function updateVariantRow(index: number, patch: Partial<VariantRow>) {
+    setVariantRows((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   }
 
   async function handleImageUpload(files: FileList | null) {
@@ -258,8 +274,23 @@ export default function ProductsManager({
     setForm((f) => ({ ...f, images: f.images.filter((i) => i !== url) }));
   }
 
-  async function save() {
-    setFormError("");
+  function sharedFields() {
+    return {
+      name: form.name,
+      description: form.description.trim() || undefined,
+      benefits: textToLines(form.benefits),
+      applications: textToLines(form.applications),
+      characteristics: textToLines(form.characteristics),
+      unit: form.unit || undefined,
+      weight: form.weight ? Number(form.weight) : undefined,
+      categoryId: form.categoryId,
+      brandId: form.brandId,
+      featured: form.featured,
+      images: form.images,
+    };
+  }
+
+  async function saveSimple() {
     if (!Number(form.price) || Number(form.price) <= 0) {
       setFormError("El precio debe ser mayor a 0.");
       return;
@@ -268,31 +299,77 @@ export default function ProductsManager({
       setFormError("La cantidad mínima de venta debe ser un número entero de al menos 1.");
       return;
     }
-    setSaving(true);
-    try {
+    const payload = {
+      ...sharedFields(),
+      sku: form.sku,
+      price: Number(form.price),
+      stock: Number(form.stock),
+      stockStatus: form.stockStatus,
+      minOrderQty: form.minOrderQty ? Number(form.minOrderQty) : 1,
+      packLabel: form.packLabel.trim() || undefined,
+      variantGroupId: undefined,
+      variantLabel: undefined,
+    };
+    const res = form.id
+      ? await fetch(`/api/products/${form.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      : await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setFormError(data.error ?? "No se pudo guardar el producto.");
+      return false;
+    }
+    return true;
+  }
+
+  async function saveVariants() {
+    if (variantRows.length === 0) {
+      setFormError("Agrega al menos una medida.");
+      return;
+    }
+    for (const row of variantRows) {
+      if (!row.variantLabel.trim()) {
+        setFormError("Cada medida necesita una etiqueta (ej. 1\", 1 1/2\").");
+        return;
+      }
+      if (!row.sku.trim()) {
+        setFormError("Cada medida necesita un SKU único.");
+        return;
+      }
+      if (!Number(row.price) || Number(row.price) <= 0) {
+        setFormError(`El precio de "${row.variantLabel}" debe ser mayor a 0.`);
+        return;
+      }
+      if (!Number.isInteger(Number(row.minOrderQty)) || Number(row.minOrderQty) < 1) {
+        setFormError(`La cantidad mínima de "${row.variantLabel}" debe ser un entero de al menos 1.`);
+        return;
+      }
+    }
+    const familyKey = form.name.trim();
+    const shared = sharedFields();
+    const errors: string[] = [];
+
+    for (const row of variantRows) {
+      const stock = Number(row.stock) || 0;
       const payload = {
-        sku: form.sku,
-        name: form.name,
-        description: form.description.trim() || undefined,
-        benefits: textToLines(form.benefits),
-        applications: textToLines(form.applications),
-        characteristics: textToLines(form.characteristics),
-        price: Number(form.price),
-        unit: form.unit || undefined,
-        weight: form.weight ? Number(form.weight) : undefined,
-        stock: Number(form.stock),
-        stockStatus: form.stockStatus,
-        categoryId: form.categoryId,
-        brandId: form.brandId,
-        featured: form.featured,
-        images: form.images,
-        variantGroupId: form.variantGroupId.trim() || undefined,
-        variantLabel: form.variantLabel.trim() || undefined,
-        minOrderQty: form.minOrderQty ? Number(form.minOrderQty) : 1,
-        packLabel: form.packLabel.trim() || undefined,
+        ...shared,
+        sku: row.sku,
+        price: Number(row.price),
+        stock,
+        stockStatus: deriveStockStatus(stock),
+        minOrderQty: Number(row.minOrderQty) || 1,
+        variantGroupId: familyKey,
+        variantLabel: row.variantLabel.trim(),
       };
-      const res = form.id
-        ? await fetch(`/api/products/${form.id}`, {
+      const res = row.id
+        ? await fetch(`/api/products/${row.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -302,39 +379,41 @@ export default function ProductsManager({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setFormError(data.error ?? "No se pudo guardar el producto.");
-        return;
+        const data = await res.json().catch(() => ({}));
+        errors.push(`${row.variantLabel}: ${data.error ?? "error"}`);
       }
-      if (!form.id && originToBackfill) {
-        await fetch(`/api/products/${originToBackfill.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sku: originToBackfill.sku,
-            name: originToBackfill.name,
-            description: originToBackfill.description || undefined,
-            benefits: originToBackfill.benefits ?? [],
-            applications: originToBackfill.applications ?? [],
-            characteristics: originToBackfill.characteristics ?? [],
-            price: originToBackfill.price,
-            unit: originToBackfill.unit || undefined,
-            weight: originToBackfill.weight,
-            stock: originToBackfill.stock,
-            stockStatus: originToBackfill.stockStatus,
-            categoryId: originToBackfill.categoryId,
-            brandId: originToBackfill.brandId,
-            featured: originToBackfill.featured,
-            images: originToBackfill.images ?? [],
-            variantGroupId: form.variantGroupId.trim(),
-            minOrderQty: originToBackfill.minOrderQty ?? 1,
-            packLabel: originToBackfill.packLabel || undefined,
-          }),
-        });
-        setOriginToBackfill(null);
+    }
+
+    const keptIds = new Set(variantRows.map((r) => r.id).filter(Boolean));
+    for (const id of originalVariantIds) {
+      if (!keptIds.has(id)) {
+        const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          errors.push(data.error ?? "No se pudo eliminar una medida quitada.");
+        }
       }
-      showToast(form.id ? "Producto actualizado" : "Producto creado", "success");
+    }
+
+    if (errors.length > 0) {
+      setFormError(errors.join(" · "));
+      return false;
+    }
+    return true;
+  }
+
+  async function save() {
+    setFormError("");
+    if (!form.name.trim()) {
+      setFormError("El nombre es obligatorio.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const ok = hasVariants ? await saveVariants() : await saveSimple();
+      if (!ok) return;
+      showToast(form.id || variantRows.some((r) => r.id) ? "Producto actualizado" : "Producto creado", "success");
       setModalOpen(false);
       router.refresh();
     } finally {
@@ -560,7 +639,14 @@ export default function ProductsManager({
                   )}
                 </div>
                 <div>
-                  <div className="text-[13px] font-medium text-diose-black">{p.name}</div>
+                  <div className="text-[13px] font-medium text-diose-black flex items-center gap-1.5">
+                    {p.name}
+                    {p.variantLabel && (
+                      <span className="text-[10px] font-semibold text-diose-amber bg-diose-amber/10 px-1.5 py-0.5 rounded-sm shrink-0">
+                        {p.variantLabel}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[11px] text-gray-300 mt-0.5">SKU-{p.sku}</div>
                 </div>
                 <span className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 inline-block w-fit">
@@ -589,9 +675,6 @@ export default function ProductsManager({
                   </span>
                   <span onClick={() => openDuplicate(p)} className="text-xs text-gray-400 underline cursor-pointer hover:text-diose-black">
                     Duplicar
-                  </span>
-                  <span onClick={() => openAddVariant(p)} className="text-xs text-diose-amber underline cursor-pointer">
-                    + Medida
                   </span>
                   <span
                     onClick={() => setConfirmProductId(p.id)}
@@ -633,31 +716,55 @@ export default function ProductsManager({
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-lg p-7 max-h-[90vh] overflow-y-auto">
             <div className="font-heading text-lg text-diose-black mb-5">
-              {form.id
-                ? "Editar producto"
-                : isDuplicating && form.variantGroupId
-                  ? "Añadir medida"
-                  : isDuplicating
-                    ? "Duplicar producto"
-                    : "Añadir producto"}
+              {form.id ? "Editar producto" : isDuplicating ? "Duplicar producto" : "Añadir producto"}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <label className="flex flex-col gap-1 col-span-2">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Nombre</span>
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">
+                  {hasVariants ? "Nombre de familia" : "Nombre"}
+                </span>
                 <input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder={hasVariants ? "Ej: Tornillo Hexagonal 1/4" : undefined}
+                  list={hasVariants ? "variant-groups" : undefined}
                   className="border border-diose-border px-3 py-2 text-sm outline-none"
                 />
+                {hasVariants && (
+                  <datalist id="variant-groups">
+                    {variantGroups.map((g) => (
+                      <option key={g} value={g} />
+                    ))}
+                  </datalist>
+                )}
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">SKU</span>
-                <input
-                  value={form.sku}
-                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
-                />
-              </label>
+
+              <div className="col-span-2 flex items-center justify-between gap-3 border border-diose-border-light bg-diose-gray px-3.5 py-3">
+                <div>
+                  <div className="text-xs font-semibold text-diose-black">
+                    Este producto tiene variantes (tallas o medidas)
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">
+                    Actívalo para tornillería u otros productos con varios tamaños bajo un mismo nombre — cada
+                    medida tendrá su propio SKU, precio, stock y cantidad mínima.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHasVariants((v) => !v)}
+                  aria-pressed={hasVariants}
+                  className={`relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer ${
+                    hasVariants ? "bg-diose-amber" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      hasVariants ? "translate-x-5" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+
               <label className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Unidad (opcional)</span>
                 <input
@@ -676,28 +783,6 @@ export default function ProductsManager({
                   value={form.weight}
                   onChange={(e) => setForm({ ...form, weight: e.target.value })}
                   placeholder="Ej: 19"
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Precio</span>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={form.price}
-                  onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  className="border border-diose-border px-3 py-2 text-sm outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Stock</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={form.stock}
-                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
                   className="border border-diose-border px-3 py-2 text-sm outline-none"
                 />
               </label>
@@ -729,86 +814,159 @@ export default function ProductsManager({
                   ))}
                 </select>
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Estado</span>
-                <select
-                  value={form.stockStatus}
-                  onChange={(e) => setForm({ ...form, stockStatus: e.target.value as Product["stockStatus"] })}
-                  className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
-                >
-                  <option value="EN_STOCK">En stock</option>
-                  <option value="STOCK_BAJO">Stock bajo</option>
-                  <option value="AGOTADO">Agotado</option>
-                </select>
-              </label>
-              <div className="col-span-2 border border-diose-border-light bg-diose-gray p-3 flex flex-col gap-2.5">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
-                  Variantes / medidas (opcional)
-                </div>
-                <div className="text-[11px] text-gray-400 -mt-1.5">
-                  Agrupa tallas o medidas de un mismo producto (ej. tornillería) para que el cliente elija entre
-                  ellas sin que aparezcan como productos separados en el catálogo. Usa el mismo nombre de familia
-                  en cada medida.
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+
+              {!hasVariants ? (
+                <>
                   <label className="flex flex-col gap-1">
-                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Familia de producto</span>
+                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">SKU</span>
                     <input
-                      value={form.variantGroupId}
-                      onChange={(e) => setForm({ ...form, variantGroupId: e.target.value })}
-                      placeholder="Ej: Tornillo Hexagonal 1/4"
-                      list="variant-groups"
-                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
-                    />
-                    <datalist id="variant-groups">
-                      {variantGroups.map((g) => (
-                        <option key={g} value={g} />
-                      ))}
-                    </datalist>
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Etiqueta de esta medida</span>
-                    <input
-                      value={form.variantLabel}
-                      onChange={(e) => setForm({ ...form, variantLabel: e.target.value })}
-                      placeholder='Ej: 1", 1 1/2", 2"'
-                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                      value={form.sku}
+                      onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                      className="border border-diose-border px-3 py-2 text-sm outline-none"
                     />
                   </label>
-                </div>
-
-                <div className="h-px bg-diose-border-light" />
-
-                <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
-                  Venta por mínimo o paquete (opcional)
-                </div>
-                <div className="text-[11px] text-gray-400 -mt-1.5">
-                  Útil en tornillería o piezas chicas: obliga a comprar en múltiplos de una cantidad, o véndelo por
-                  bolsa/caja en vez de por pieza suelta.
-                </div>
-                <div className="grid grid-cols-2 gap-3">
                   <label className="flex flex-col gap-1">
-                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Cantidad mínima / múltiplo</span>
+                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Precio</span>
                     <input
                       type="number"
-                      min="1"
-                      step="1"
-                      value={form.minOrderQty}
-                      onChange={(e) => setForm({ ...form, minOrderQty: e.target.value })}
-                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                      min="0.01"
+                      step="0.01"
+                      value={form.price}
+                      onChange={(e) => setForm({ ...form, price: e.target.value })}
+                      className="border border-diose-border px-3 py-2 text-sm outline-none"
                     />
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Etiqueta de venta (opcional)</span>
+                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Stock</span>
                     <input
-                      value={form.packLabel}
-                      onChange={(e) => setForm({ ...form, packLabel: e.target.value })}
-                      placeholder="Ej: Bolsa de 100 piezas"
-                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={form.stock}
+                      onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                      className="border border-diose-border px-3 py-2 text-sm outline-none"
                     />
                   </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Estado</span>
+                    <select
+                      value={form.stockStatus}
+                      onChange={(e) => setForm({ ...form, stockStatus: e.target.value as Product["stockStatus"] })}
+                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                    >
+                      <option value="EN_STOCK">En stock</option>
+                      <option value="STOCK_BAJO">Stock bajo</option>
+                      <option value="AGOTADO">Agotado</option>
+                    </select>
+                  </label>
+                  <div className="col-span-2 border border-diose-border-light bg-diose-gray p-3 flex flex-col gap-2.5">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                      Venta por mínimo o paquete (opcional)
+                    </div>
+                    <div className="text-[11px] text-gray-400 -mt-1.5">
+                      Obliga a comprar en múltiplos de una cantidad, o véndelo por bolsa/caja en vez de por pieza
+                      suelta.
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Cantidad mínima / múltiplo</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={form.minOrderQty}
+                          onChange={(e) => setForm({ ...form, minOrderQty: e.target.value })}
+                          className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Etiqueta de venta (opcional)</span>
+                        <input
+                          value={form.packLabel}
+                          onChange={(e) => setForm({ ...form, packLabel: e.target.value })}
+                          placeholder="Ej: Bolsa de 100 piezas"
+                          className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="col-span-2 flex flex-col gap-2.5">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                    Medidas de &quot;{form.name.trim() || "..."}&quot;
+                  </div>
+                  <div className="border border-diose-border overflow-hidden">
+                    <div className="grid grid-cols-[1fr_1fr_90px_70px_90px_28px] gap-1.5 px-2.5 py-2 bg-[#F9F9F9] border-b border-diose-border-light">
+                      {["Etiqueta", "SKU", "Precio", "Stock", "Mín.", ""].map((h) => (
+                        <span key={h} className="text-[9px] font-semibold tracking-[0.1em] uppercase text-gray-400">
+                          {h}
+                        </span>
+                      ))}
+                    </div>
+                    {variantRows.map((row, i) => (
+                      <div
+                        key={i}
+                        className="grid grid-cols-[1fr_1fr_90px_70px_90px_28px] gap-1.5 px-2.5 py-1.5 border-b border-gray-100 last:border-b-0 items-center"
+                      >
+                        <input
+                          value={row.variantLabel}
+                          onChange={(e) => updateVariantRow(i, { variantLabel: e.target.value })}
+                          placeholder='1", 1 1/2"...'
+                          className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
+                        />
+                        <input
+                          value={row.sku}
+                          onChange={(e) => updateVariantRow(i, { sku: e.target.value })}
+                          placeholder="SKU"
+                          className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
+                        />
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={row.price}
+                          onChange={(e) => updateVariantRow(i, { price: e.target.value })}
+                          placeholder="$"
+                          className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={row.stock}
+                          onChange={(e) => updateVariantRow(i, { stock: e.target.value })}
+                          className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
+                        />
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={row.minOrderQty}
+                          onChange={(e) => updateVariantRow(i, { minOrderQty: e.target.value })}
+                          className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeVariantRow(i)}
+                          disabled={variantRows.length <= 1}
+                          className="text-gray-300 hover:text-diose-danger cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addVariantRow}
+                    className="self-start text-xs font-semibold text-diose-amber underline cursor-pointer"
+                  >
+                    + Agregar medida
+                  </button>
                 </div>
-              </div>
+              )}
+
               <label className="flex items-center gap-2 col-span-2 mt-1">
                 <input
                   type="checkbox"
@@ -901,7 +1059,13 @@ export default function ProductsManager({
               </button>
               <button
                 onClick={save}
-                disabled={saving || !form.name || !form.sku || !form.categoryId || !form.brandId}
+                disabled={
+                  saving ||
+                  !form.name ||
+                  !form.categoryId ||
+                  !form.brandId ||
+                  (hasVariants ? variantRows.length === 0 : !form.sku)
+                }
                 className="bg-diose-amber hover:bg-diose-amber-dark text-white px-5 py-2 text-xs font-semibold cursor-pointer disabled:opacity-50"
               >
                 {saving ? "Guardando..." : "Guardar"}
