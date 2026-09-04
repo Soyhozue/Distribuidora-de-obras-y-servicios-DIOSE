@@ -58,6 +58,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         >
           {product.category}
         </Link>
+        {product.subcategory && (
+          <>
+            <span className="text-[11px] text-gray-300">/</span>
+            <span className="text-[11px] text-gray-400 tracking-[0.04em]">{product.subcategory}</span>
+          </>
+        )}
         <span className="text-[11px] text-gray-300">/</span>
         <span className="text-[11px] text-diose-black font-medium">{product.name}</span>
       </div>

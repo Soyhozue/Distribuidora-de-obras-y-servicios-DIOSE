@@ -31,8 +31,10 @@ type DbProduct = {
   stockStatus: string;
   categoryId: string;
   brandId: string;
+  subcategoryId?: string | null;
   category: { name: string };
   brand: { name: string };
+  subcategory?: { name: string } | null;
   featured: boolean;
   images: string[];
   variantGroupId?: string | null;
@@ -50,6 +52,8 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
     category: p.category.name,
     categoryId: p.categoryId,
     brandId: p.brandId,
+    subcategoryId: p.subcategoryId ?? undefined,
+    subcategory: p.subcategory?.name ?? undefined,
     price: Number(p.price.toString()),
     unit: p.unit ?? undefined,
     weight: p.weight ?? undefined,
@@ -70,12 +74,13 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
 }
 
 const STOREFRONT_WHERE = { OR: [{ variantGroupId: null }, { isPrimaryVariant: true }] };
+const PRODUCT_INCLUDE = { category: true, brand: true, subcategory: true };
 
 export type ManagedProduct = Product & { categoryId: string; brandId: string };
 
 export async function getAllProducts(): Promise<ManagedProduct[]> {
   const products = await prisma.product.findMany({
-    include: { category: true, brand: true },
+    include: PRODUCT_INCLUDE,
     orderBy: { name: "asc" },
   });
   return products.map(mapProduct);
@@ -84,7 +89,7 @@ export async function getAllProducts(): Promise<ManagedProduct[]> {
 export async function getFeaturedProducts(): Promise<Product[]> {
   const products = await prisma.product.findMany({
     where: { featured: true, ...STOREFRONT_WHERE },
-    include: { category: true, brand: true },
+    include: PRODUCT_INCLUDE,
     take: 4,
   });
   return products.map(mapProduct);
@@ -93,7 +98,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
 export async function getStorefrontProducts(): Promise<Product[]> {
   const products = await prisma.product.findMany({
     where: STOREFRONT_WHERE,
-    include: { category: true, brand: true },
+    include: PRODUCT_INCLUDE,
     orderBy: { name: "asc" },
   });
   return products.map(mapProduct);
@@ -102,7 +107,7 @@ export async function getStorefrontProducts(): Promise<Product[]> {
 export async function getProductById(id: string): Promise<Product | null> {
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { category: true, brand: true },
+    include: PRODUCT_INCLUDE,
   });
   return product ? mapProduct(product) : null;
 }
@@ -131,10 +136,26 @@ export async function getProductVariants(variantGroupId: string, excludeId: stri
 export async function getRelatedProducts(categoryName: string, excludeId: string): Promise<Product[]> {
   const products = await prisma.product.findMany({
     where: { category: { name: categoryName }, id: { not: excludeId }, ...STOREFRONT_WHERE },
-    include: { category: true, brand: true },
+    include: PRODUCT_INCLUDE,
     take: 4,
   });
   return products.map(mapProduct);
+}
+
+export async function getSubcategories(): Promise<
+  { id: string; name: string; categoryId: string; categoryName: string; count: number }[]
+> {
+  const rows = await prisma.subcategory.findMany({
+    include: { _count: { select: { products: true } }, category: { select: { name: true } } },
+    orderBy: { name: "asc" },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    categoryId: r.categoryId,
+    categoryName: r.category.name,
+    count: r._count.products,
+  }));
 }
 
 export type ProductInput = {
@@ -150,6 +171,7 @@ export type ProductInput = {
   stock: number;
   stockStatus: "EN_STOCK" | "STOCK_BAJO" | "AGOTADO";
   categoryId: string;
+  subcategoryId?: string;
   brandId: string;
   featured?: boolean;
   images?: string[];
@@ -811,7 +833,7 @@ export async function getPromoImages() {
   }
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
-    include: { category: true, brand: true },
+    include: PRODUCT_INCLUDE,
   });
   const byId = new Map(products.map((p) => [p.id, mapProduct(p)]));
   return promos.map((p) => ({ ...p, linkedProduct: p.linkedProductId ? byId.get(p.linkedProductId) ?? null : null }));

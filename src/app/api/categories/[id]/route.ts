@@ -3,10 +3,18 @@ import { prisma } from "@/lib/prisma";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const category = await prisma.category.findUnique({ include: { _count: { select: { products: true } } }, where: { id } });
+  const category = await prisma.category.findUnique({
+    include: { _count: { select: { products: true, subcategories: true } } },
+    where: { id },
+  });
   if (!category) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
   if (category._count.products > 0)
     return NextResponse.json({ error: `No se puede eliminar: tiene ${category._count.products} producto(s) asignados` }, { status: 409 });
+  if (category._count.subcategories > 0)
+    return NextResponse.json(
+      { error: `No se puede eliminar: tiene ${category._count.subcategories} subcategoría(s). Elimínalas primero.` },
+      { status: 409 }
+    );
   await prisma.category.delete({ where: { id } });
   return new NextResponse(null, { status: 204 });
 }

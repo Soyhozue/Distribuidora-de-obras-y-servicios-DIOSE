@@ -44,6 +44,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/upload") ||
     pathname.startsWith("/api/promos") ||
     pathname.startsWith("/api/coupons") ||
+    pathname.startsWith("/api/categories") ||
+    pathname.startsWith("/api/subcategories") ||
+    pathname.startsWith("/api/brands") ||
     /^\/api\/orders\/[^/]+$/.test(pathname);
 
   if (isProtectedApi && request.method !== "GET" && !valid) {
@@ -64,5 +67,8 @@ export const config = {
     "/api/upload",
     "/api/promos/:path*",
     "/api/coupons/:path*",
+    "/api/categories/:path*",
+    "/api/subcategories/:path*",
+    "/api/brands/:path*",
   ],
 };

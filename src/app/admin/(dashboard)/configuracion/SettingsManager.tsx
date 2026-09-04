@@ -155,6 +155,175 @@ function CatalogSection({
   );
 }
 
+function SubcategorySection() {
+  const [categories, setCategories] = useState<CatalogItem[]>([]);
+  const [categoryId, setCategoryId] = useState("");
+  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [newName, setNewName] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [confirmItem, setConfirmItem] = useState<CatalogItem | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const res = await fetch("/api/categories");
+      const data: CatalogItem[] = await res.json();
+      setCategories(data);
+      setCategoryId((prev) => prev || data[0]?.id || "");
+    })();
+  }, []);
+
+  const load = useCallback(async () => {
+    if (!categoryId) {
+      setItems([]);
+      return;
+    }
+    const res = await fetch(`/api/subcategories?categoryId=${categoryId}`);
+    setItems(await res.json());
+  }, [categoryId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function create() {
+    if (!newName.trim() || !categoryId) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/subcategories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName, categoryId }),
+      });
+      if (!res.ok) { const d = await res.json(); setError(d.error); return; }
+      setNewName("");
+      await load();
+    } finally { setSaving(false); }
+  }
+
+  async function remove(id: string) {
+    const res = await fetch(`/api/subcategories/${id}`, { method: "DELETE" });
+    setConfirmItem(null);
+    if (!res.ok) { const d = await res.json(); setError(d.error); return; }
+    await load();
+  }
+
+  async function saveEdit(id: string) {
+    if (!editName.trim()) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/subcategories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName }),
+      });
+      if (!res.ok) { const d = await res.json(); setError(d.error); return; }
+      setEditId(null);
+      await load();
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <>
+      {confirmItem && (
+        <ConfirmModal
+          message={`¿Eliminar "${confirmItem.name}"?`}
+          onConfirm={() => { const id = confirmItem.id; setConfirmItem(null); remove(id); }}
+          onCancel={() => setConfirmItem(null)}
+        />
+      )}
+      <div className="bg-white border border-diose-border p-6">
+        <div className="font-heading text-lg text-diose-black mb-1">Subcategorías</div>
+        <div className="text-xs text-gray-400 mb-5">
+          Divide una categoría en tipos más específicos — por ejemplo, dentro de &quot;Tornillería&quot;: Grado 5,
+          Grado 8, Socket, Rondanas, Tuercas. Elige primero la categoría, luego administra sus subcategorías.
+        </div>
+
+        <select
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          className="border border-diose-border px-3 py-2 text-sm outline-none bg-white mb-4 w-full"
+        >
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        {categoryId && (
+          <>
+            <div className="flex flex-col gap-1.5 mb-5">
+              {items.map((item) => (
+                <div key={item.id} className="flex items-center gap-2 border border-diose-border-light px-3 py-2">
+                  {editId === item.id ? (
+                    <>
+                      <input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveEdit(item.id); if (e.key === "Escape") setEditId(null); }}
+                        className="flex-1 text-sm outline-none border-b border-diose-amber"
+                        autoFocus
+                      />
+                      <button onClick={() => saveEdit(item.id)} disabled={saving} className="text-[11px] text-diose-amber font-semibold cursor-pointer">
+                        Guardar
+                      </button>
+                      <button onClick={() => setEditId(null)} className="text-[11px] text-gray-400 cursor-pointer">
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex-1 text-sm text-diose-black">{item.name}</span>
+                      <span className="text-[11px] text-gray-400">{item.count} productos</span>
+                      <button
+                        onClick={() => { setEditId(item.id); setEditName(item.name); setError(""); }}
+                        className="text-[11px] text-gray-500 hover:text-diose-black cursor-pointer ml-2"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => setConfirmItem(item)}
+                        disabled={item.count > 0}
+                        title={item.count > 0 ? "Reasigna o elimina los productos primero" : "Eliminar"}
+                        className="text-[11px] text-red-400 hover:text-red-600 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        Eliminar
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+              {items.length === 0 && <div className="text-xs text-gray-400">Sin subcategorías en esta categoría aún.</div>}
+            </div>
+
+            {error && <div className="text-xs text-red-500 mb-3">{error}</div>}
+
+            <div className="flex gap-2">
+              <input
+                value={newName}
+                onChange={(e) => { setNewName(e.target.value); setError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") create(); }}
+                placeholder="Ej: Grado 8"
+                className="flex-1 border border-diose-border px-3 py-2 text-sm outline-none"
+              />
+              <button
+                onClick={create}
+                disabled={saving || !newName.trim()}
+                className="bg-diose-black hover:bg-diose-amber text-white px-5 py-2 text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors"
+              >
+                {saving ? "..." : "Agregar"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 type Settings = {
   phone: string;
   phone2: string;
@@ -867,6 +1036,7 @@ export default function SettingsManager({
               endpoint="/api/categories"
               namePlaceholder="Ej: Herramientas"
             />
+            <SubcategorySection />
           </>
         )}
 

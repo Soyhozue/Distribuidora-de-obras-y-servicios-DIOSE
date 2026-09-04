@@ -7,6 +7,7 @@ import type { Product } from "@/data/products";
 
 type CategoryCount = { name: string; count: number };
 type BrandCount = { name: string; count: number };
+type SubcategoryCount = { id: string; name: string; categoryId: string; categoryName: string; count: number };
 type Combo = { id: string; title: string; subtitle: string | null; products: string[]; comboPrice: number | null; savings: number | null };
 
 const SORT_OPTIONS = [
@@ -24,6 +25,7 @@ export default function CatalogoClient({
   categories,
   brands,
   combos = [],
+  subcategories = [],
   initialCategory,
   initialQuery = "",
 }: {
@@ -31,22 +33,30 @@ export default function CatalogoClient({
   categories: CategoryCount[];
   brands: BrandCount[];
   combos?: Combo[];
+  subcategories?: SubcategoryCount[];
   initialCategory?: string | null;
   initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<string | null>(initialCategory ?? null);
+  const [subcategory, setSubcategory] = useState<string | null>(null);
   const [brand, setBrand] = useState<string | null>(null);
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [sort, setSort] = useState<SortKey>("relevancia");
   const [sortOpen, setSortOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const activeFilterCount = (category ? 1 : 0) + (brand ? 1 : 0) + (onlyInStock ? 1 : 0);
+  const activeFilterCount = (category ? 1 : 0) + (subcategory ? 1 : 0) + (brand ? 1 : 0) + (onlyInStock ? 1 : 0);
+
+  function selectCategory(c: string | null) {
+    setCategory(c);
+    setSubcategory(null);
+  }
 
   const filtered = useMemo(() => {
     const result = products.filter((p) => {
       if (category && p.category !== category) return false;
+      if (subcategory && p.subcategory !== subcategory) return false;
       if (brand && p.brand !== brand) return false;
       if (onlyInStock && p.stockStatus === "AGOTADO") return false;
       if (query && !p.name.toLowerCase().includes(query.toLowerCase())) return false;
@@ -56,14 +66,14 @@ export default function CatalogoClient({
     if (sort === "precio-desc") result.sort((a, b) => b.price - a.price);
     if (sort === "nombre") result.sort((a, b) => a.name.localeCompare(b.name));
     return result;
-  }, [products, query, category, brand, onlyInStock, sort]);
+  }, [products, query, category, subcategory, brand, onlyInStock, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageProducts = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   useEffect(() => {
     setPage(1);
-  }, [query, category, brand, onlyInStock, sort]);
+  }, [query, category, subcategory, brand, onlyInStock, sort]);
 
   return (
     <>
@@ -130,7 +140,10 @@ export default function CatalogoClient({
             products={products}
             categories={categories}
             category={category}
-            setCategory={setCategory}
+            setCategory={selectCategory}
+            subcategories={subcategories}
+            subcategory={subcategory}
+            setSubcategory={setSubcategory}
             brands={brands}
             brand={brand}
             setBrand={setBrand}
@@ -153,7 +166,10 @@ export default function CatalogoClient({
                 products={products}
                 categories={categories}
                 category={category}
-                setCategory={setCategory}
+                setCategory={selectCategory}
+                subcategories={subcategories}
+                subcategory={subcategory}
+                setSubcategory={setSubcategory}
                 brands={brands}
                 brand={brand}
                 setBrand={setBrand}
@@ -173,7 +189,7 @@ export default function CatalogoClient({
         {/* PRODUCT GRID */}
         <main className="flex-1 p-6">
           {/* Combos / paquetes */}
-          {combos.length > 0 && !query && !category && !brand && (
+          {combos.length > 0 && !query && !category && !subcategory && !brand && (
             <div className="mb-7">
               <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-3">
                 Paquetes especiales
@@ -241,6 +257,9 @@ function FilterContent({
   categories,
   category,
   setCategory,
+  subcategories,
+  subcategory,
+  setSubcategory,
   brands,
   brand,
   setBrand,
@@ -251,12 +270,17 @@ function FilterContent({
   categories: CategoryCount[];
   category: string | null;
   setCategory: (c: string | null) => void;
+  subcategories: SubcategoryCount[];
+  subcategory: string | null;
+  setSubcategory: (s: string | null) => void;
   brands: BrandCount[];
   brand: string | null;
   setBrand: (b: string | null) => void;
   onlyInStock: boolean;
   setOnlyInStock: (v: boolean | ((prev: boolean) => boolean)) => void;
 }) {
+  const subcategoriesForCategory = category ? subcategories.filter((s) => s.categoryName === category) : [];
+
   return (
     <>
       <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 mb-3.5">
@@ -278,21 +302,47 @@ function FilterContent({
           <span className="text-[11px] text-gray-300 ml-auto">{products.length}</span>
         </button>
         {categories.map((cat) => (
-          <button
-            key={cat.name}
-            onClick={() => setCategory(cat.name)}
-            className="flex items-center gap-2.5 py-2 border-b border-gray-100 cursor-pointer text-left last:border-b-0"
-          >
-            <div
-              className={`w-3.5 h-3.5 rounded-full border-[1.5px] shrink-0 ${
-                category === cat.name ? "bg-diose-black border-diose-black" : "border-gray-300"
-              }`}
-            />
-            <span className={`text-[13px] ${category === cat.name ? "text-diose-black font-medium" : "text-gray-600"}`}>
-              {cat.name}
-            </span>
-            <span className="text-[11px] text-gray-300 ml-auto">{cat.count}</span>
-          </button>
+          <div key={cat.name}>
+            <button
+              onClick={() => setCategory(cat.name)}
+              className="w-full flex items-center gap-2.5 py-2 border-b border-gray-100 cursor-pointer text-left"
+            >
+              <div
+                className={`w-3.5 h-3.5 rounded-full border-[1.5px] shrink-0 ${
+                  category === cat.name ? "bg-diose-black border-diose-black" : "border-gray-300"
+                }`}
+              />
+              <span className={`text-[13px] ${category === cat.name ? "text-diose-black font-medium" : "text-gray-600"}`}>
+                {cat.name}
+              </span>
+              <span className="text-[11px] text-gray-300 ml-auto">{cat.count}</span>
+            </button>
+            {category === cat.name && subcategoriesForCategory.length > 0 && (
+              <div className="flex flex-col pl-5 pb-1.5 border-b border-gray-100">
+                {subcategoriesForCategory.map((sub) => (
+                  <button
+                    key={sub.id}
+                    onClick={() => setSubcategory(subcategory === sub.name ? null : sub.name)}
+                    className="flex items-center gap-2 py-1.5 cursor-pointer text-left"
+                  >
+                    <div
+                      className={`w-2.5 h-2.5 rounded-full border-[1.5px] shrink-0 ${
+                        subcategory === sub.name ? "bg-diose-amber border-diose-amber" : "border-gray-300"
+                      }`}
+                    />
+                    <span
+                      className={`text-[12.5px] ${
+                        subcategory === sub.name ? "text-diose-black font-medium" : "text-gray-500"
+                      }`}
+                    >
+                      {sub.name}
+                    </span>
+                    <span className="text-[10px] text-gray-300 ml-auto">{sub.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </div>
 

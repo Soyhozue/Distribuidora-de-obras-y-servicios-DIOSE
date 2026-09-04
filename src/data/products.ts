@@ -23,6 +23,8 @@ export type Product = {
   variantLabel?: string;
   minOrderQty?: number;
   packLabel?: string;
+  subcategory?: string;
+  subcategoryId?: string;
 };
 
 export const PRODUCTS: Product[] = [

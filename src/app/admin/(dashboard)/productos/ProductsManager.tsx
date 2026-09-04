@@ -48,6 +48,7 @@ type FormState = {
   stock: string;
   stockStatus: Product["stockStatus"];
   categoryId: string;
+  subcategoryId: string;
   brandId: string;
   featured: boolean;
   images: string[];
@@ -63,6 +64,8 @@ type VariantRow = {
   stock: string;
   minOrderQty: string;
 };
+
+type Subcategory = { id: string; name: string; categoryId: string; count: number };
 
 function emptyVariantRow(): VariantRow {
   return { variantLabel: "", sku: "", price: "", stock: "0", minOrderQty: "1" };
@@ -107,6 +110,7 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     stock: "0",
     stockStatus: "EN_STOCK",
     categoryId: categories[0]?.id ?? "",
+    subcategoryId: "",
     brandId: brands[0]?.id ?? "",
     featured: false,
     images: [],
@@ -129,11 +133,13 @@ export default function ProductsManager({
   categories,
   brands,
   variantGroups,
+  subcategories,
 }: {
   products: ManagedProduct[];
   categories: Option[];
   brands: Option[];
   variantGroups: string[];
+  subcategories: Subcategory[];
 }) {
   const router = useRouter();
   const showToast = useToastStore((s) => s.show);
@@ -195,6 +201,7 @@ export default function ProductsManager({
       stock: String(p.stock),
       stockStatus: p.stockStatus,
       categoryId: p.categoryId,
+      subcategoryId: p.subcategoryId ?? "",
       brandId: p.brandId,
       featured: !!p.featured,
       images: p.images ?? [],
@@ -226,6 +233,7 @@ export default function ProductsManager({
       stock: "0",
       stockStatus: "EN_STOCK",
       categoryId: p.categoryId,
+      subcategoryId: p.subcategoryId ?? "",
       brandId: p.brandId,
       featured: false,
       images: p.images ?? [],
@@ -284,6 +292,7 @@ export default function ProductsManager({
       unit: form.unit || undefined,
       weight: form.weight ? Number(form.weight) : undefined,
       categoryId: form.categoryId,
+      subcategoryId: form.subcategoryId || undefined,
       brandId: form.brandId,
       featured: form.featured,
       images: form.images,
@@ -651,6 +660,7 @@ export default function ProductsManager({
                 </div>
                 <span className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 inline-block w-fit">
                   {p.category}
+                  {p.subcategory && <span className="text-gray-400"> · {p.subcategory}</span>}
                 </span>
                 <span className="text-xs text-gray-600">{p.brand}</span>
                 <span className="text-[13px] font-semibold text-diose-black">
@@ -790,7 +800,7 @@ export default function ProductsManager({
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Categoría</span>
                 <select
                   value={form.categoryId}
-                  onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                  onChange={(e) => setForm({ ...form, categoryId: e.target.value, subcategoryId: "" })}
                   className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
                 >
                   {categories.map((c) => (
@@ -798,6 +808,23 @@ export default function ProductsManager({
                       {c.name}
                     </option>
                   ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Subcategoría (opcional)</span>
+                <select
+                  value={form.subcategoryId}
+                  onChange={(e) => setForm({ ...form, subcategoryId: e.target.value })}
+                  className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                >
+                  <option value="">Sin subcategoría</option>
+                  {subcategories
+                    .filter((s) => s.categoryId === form.categoryId)
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
                 </select>
               </label>
               <label className="flex flex-col gap-1">
