@@ -4,6 +4,8 @@ import { CartIcon, UserIcon } from "./icons";
 import CartBadge from "./CartBadge";
 import SearchBar from "./SearchBar";
 import MobileMenu from "./MobileMenu";
+import AnnouncementBar from "./AnnouncementBar";
+import CookieNotice from "./CookieNotice";
 import { getSiteSettings } from "@/lib/data";
 
 const LINKS = [
@@ -15,6 +17,8 @@ const LINKS = [
 export default async function Navbar({ active }: { active?: string }) {
   const settings = await getSiteSettings();
   return (
+    <>
+    <AnnouncementBar text={settings.announcementText} />
     <nav className="sticky top-0 z-30 h-16 bg-white border-b border-diose-border-light px-5 md:px-12">
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
         {/* Logo */}
@@ -63,5 +67,7 @@ export default async function Navbar({ active }: { active?: string }) {
         </div>
       </div>
     </nav>
+    <CookieNotice />
+    </>
   );
 }

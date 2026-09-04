@@ -13,12 +13,17 @@ export async function POST(request: Request) {
   if (!file || !(file instanceof File)) {
     return NextResponse.json({ error: "No se recibió ningún archivo" }, { status: 400 });
   }
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "El archivo debe ser una imagen" }, { status: 400 });
+  const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
+  if (!isImage && !isVideo) {
+    return NextResponse.json({ error: "El archivo debe ser una imagen o un video" }, { status: 400 });
   }
-  const MAX_SIZE = 8 * 1024 * 1024;
+  const MAX_SIZE = isVideo ? 25 * 1024 * 1024 : 8 * 1024 * 1024;
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: "La imagen no puede pesar más de 8 MB" }, { status: 400 });
+    return NextResponse.json(
+      { error: isVideo ? "El video no puede pesar más de 25 MB" : "La imagen no puede pesar más de 8 MB" },
+      { status: 400 }
+    );
   }
 
   try {

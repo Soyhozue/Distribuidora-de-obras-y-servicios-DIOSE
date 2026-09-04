@@ -14,10 +14,18 @@ export async function POST(request: Request) {
   }
   const body = await request.json();
   if (!body.imageUrl) {
-    return NextResponse.json({ error: "Falta la imagen de la promoción." }, { status: 400 });
+    return NextResponse.json({ error: "Falta la imagen o video de la promoción." }, { status: 400 });
   }
   try {
-    const promo = await createPromoImage(body);
+    const promo = await createPromoImage({
+      imageUrl: body.imageUrl,
+      mediaType: body.mediaType === "VIDEO" ? "VIDEO" : "IMAGE",
+      title: body.title || undefined,
+      subtitle: body.subtitle || undefined,
+      badgeText: body.badgeText || undefined,
+      sectionLabel: body.sectionLabel || undefined,
+      link: body.link || undefined,
+    });
     return NextResponse.json(promo);
   } catch {
     return NextResponse.json({ error: "No se pudo guardar la promoción." }, { status: 400 });

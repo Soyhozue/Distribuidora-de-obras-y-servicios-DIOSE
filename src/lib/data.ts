@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import type { Product } from "@/data/products";
 import type { ProductIconKey } from "@/components/icons";
 
-function pickIcon(categoryName: string): ProductIconKey {
+export function pickIcon(categoryName: string): ProductIconKey {
   const map: Record<string, ProductIconKey> = {
     Herramientas: "drill",
     Materiales: "cement",
@@ -690,6 +690,7 @@ export type SiteSettingsInput = {
   aboutFeature3: string;
   aboutCityLine: string;
   aboutStateLine: string;
+  announcementText: string;
 };
 
 export async function updateSiteSettings(input: SiteSettingsInput) {
@@ -704,10 +705,24 @@ export async function getPromoImages() {
   return prisma.promoImage.findMany({ orderBy: { order: "asc" } });
 }
 
+export async function getPromoSectionLabels() {
+  const rows = await prisma.promoImage.findMany({
+    where: { sectionLabel: { not: null } },
+    select: { sectionLabel: true },
+    distinct: ["sectionLabel"],
+  });
+  return rows
+    .map((r) => r.sectionLabel)
+    .filter((label): label is string => !!label && label.trim().length > 0);
+}
+
 export async function createPromoImage(input: {
   imageUrl: string;
+  mediaType?: "IMAGE" | "VIDEO";
   title?: string;
   subtitle?: string;
+  badgeText?: string;
+  sectionLabel?: string;
   link?: string;
 }) {
   const count = await prisma.promoImage.count();

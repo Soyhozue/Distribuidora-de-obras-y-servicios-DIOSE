@@ -221,17 +221,26 @@ model SiteSettings {
   aboutFeature3   String   @default("Atención personalizada")
   aboutCityLine   String   @default("Cd. Juárez")
   aboutStateLine  String   @default("Chihuahua, México")
+  announcementText String  @default("")
   updatedAt       DateTime @updatedAt
 }
 
+enum PromoMediaType {
+  IMAGE
+  VIDEO
+}
+
 model PromoImage {
-  id        String   @id @default(cuid())
-  imageUrl  String
-  title     String?
-  subtitle  String?
-  link      String?
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
+  id           String         @id @default(cuid())
+  imageUrl     String
+  mediaType    PromoMediaType @default(IMAGE)
+  title        String?
+  subtitle     String?
+  badgeText    String?
+  sectionLabel String?
+  link         String?
+  order        Int            @default(0)
+  createdAt    DateTime       @default(now())
 }
 
 model Coupon {

@@ -6,7 +6,9 @@ import ProductCard from "@/components/ProductCard";
 import HeroCarousel from "@/components/HeroCarousel";
 import HeroTitle from "@/components/HeroTitle";
 import PromoSection from "@/components/PromoSection";
-import { getCategoriesWithCounts, getFeaturedProducts, getPromoImages, getSiteSettings, parseHeroSlides } from "@/lib/data";
+import RevealOnScroll from "@/components/RevealOnScroll";
+import { ProductIcon } from "@/components/icons";
+import { getCategoriesWithCounts, getFeaturedProducts, getPromoImages, getSiteSettings, parseHeroSlides, pickIcon } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -71,15 +73,23 @@ export default async function Home() {
             <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 whitespace-nowrap">
               Categorías
             </span>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-2">
               {activeCategories.map((cat, i) => (
                 <Link
                   key={cat.name}
                   href={`/catalogo?categoria=${encodeURIComponent(cat.name)}`}
-                  className={`px-6 py-2.5 text-[13px] tracking-[0.04em] cursor-pointer ${
-                    i === 0 ? "bg-diose-amber text-white font-medium" : "border border-diose-border text-gray-700"
+                  className={`flex items-center gap-2 pl-3.5 pr-6 py-2 text-[13px] tracking-[0.04em] cursor-pointer rounded-full transition-colors duration-200 ${
+                    i === 0
+                      ? "bg-diose-amber text-white font-medium"
+                      : "border border-diose-border text-gray-700 hover:border-diose-amber hover:text-diose-amber"
                   }`}
                 >
+                  <ProductIcon
+                    icon={pickIcon(cat.name)}
+                    size={18}
+                    strokeWidth={1.6}
+                    color={i === 0 ? "#ffffff" : "#1d5fb8"}
+                  />
                   {cat.name}
                 </Link>
               ))}
@@ -91,7 +101,7 @@ export default async function Home() {
       {/* FEATURED PRODUCTS */}
       {featured.length > 0 && (
         <section className="bg-diose-gray px-6 md:px-20 py-8">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-5">
+          <RevealOnScroll className="max-w-7xl mx-auto flex flex-col md:flex-row gap-5">
             <div className="md:min-w-[140px]">
               <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-500 mb-1.5">
                 Destacados
@@ -107,7 +117,7 @@ export default async function Home() {
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-          </div>
+          </RevealOnScroll>
         </section>
       )}
 

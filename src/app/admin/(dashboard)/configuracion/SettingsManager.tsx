@@ -185,13 +185,17 @@ type Settings = {
   aboutFeature3: string;
   aboutCityLine: string;
   aboutStateLine: string;
+  announcementText: string;
 };
 
 type Promo = {
   id: string;
   imageUrl: string;
+  mediaType: "IMAGE" | "VIDEO";
   title: string | null;
   subtitle: string | null;
+  badgeText: string | null;
+  sectionLabel: string | null;
   link: string | null;
 };
 
@@ -235,10 +239,12 @@ export default function SettingsManager({
   settings,
   heroSlides: initialHeroSlides,
   promos,
+  sectionLabels,
 }: {
   settings: Settings;
   heroSlides: HeroSlide[];
   promos: Promo[];
+  sectionLabels: string[];
 }) {
   const router = useRouter();
   const showToast = useToastStore((s) => s.show);
@@ -251,7 +257,15 @@ export default function SettingsManager({
   const [savedMsg, setSavedMsg] = useState(false);
   const [dirty, setDirty] = useState(false);
 
-  const [promoForm, setPromoForm] = useState({ imageUrl: "", title: "", subtitle: "", link: "" });
+  const [promoForm, setPromoForm] = useState({
+    imageUrl: "",
+    mediaType: "IMAGE" as "IMAGE" | "VIDEO",
+    title: "",
+    subtitle: "",
+    badgeText: "",
+    sectionLabel: "",
+    link: "",
+  });
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [creatingPromo, setCreatingPromo] = useState(false);
   const [uploadingPartnerLogo, setUploadingPartnerLogo] = useState(false);
@@ -327,12 +341,14 @@ export default function SettingsManager({
 
   async function handlePromoUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
+    const file = files[0];
+    const isVideo = file.type.startsWith("video/");
     setUploadingPromo(true);
     try {
-      const url = await uploadImage(files[0]);
-      setPromoForm((f) => ({ ...f, imageUrl: url }));
+      const url = await uploadImage(file);
+      setPromoForm((f) => ({ ...f, imageUrl: url, mediaType: isVideo ? "VIDEO" : "IMAGE" }));
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "No se pudo subir la imagen.", "error");
+      showToast(err instanceof Error ? err.message : "No se pudo subir el archivo.", "error");
     } finally {
       setUploadingPromo(false);
     }
@@ -347,8 +363,11 @@ export default function SettingsManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrl: promoForm.imageUrl,
+          mediaType: promoForm.mediaType,
           title: promoForm.title || undefined,
           subtitle: promoForm.subtitle || undefined,
+          badgeText: promoForm.badgeText || undefined,
+          sectionLabel: promoForm.sectionLabel || undefined,
           link: promoForm.link || undefined,
         }),
       });
@@ -357,7 +376,7 @@ export default function SettingsManager({
         showToast(data.error ?? "No se pudo agregar la promoción.", "error");
         return;
       }
-      setPromoForm({ imageUrl: "", title: "", subtitle: "", link: "" });
+      setPromoForm({ imageUrl: "", mediaType: "IMAGE", title: "", subtitle: "", badgeText: "", sectionLabel: "", link: "" });
       router.refresh();
     } finally {
       setCreatingPromo(false);
@@ -375,7 +394,7 @@ export default function SettingsManager({
     router.refresh();
   }
 
-  const formTabs: TabKey[] = ["contacto", "portada", "nosotros", "publicidad"];
+  const formTabs: TabKey[] = ["contacto", "portada", "nosotros", "publicidad", "promos"];
   const showGlobalSave = formTabs.includes(tab);
 
   return (
@@ -838,81 +857,140 @@ export default function SettingsManager({
 
         {/* PROMOS */}
         {tab === "promos" && (
-          <div className="bg-white border border-diose-border p-6">
-            <div className="font-heading text-lg text-diose-black mb-1">Ofertas y promociones (inicio)</div>
-            <div className="text-xs text-gray-400 mb-5">
-              Tarjetas de promoción que aparecen en la página de inicio, debajo de los productos destacados. Se
-              guardan al instante.
+          <div className="flex flex-col gap-5">
+            <div className="bg-white border border-diose-border p-6">
+              <div className="font-heading text-lg text-diose-black mb-1">Letrero animado (arriba de todo el sitio)</div>
+              <div className="text-xs text-gray-400 mb-4">
+                Texto que se desliza como un letrero movible en la parte superior de cada página pública. Déjalo
+                vacío para ocultarlo.
+              </div>
+              <input
+                value={form.announcementText}
+                onChange={(e) => setField("announcementText", e.target.value)}
+                placeholder="Ej: Envíos a todo Ciudad Juárez · Cotiza por WhatsApp · Materiales con garantía"
+                className={`${inputCls} w-full`}
+              />
             </div>
 
-            <div className="flex flex-wrap gap-3 mb-5">
-              {promos.map((p) => (
-                <div key={p.id} className="relative w-32 border border-diose-border-light">
-                  <div className="w-full h-24 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.imageUrl} alt="" className="w-full h-full object-cover" />
+            <div className="bg-white border border-diose-border p-6">
+              <div className="font-heading text-lg text-diose-black mb-1">Ofertas y promociones (inicio)</div>
+              <div className="text-xs text-gray-400 mb-2">
+                Tarjetas de promoción que aparecen en la página de inicio, debajo de los productos destacados. Se
+                guardan al instante.
+              </div>
+              <div className="text-xs text-gray-400 mb-5 bg-diose-gray border border-diose-border-light px-3 py-2.5">
+                <span className="font-semibold text-diose-black">Medidas recomendadas: </span>
+                imágenes cuadradas de <span className="font-medium text-diose-black">1000 × 1000 px</span> (máx.
+                8 MB, formato JPG/WEBP). Para video: clips cortos y silenciosos de{" "}
+                <span className="font-medium text-diose-black">1000 × 1000 px</span> (o 1:1), de 5–10 segundos, en
+                MP4, máx. 25 MB — se reproducen en bucle automáticamente sin sonido.
+              </div>
+
+              <div className="flex flex-wrap gap-3 mb-5">
+                {promos.map((p) => (
+                  <div key={p.id} className="relative w-32 border border-diose-border-light">
+                    <div className="w-full h-24 overflow-hidden bg-diose-black">
+                      {p.mediaType === "VIDEO" ? (
+                        <video src={p.imageUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.imageUrl} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    {p.sectionLabel && (
+                      <div className="text-[9px] font-semibold uppercase tracking-[0.06em] text-diose-amber px-2 pt-1.5 truncate">
+                        {p.sectionLabel}
+                      </div>
+                    )}
+                    {p.title && <div className="text-[11px] font-medium text-diose-black px-2 pt-0.5 truncate">{p.title}</div>}
+                    {p.badgeText && <div className="text-[10px] text-gray-400 px-2 pb-1.5 truncate">{p.badgeText}</div>}
+                    <button
+                      onClick={() => setConfirmPromoId(p.id)}
+                      className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  {p.title && <div className="text-[11px] font-medium text-diose-black px-2 pt-1.5 truncate">{p.title}</div>}
+                ))}
+                {promos.length === 0 && <div className="text-xs text-gray-400">Aún no hay promociones.</div>}
+              </div>
+
+              <div className="border-t border-diose-border-light pt-5">
+                <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-gray-400 mb-3">
+                  Agregar nueva promoción
+                </div>
+                <div className="flex flex-wrap gap-3 items-start">
+                  {promoForm.imageUrl ? (
+                    <div className="relative w-24 h-20 border border-diose-border-light overflow-hidden shrink-0 bg-diose-black">
+                      {promoForm.mediaType === "VIDEO" ? (
+                        <video src={promoForm.imageUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={promoForm.imageUrl} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                  ) : (
+                    <label className="w-24 h-20 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-xs shrink-0 hover:border-diose-amber text-center px-1">
+                      {uploadingPromo ? "..." : "+ Imagen / video"}
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        className="hidden"
+                        disabled={uploadingPromo}
+                        onChange={(e) => handlePromoUpload(e.target.files)}
+                      />
+                    </label>
+                  )}
+                  <div className="flex flex-col gap-2 flex-1 min-w-[220px]">
+                    <input
+                      value={promoForm.sectionLabel}
+                      onChange={(e) => setPromoForm((f) => ({ ...f, sectionLabel: e.target.value }))}
+                      placeholder="Nombre de la sección (opcional), ej: HERRAMIENTAS CON OFERTA"
+                      list="promo-section-labels"
+                      className="border border-diose-border px-3 py-2 text-sm outline-none"
+                    />
+                    <datalist id="promo-section-labels">
+                      {sectionLabels.map((label) => (
+                        <option key={label} value={label} />
+                      ))}
+                    </datalist>
+                    <input
+                      value={promoForm.title}
+                      onChange={(e) => setPromoForm((f) => ({ ...f, title: e.target.value }))}
+                      placeholder="Título (opcional)"
+                      className="border border-diose-border px-3 py-2 text-sm outline-none"
+                    />
+                    <input
+                      value={promoForm.subtitle}
+                      onChange={(e) => setPromoForm((f) => ({ ...f, subtitle: e.target.value }))}
+                      placeholder="Subtítulo (opcional)"
+                      className="border border-diose-border px-3 py-2 text-sm outline-none"
+                    />
+                    <input
+                      value={promoForm.badgeText}
+                      onChange={(e) => setPromoForm((f) => ({ ...f, badgeText: e.target.value }))}
+                      placeholder="Etiqueta de ahorro (opcional), ej: Hasta 35% de ahorro"
+                      className="border border-diose-border px-3 py-2 text-sm outline-none"
+                    />
+                    <input
+                      value={promoForm.link}
+                      onChange={(e) => setPromoForm((f) => ({ ...f, link: e.target.value }))}
+                      placeholder="Enlace al hacer clic, ej: /catalogo o /catalogo?categoria=NOMBRE DE LA CATEGORÍA"
+                      className="border border-diose-border px-3 py-2 text-sm outline-none"
+                    />
+                  </div>
                   <button
-                    onClick={() => setConfirmPromoId(p.id)}
-                    className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
+                    onClick={createPromo}
+                    disabled={creatingPromo || !promoForm.imageUrl}
+                    className="bg-diose-black hover:bg-diose-amber text-white px-5 py-2.5 text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors"
                   >
-                    ✕
+                    {creatingPromo ? "Agregando..." : "Añadir"}
                   </button>
                 </div>
-              ))}
-              {promos.length === 0 && <div className="text-xs text-gray-400">Aún no hay promociones.</div>}
-            </div>
-
-            <div className="border-t border-diose-border-light pt-5">
-              <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-gray-400 mb-3">
-                Agregar nueva promoción
-              </div>
-              <div className="flex flex-wrap gap-3 items-start">
-                {promoForm.imageUrl ? (
-                  <div className="w-24 h-20 border border-diose-border-light overflow-hidden shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={promoForm.imageUrl} alt="" className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <label className="w-24 h-20 border border-dashed border-diose-border flex items-center justify-center cursor-pointer text-gray-400 text-xs shrink-0 hover:border-diose-amber">
-                    {uploadingPromo ? "..." : "+ Imagen"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      disabled={uploadingPromo}
-                      onChange={(e) => handlePromoUpload(e.target.files)}
-                    />
-                  </label>
-                )}
-                <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-                  <input
-                    value={promoForm.title}
-                    onChange={(e) => setPromoForm((f) => ({ ...f, title: e.target.value }))}
-                    placeholder="Título (opcional)"
-                    className="border border-diose-border px-3 py-2 text-sm outline-none"
-                  />
-                  <input
-                    value={promoForm.subtitle}
-                    onChange={(e) => setPromoForm((f) => ({ ...f, subtitle: e.target.value }))}
-                    placeholder="Subtítulo (opcional)"
-                    className="border border-diose-border px-3 py-2 text-sm outline-none"
-                  />
-                  <input
-                    value={promoForm.link}
-                    onChange={(e) => setPromoForm((f) => ({ ...f, link: e.target.value }))}
-                    placeholder="Enlace al hacer clic, ej: /catalogo o /catalogo?categoria=NOMBRE DE LA CATEGORÍA"
-                    className="border border-diose-border px-3 py-2 text-sm outline-none"
-                  />
+                <div className="text-[11px] text-gray-400 mt-3">
+                  Consejo: usa el mismo nombre de sección en varias promociones para agruparlas bajo un mismo
+                  encabezado tipo "cinta de precaución" en la página de inicio.
                 </div>
-                <button
-                  onClick={createPromo}
-                  disabled={creatingPromo || !promoForm.imageUrl}
-                  className="bg-diose-black hover:bg-diose-amber text-white px-5 py-2.5 text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors"
-                >
-                  {creatingPromo ? "Agregando..." : "Añadir"}
-                </button>
               </div>
             </div>
           </div>
