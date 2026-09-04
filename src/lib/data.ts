@@ -119,9 +119,11 @@ export type ProductVariant = {
   stockStatus: "EN_STOCK" | "STOCK_BAJO" | "AGOTADO";
 };
 
-export async function getProductVariants(variantGroupId: string, excludeId: string): Promise<ProductVariant[]> {
+export async function getProductVariants(variantGroupId: string): Promise<ProductVariant[]> {
+  // Includes the current product too, always in the same creation order, so
+  // the buttons stay in a fixed position no matter which variant is active.
   const rows = await prisma.product.findMany({
-    where: { variantGroupId, id: { not: excludeId } },
+    where: { variantGroupId },
     select: { id: true, variantLabel: true, price: true, stockStatus: true },
     orderBy: { createdAt: "asc" },
   });
