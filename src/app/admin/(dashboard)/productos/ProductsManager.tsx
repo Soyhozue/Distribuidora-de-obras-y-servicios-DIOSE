@@ -51,6 +51,8 @@ type FormState = {
   brandId: string;
   featured: boolean;
   images: string[];
+  variantGroupId: string;
+  variantLabel: string;
 };
 
 function linesToText(lines: string[] | undefined): string {
@@ -78,6 +80,8 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     brandId: brands[0]?.id ?? "",
     featured: false,
     images: [],
+    variantGroupId: "",
+    variantLabel: "",
   };
 }
 
@@ -94,10 +98,12 @@ export default function ProductsManager({
   products,
   categories,
   brands,
+  variantGroups,
 }: {
   products: ManagedProduct[];
   categories: Option[];
   brands: Option[];
+  variantGroups: string[];
 }) {
   const router = useRouter();
   const showToast = useToastStore((s) => s.show);
@@ -115,6 +121,7 @@ export default function ProductsManager({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [originToBackfill, setOriginToBackfill] = useState<ManagedProduct | null>(null);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -134,11 +141,13 @@ export default function ProductsManager({
     setForm(emptyForm(categories, brands));
     setFormError("");
     setIsDuplicating(false);
+    setOriginToBackfill(null);
     setModalOpen(true);
   }
 
   function openEdit(p: ManagedProduct) {
     setIsDuplicating(false);
+    setOriginToBackfill(null);
     setForm({
       id: p.id,
       sku: p.sku,
@@ -156,6 +165,8 @@ export default function ProductsManager({
       brandId: p.brandId,
       featured: !!p.featured,
       images: p.images ?? [],
+      variantGroupId: p.variantGroupId ?? "",
+      variantLabel: p.variantLabel ?? "",
     });
     setFormError("");
     setModalOpen(true);
@@ -163,6 +174,7 @@ export default function ProductsManager({
 
   function openDuplicate(p: ManagedProduct) {
     setIsDuplicating(true);
+    setOriginToBackfill(null);
     setForm({
       sku: "",
       name: `${p.name} (copia)`,
@@ -179,6 +191,35 @@ export default function ProductsManager({
       brandId: p.brandId,
       featured: false,
       images: p.images ?? [],
+      variantGroupId: p.variantGroupId ?? "",
+      variantLabel: "",
+    });
+    setFormError("");
+    setModalOpen(true);
+  }
+
+  function openAddVariant(p: ManagedProduct) {
+    setIsDuplicating(true);
+    const groupId = p.variantGroupId || p.name;
+    setOriginToBackfill(p.variantGroupId ? null : p);
+    setForm({
+      sku: "",
+      name: p.name,
+      description: p.description ?? "",
+      benefits: linesToText(p.benefits),
+      applications: linesToText(p.applications),
+      characteristics: linesToText(p.characteristics),
+      price: String(p.price),
+      unit: p.unit ?? "",
+      weight: p.weight != null ? String(p.weight) : "",
+      stock: "0",
+      stockStatus: "EN_STOCK",
+      categoryId: p.categoryId,
+      brandId: p.brandId,
+      featured: false,
+      images: [],
+      variantGroupId: groupId,
+      variantLabel: "",
     });
     setFormError("");
     setModalOpen(true);
@@ -231,6 +272,8 @@ export default function ProductsManager({
         brandId: form.brandId,
         featured: form.featured,
         images: form.images,
+        variantGroupId: form.variantGroupId.trim() || undefined,
+        variantLabel: form.variantLabel.trim() || undefined,
       };
       const res = form.id
         ? await fetch(`/api/products/${form.id}`, {
@@ -247,6 +290,31 @@ export default function ProductsManager({
       if (!res.ok) {
         setFormError(data.error ?? "No se pudo guardar el producto.");
         return;
+      }
+      if (!form.id && originToBackfill) {
+        await fetch(`/api/products/${originToBackfill.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sku: originToBackfill.sku,
+            name: originToBackfill.name,
+            description: originToBackfill.description || undefined,
+            benefits: originToBackfill.benefits ?? [],
+            applications: originToBackfill.applications ?? [],
+            characteristics: originToBackfill.characteristics ?? [],
+            price: originToBackfill.price,
+            unit: originToBackfill.unit || undefined,
+            weight: originToBackfill.weight,
+            stock: originToBackfill.stock,
+            stockStatus: originToBackfill.stockStatus,
+            categoryId: originToBackfill.categoryId,
+            brandId: originToBackfill.brandId,
+            featured: originToBackfill.featured,
+            images: originToBackfill.images ?? [],
+            variantGroupId: form.variantGroupId.trim(),
+          }),
+        });
+        setOriginToBackfill(null);
       }
       showToast(form.id ? "Producto actualizado" : "Producto creado", "success");
       setModalOpen(false);
@@ -435,7 +503,7 @@ export default function ProductsManager({
       <div className="flex-1 p-9 pt-5 overflow-hidden">
         <div className="bg-white border border-diose-border overflow-hidden">
           <div className="min-w-[870px] overflow-x-auto">
-            <div className="grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_140px] px-4 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black items-center gap-2">
+            <div className="grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black items-center gap-2">
               <input
                 type="checkbox"
                 className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
@@ -452,7 +520,7 @@ export default function ProductsManager({
             {pageItems.map((p) => (
               <div
                 key={p.id}
-                className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_140px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] ${
+                className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] ${
                   p.stockStatus === "AGOTADO" ? "opacity-70" : ""
                 }`}
               >
@@ -504,6 +572,9 @@ export default function ProductsManager({
                   <span onClick={() => openDuplicate(p)} className="text-xs text-gray-400 underline cursor-pointer hover:text-diose-black">
                     Duplicar
                   </span>
+                  <span onClick={() => openAddVariant(p)} className="text-xs text-diose-amber underline cursor-pointer">
+                    + Medida
+                  </span>
                   <span
                     onClick={() => setConfirmProductId(p.id)}
                     className="text-xs text-gray-300 cursor-pointer hover:text-diose-danger"
@@ -544,7 +615,13 @@ export default function ProductsManager({
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-lg p-7 max-h-[90vh] overflow-y-auto">
             <div className="font-heading text-lg text-diose-black mb-5">
-              {form.id ? "Editar producto" : isDuplicating ? "Duplicar producto" : "Añadir producto"}
+              {form.id
+                ? "Editar producto"
+                : isDuplicating && form.variantGroupId
+                  ? "Añadir medida"
+                  : isDuplicating
+                    ? "Duplicar producto"
+                    : "Añadir producto"}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <label className="flex flex-col gap-1 col-span-2">
@@ -646,6 +723,42 @@ export default function ProductsManager({
                   <option value="AGOTADO">Agotado</option>
                 </select>
               </label>
+              <div className="col-span-2 border border-diose-border-light bg-diose-gray p-3 flex flex-col gap-2.5">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                  Variantes / medidas (opcional)
+                </div>
+                <div className="text-[11px] text-gray-400 -mt-1.5">
+                  Agrupa tallas o medidas de un mismo producto (ej. tornillería) para que el cliente elija entre
+                  ellas sin que aparezcan como productos separados en el catálogo. Usa el mismo nombre de familia
+                  en cada medida.
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Familia de producto</span>
+                    <input
+                      value={form.variantGroupId}
+                      onChange={(e) => setForm({ ...form, variantGroupId: e.target.value })}
+                      placeholder="Ej: Tornillo Hexagonal 1/4"
+                      list="variant-groups"
+                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                    />
+                    <datalist id="variant-groups">
+                      {variantGroups.map((g) => (
+                        <option key={g} value={g} />
+                      ))}
+                    </datalist>
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Etiqueta de esta medida</span>
+                    <input
+                      value={form.variantLabel}
+                      onChange={(e) => setForm({ ...form, variantLabel: e.target.value })}
+                      placeholder='Ej: 1", 1 1/2", 2"'
+                      className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                    />
+                  </label>
+                </div>
+              </div>
               <label className="flex items-center gap-2 col-span-2 mt-1">
                 <input
                   type="checkbox"

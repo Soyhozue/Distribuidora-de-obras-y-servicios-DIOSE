@@ -6,7 +6,7 @@ import WhatsAppFloat from "@/components/WhatsAppFloat";
 import ProductCard from "@/components/ProductCard";
 import ProductPurchasePanel from "./ProductPurchasePanel";
 import ProductGallery from "./ProductGallery";
-import { getProductById, getRelatedProducts, getSiteSettings } from "@/lib/data";
+import { getProductById, getProductVariants, getRelatedProducts, getSiteSettings } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +36,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   const related = await getRelatedProducts(product.category, product.id);
   const settings = await getSiteSettings();
+  const variants = product.variantGroupId ? await getProductVariants(product.variantGroupId, product.id) : [];
   const main = product.description ?? "";
   const benefits = product.benefits ?? [];
   const applications = product.applications ?? [];
@@ -111,6 +112,32 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               <span className="text-xs font-medium text-diose-danger tracking-[0.04em]">Agotado</span>
             )}
           </div>
+
+          {(variants.length > 0 || product.variantLabel) && (
+            <div className="mb-5">
+              <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-2">Medida</div>
+              <div className="flex flex-wrap gap-2">
+                {product.variantLabel && (
+                  <span className="px-4 py-2 text-sm font-medium border-2 border-diose-black bg-diose-black text-white">
+                    {product.variantLabel}
+                  </span>
+                )}
+                {variants.map((v) => (
+                  <Link
+                    key={v.id}
+                    href={`/producto/${v.id}`}
+                    className={`px-4 py-2 text-sm font-medium border transition-colors ${
+                      v.stockStatus === "AGOTADO"
+                        ? "border-diose-border-light text-gray-300 line-through"
+                        : "border-diose-border text-gray-700 hover:border-diose-amber hover:text-diose-amber"
+                    }`}
+                  >
+                    {v.variantLabel ?? "Ver"}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="h-px bg-diose-border-light mb-5" />
 

@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import CatalogoClient from "./CatalogoClient";
-import { getAllProducts, getBrandsWithCounts, getCategoriesWithCounts, getCombos } from "@/lib/data";
+import { getStorefrontProducts, getBrandsWithCounts, getCategoriesWithCounts, getCombos } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export default async function CatalogoPage({
   searchParams: Promise<{ categoria?: string; q?: string }>;
 }) {
   const [products, categories, brands, combos, params] = await Promise.all([
-    getAllProducts(),
+    getStorefrontProducts(),
     getCategoriesWithCounts(),
     getBrandsWithCounts(),
     getCombos(),

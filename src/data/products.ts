@@ -19,6 +19,8 @@ export type Product = {
   specs?: Record<string, string>;
   featured?: boolean;
   images?: string[];
+  variantGroupId?: string;
+  variantLabel?: string;
 };
 
 export const PRODUCTS: Product[] = [

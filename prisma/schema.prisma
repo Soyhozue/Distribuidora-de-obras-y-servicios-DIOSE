@@ -71,6 +71,9 @@ model Product {
   featured    Boolean     @default(false)
   orderItems  OrderItem[]
   comboItems  ComboItem[]
+  variantGroupId   String?
+  variantLabel     String?
+  isPrimaryVariant Boolean @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }

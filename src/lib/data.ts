@@ -35,6 +35,8 @@ type DbProduct = {
   brand: { name: string };
   featured: boolean;
   images: string[];
+  variantGroupId?: string | null;
+  variantLabel?: string | null;
 };
 
 function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: string } {
@@ -58,8 +60,12 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
     characteristics: p.characteristics,
     featured: p.featured,
     images: p.images,
+    variantGroupId: p.variantGroupId ?? undefined,
+    variantLabel: p.variantLabel ?? undefined,
   };
 }
+
+const STOREFRONT_WHERE = { OR: [{ variantGroupId: null }, { isPrimaryVariant: true }] };
 
 export type ManagedProduct = Product & { categoryId: string; brandId: string };
 
@@ -73,9 +79,18 @@ export async function getAllProducts(): Promise<ManagedProduct[]> {
 
 export async function getFeaturedProducts(): Promise<Product[]> {
   const products = await prisma.product.findMany({
-    where: { featured: true },
+    where: { featured: true, ...STOREFRONT_WHERE },
     include: { category: true, brand: true },
     take: 4,
+  });
+  return products.map(mapProduct);
+}
+
+export async function getStorefrontProducts(): Promise<Product[]> {
+  const products = await prisma.product.findMany({
+    where: STOREFRONT_WHERE,
+    include: { category: true, brand: true },
+    orderBy: { name: "asc" },
   });
   return products.map(mapProduct);
 }
@@ -88,9 +103,30 @@ export async function getProductById(id: string): Promise<Product | null> {
   return product ? mapProduct(product) : null;
 }
 
+export type ProductVariant = {
+  id: string;
+  variantLabel: string | null;
+  price: number;
+  stockStatus: "EN_STOCK" | "STOCK_BAJO" | "AGOTADO";
+};
+
+export async function getProductVariants(variantGroupId: string, excludeId: string): Promise<ProductVariant[]> {
+  const rows = await prisma.product.findMany({
+    where: { variantGroupId, id: { not: excludeId } },
+    select: { id: true, variantLabel: true, price: true, stockStatus: true },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    variantLabel: r.variantLabel,
+    price: Number(r.price.toString()),
+    stockStatus: r.stockStatus as ProductVariant["stockStatus"],
+  }));
+}
+
 export async function getRelatedProducts(categoryName: string, excludeId: string): Promise<Product[]> {
   const products = await prisma.product.findMany({
-    where: { category: { name: categoryName }, id: { not: excludeId } },
+    where: { category: { name: categoryName }, id: { not: excludeId }, ...STOREFRONT_WHERE },
     include: { category: true, brand: true },
     take: 4,
   });
@@ -113,6 +149,8 @@ export type ProductInput = {
   brandId: string;
   featured?: boolean;
   images?: string[];
+  variantGroupId?: string;
+  variantLabel?: string;
 };
 
 function validateProductInput(input: ProductInput) {
@@ -127,10 +165,20 @@ function validateProductInput(input: ProductInput) {
   }
 }
 
+async function resolveIsPrimaryVariant(variantGroupId: string | undefined, excludeId?: string): Promise<boolean> {
+  if (!variantGroupId) return true;
+  const existingPrimary = await prisma.product.findFirst({
+    where: { variantGroupId, isPrimaryVariant: true, ...(excludeId ? { id: { not: excludeId } } : {}) },
+    select: { id: true },
+  });
+  return !existingPrimary;
+}
+
 export async function createProduct(input: ProductInput) {
   validateProductInput(input);
+  const isPrimaryVariant = await resolveIsPrimaryVariant(input.variantGroupId);
   try {
-    return await prisma.product.create({ data: input });
+    return await prisma.product.create({ data: { ...input, isPrimaryVariant } });
   } catch (err) {
     if ((err as { code?: string }).code === "P2002") {
       throw new Error("Ya existe un producto con ese SKU.");
@@ -141,8 +189,23 @@ export async function createProduct(input: ProductInput) {
 
 export async function updateProduct(id: string, input: ProductInput) {
   validateProductInput(input);
+  const before = await prisma.product.findUnique({
+    where: { id },
+    select: { variantGroupId: true, isPrimaryVariant: true },
+  });
+  const isPrimaryVariant = await resolveIsPrimaryVariant(input.variantGroupId, id);
   try {
-    return await prisma.product.update({ where: { id }, data: input });
+    const updated = await prisma.product.update({ where: { id }, data: { ...input, isPrimaryVariant } });
+    if (before?.isPrimaryVariant && before.variantGroupId && before.variantGroupId !== (input.variantGroupId ?? null)) {
+      const nextPrimary = await prisma.product.findFirst({
+        where: { variantGroupId: before.variantGroupId },
+        orderBy: { createdAt: "asc" },
+      });
+      if (nextPrimary) {
+        await prisma.product.update({ where: { id: nextPrimary.id }, data: { isPrimaryVariant: true } });
+      }
+    }
+    return updated;
   } catch (err) {
     if ((err as { code?: string }).code === "P2002") {
       throw new Error("Ya existe un producto con ese SKU.");
@@ -166,8 +229,33 @@ export async function deleteProduct(id: string) {
       "No se puede eliminar: este producto aparece en pedidos ya realizados. Márcalo como \"Agotado\" en vez de eliminarlo para conservar el historial de esos pedidos."
     );
   }
+  const product = await prisma.product.findUnique({
+    where: { id },
+    select: { variantGroupId: true, isPrimaryVariant: true },
+  });
   await prisma.comboItem.deleteMany({ where: { productId: id } });
   await prisma.product.delete({ where: { id } });
+  if (product?.isPrimaryVariant && product.variantGroupId) {
+    const nextPrimary = await prisma.product.findFirst({
+      where: { variantGroupId: product.variantGroupId },
+      orderBy: { createdAt: "asc" },
+    });
+    if (nextPrimary) {
+      await prisma.product.update({ where: { id: nextPrimary.id }, data: { isPrimaryVariant: true } });
+    }
+  }
+}
+
+export async function getVariantGroups(): Promise<string[]> {
+  const rows = await prisma.product.findMany({
+    where: { variantGroupId: { not: null } },
+    select: { variantGroupId: true },
+    distinct: ["variantGroupId"],
+  });
+  return rows
+    .map((r) => r.variantGroupId)
+    .filter((g): g is string => !!g && g.trim().length > 0)
+    .sort();
 }
 
 export async function getCategoryOptions() {
