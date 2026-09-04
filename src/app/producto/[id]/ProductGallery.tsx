@@ -13,7 +13,7 @@ export default function ProductGallery({ product, scale }: { product: Product; s
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
-      <div className="flex gap-4 w-full items-stretch">
+      <div className="flex gap-3 sm:gap-4 w-full items-start">
         {scale && (
           <SizeRuler
             inches={scale.inches}
@@ -59,7 +59,7 @@ export default function ProductGallery({ product, scale }: { product: Product; s
 
       {scale && (
         <p className="text-[10px] text-gray-400 text-center leading-relaxed max-w-xs">
-          Escala comparativa entre las medidas disponibles de este producto.
+          Ajusta la regla a tu pantalla una sola vez y verás la medida a tamaño real en este dispositivo.
         </p>
       )}
     </div>
