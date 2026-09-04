@@ -2,6 +2,7 @@ import Link from "next/link";
 import Logo from "./Logo";
 import { PinIcon, PhoneIcon, MailIcon } from "./icons";
 import { getSiteSettings } from "@/lib/data";
+import PaymentBadges from "./PaymentBadges";
 
 const NAV = [
   { label: "Catálogo", href: "/catalogo" },
@@ -14,7 +15,7 @@ export default async function Footer() {
   return (
     <footer className="bg-diose-black text-white px-6 md:px-20 pt-10 pb-6">
       <div className="max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
 
         {/* Marca */}
         <div>
@@ -74,6 +75,9 @@ export default async function Footer() {
             )}
           </div>
         </div>
+
+        {/* Métodos de pago */}
+        <PaymentBadges />
       </div>
 
       <div className="pt-5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2">
