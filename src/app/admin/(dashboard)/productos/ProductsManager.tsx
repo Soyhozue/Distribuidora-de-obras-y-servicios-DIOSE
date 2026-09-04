@@ -67,6 +67,10 @@ type VariantRow = {
 
 type Subcategory = { id: string; name: string; categoryId: string; count: number };
 
+type ProductRow =
+  | { kind: "single"; product: ManagedProduct }
+  | { kind: "family"; groupId: string; members: ManagedProduct[] };
+
 function emptyVariantRow(): VariantRow {
   return { variantLabel: "", sku: "", price: "", stock: "0", minOrderQty: "1" };
 }
@@ -172,8 +176,35 @@ export default function ProductsManager({
     });
   }, [products, search, categoryFilter, brandFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const groupedRows = useMemo(() => {
+    const seenGroups = new Set<string>();
+    const rows: ProductRow[] = [];
+    for (const p of filtered) {
+      if (p.variantGroupId) {
+        if (seenGroups.has(p.variantGroupId)) continue;
+        seenGroups.add(p.variantGroupId);
+        const members = filtered.filter((m) => m.variantGroupId === p.variantGroupId);
+        rows.push({ kind: "family", groupId: p.variantGroupId, members });
+      } else {
+        rows.push({ kind: "single", product: p });
+      }
+    }
+    return rows;
+  }, [filtered]);
+
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  function toggleGroup(groupId: string) {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
+    });
+  }
+
+  const totalPages = Math.max(1, Math.ceil(groupedRows.length / PAGE_SIZE));
+  const pageRows = groupedRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function openCreate() {
     setForm(emptyForm(categories, brands));
@@ -476,12 +507,23 @@ export default function ProductsManager({
   }
 
   function toggleSelectPage() {
-    const pageIds = pageItems.map((p) => p.id);
+    const pageIds = pageRows.flatMap((r) => (r.kind === "single" ? [r.product.id] : r.members.map((m) => m.id)));
     const allSelected = pageIds.every((id) => selectedIds.has(id));
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (allSelected) pageIds.forEach((id) => next.delete(id));
       else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+
+  function toggleSelectGroup(members: ManagedProduct[]) {
+    const ids = members.map((m) => m.id);
+    const allSelected = ids.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
       return next;
     });
   }
@@ -631,7 +673,12 @@ export default function ProductsManager({
               <input
                 type="checkbox"
                 className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
-                checked={pageItems.length > 0 && pageItems.every((p) => selectedIds.has(p.id))}
+                checked={
+                  pageRows.length > 0 &&
+                  pageRows.every((r) =>
+                    r.kind === "single" ? selectedIds.has(r.product.id) : r.members.every((m) => selectedIds.has(m.id))
+                  )
+                }
                 onChange={toggleSelectPage}
               />
               {["Img", "Nombre / SKU", "Categoría", "Marca", "Precio", "Stock", "Estado", "Acciones"].map((h) => (
@@ -641,80 +688,204 @@ export default function ProductsManager({
               ))}
             </div>
 
-            {pageItems.map((p) => (
-              <div
-                key={p.id}
-                className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] ${
-                  p.stockStatus === "AGOTADO" ? "opacity-70" : ""
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
-                  checked={selectedIds.has(p.id)}
-                  onChange={() => toggleSelect(p.id)}
-                />
-                <div
-                  className="w-10 h-10 bg-[#F0F0F0] flex items-center justify-center shrink-0 overflow-hidden"
-                  style={{ backgroundImage: "radial-gradient(#DCDCDC 1px,transparent 1px)", backgroundSize: "10px 10px" }}
-                >
-                  {p.images && p.images[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <ProductIcon icon={p.icon} size={16} />
-                  )}
-                </div>
-                <div>
-                  <div className="text-[13px] font-medium text-diose-black flex items-center gap-1.5">
-                    {p.name}
-                    {p.variantLabel && (
-                      <span className="text-[10px] font-semibold text-diose-amber bg-diose-amber/10 px-1.5 py-0.5 rounded-sm shrink-0">
-                        {p.variantLabel}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-gray-300 mt-0.5">SKU-{p.sku}</div>
-                </div>
-                <span className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 inline-block w-fit">
-                  {p.category}
-                  {p.subcategory && <span className="text-gray-400"> · {p.subcategory}</span>}
-                </span>
-                <span className="text-xs text-gray-600">{p.brand}</span>
-                <span className="text-[13px] font-semibold text-diose-black">
-                  ${p.price.toLocaleString("es-MX")}
-                  {p.unit && <span className="text-[10px] font-normal text-gray-400">{p.unit}</span>}
-                </span>
-                <span
-                  className={`text-[13px] ${
-                    p.stockStatus === "STOCK_BAJO"
-                      ? "text-diose-amber font-medium"
-                      : p.stockStatus === "AGOTADO"
-                        ? "text-diose-danger font-semibold"
-                        : "text-gray-700"
-                  }`}
-                >
-                  {p.stock} uds
-                </span>
-                <StatusTag status={p.stockStatus} />
-                <div className="flex gap-2.5 items-center">
-                  <span onClick={() => openEdit(p)} className="text-xs text-gray-600 underline cursor-pointer">
-                    Editar
-                  </span>
-                  <span onClick={() => openDuplicate(p)} className="text-xs text-gray-400 underline cursor-pointer hover:text-diose-black">
-                    Duplicar
-                  </span>
-                  <span
-                    onClick={() => setConfirmProductId(p.id)}
-                    className="text-xs text-gray-300 cursor-pointer hover:text-diose-danger"
+            {pageRows.map((row) => {
+              if (row.kind === "single") {
+                const p = row.product;
+                return (
+                  <div
+                    key={p.id}
+                    className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] ${
+                      p.stockStatus === "AGOTADO" ? "opacity-70" : ""
+                    }`}
                   >
-                    ✕
-                  </span>
-                </div>
-              </div>
-            ))}
+                    <input
+                      type="checkbox"
+                      className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
+                      checked={selectedIds.has(p.id)}
+                      onChange={() => toggleSelect(p.id)}
+                    />
+                    <div
+                      className="w-10 h-10 bg-[#F0F0F0] flex items-center justify-center shrink-0 overflow-hidden"
+                      style={{ backgroundImage: "radial-gradient(#DCDCDC 1px,transparent 1px)", backgroundSize: "10px 10px" }}
+                    >
+                      {p.images && p.images[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <ProductIcon icon={p.icon} size={16} />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-medium text-diose-black">{p.name}</div>
+                      <div className="text-[11px] text-gray-300 mt-0.5">SKU-{p.sku}</div>
+                    </div>
+                    <span className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 inline-block w-fit">
+                      {p.category}
+                      {p.subcategory && <span className="text-gray-400"> · {p.subcategory}</span>}
+                    </span>
+                    <span className="text-xs text-gray-600">{p.brand}</span>
+                    <span className="text-[13px] font-semibold text-diose-black">
+                      ${p.price.toLocaleString("es-MX")}
+                      {p.unit && <span className="text-[10px] font-normal text-gray-400">{p.unit}</span>}
+                    </span>
+                    <span
+                      className={`text-[13px] ${
+                        p.stockStatus === "STOCK_BAJO"
+                          ? "text-diose-amber font-medium"
+                          : p.stockStatus === "AGOTADO"
+                            ? "text-diose-danger font-semibold"
+                            : "text-gray-700"
+                      }`}
+                    >
+                      {p.stock} uds
+                    </span>
+                    <StatusTag status={p.stockStatus} />
+                    <div className="flex gap-2.5 items-center">
+                      <span onClick={() => openEdit(p)} className="text-xs text-gray-600 underline cursor-pointer">
+                        Editar
+                      </span>
+                      <span onClick={() => openDuplicate(p)} className="text-xs text-gray-400 underline cursor-pointer hover:text-diose-black">
+                        Duplicar
+                      </span>
+                      <span
+                        onClick={() => setConfirmProductId(p.id)}
+                        className="text-xs text-gray-300 cursor-pointer hover:text-diose-danger"
+                      >
+                        ✕
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
 
-            {pageItems.length === 0 && (
+              const { groupId, members } = row;
+              const head = members[0];
+              const expanded = expandedGroups.has(groupId);
+              const prices = members.map((m) => m.price);
+              const priceLabel =
+                Math.min(...prices) === Math.max(...prices)
+                  ? `$${prices[0].toLocaleString("es-MX")}`
+                  : `desde $${Math.min(...prices).toLocaleString("es-MX")}`;
+              const totalStock = members.reduce((sum, m) => sum + m.stock, 0);
+              const groupStatus = deriveStockStatus(totalStock);
+              const image = members.find((m) => m.images?.[0])?.images?.[0];
+
+              return (
+                <div key={groupId}>
+                  <div className="grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] bg-diose-gray/40">
+                    <input
+                      type="checkbox"
+                      className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
+                      checked={members.every((m) => selectedIds.has(m.id))}
+                      onChange={() => toggleSelectGroup(members)}
+                    />
+                    <div
+                      className="w-10 h-10 bg-[#F0F0F0] flex items-center justify-center shrink-0 overflow-hidden"
+                      style={{ backgroundImage: "radial-gradient(#DCDCDC 1px,transparent 1px)", backgroundSize: "10px 10px" }}
+                    >
+                      {image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={image} alt={head.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <ProductIcon icon={head.icon} size={16} />
+                      )}
+                    </div>
+                    <button
+                      onClick={() => toggleGroup(groupId)}
+                      className="flex items-center gap-2 cursor-pointer text-left"
+                    >
+                      <span className={`text-gray-400 transition-transform ${expanded ? "rotate-90" : ""}`}>›</span>
+                      <div>
+                        <div className="text-[13px] font-medium text-diose-black flex items-center gap-1.5">
+                          {head.name}
+                          <span className="text-[10px] font-semibold text-diose-amber bg-diose-amber/10 px-1.5 py-0.5 rounded-sm shrink-0">
+                            {members.length} medidas
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-gray-300 mt-0.5">
+                          {expanded ? "Ocultar medidas" : "Ver medidas"}
+                        </div>
+                      </div>
+                    </button>
+                    <span className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 inline-block w-fit">
+                      {head.category}
+                      {head.subcategory && <span className="text-gray-400"> · {head.subcategory}</span>}
+                    </span>
+                    <span className="text-xs text-gray-600">{head.brand}</span>
+                    <span className="text-[13px] font-semibold text-diose-black">{priceLabel}</span>
+                    <span className="text-[13px] text-gray-700">{totalStock} uds</span>
+                    <StatusTag status={groupStatus} />
+                    <div className="flex gap-2.5 items-center">
+                      <span onClick={() => openEdit(head)} className="text-xs text-gray-600 underline cursor-pointer">
+                        Editar
+                      </span>
+                    </div>
+                  </div>
+
+                  {expanded &&
+                    members.map((p) => (
+                      <div
+                        key={p.id}
+                        className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] pl-2 ${
+                          p.stockStatus === "AGOTADO" ? "opacity-70" : ""
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
+                          checked={selectedIds.has(p.id)}
+                          onChange={() => toggleSelect(p.id)}
+                        />
+                        <div />
+                        <div className="pl-5 border-l-2 border-diose-border-light ml-1.5">
+                          <div className="text-[13px] font-medium text-diose-black flex items-center gap-1.5">
+                            {p.variantLabel && (
+                              <span className="text-[10px] font-semibold text-diose-amber bg-diose-amber/10 px-1.5 py-0.5 rounded-sm shrink-0">
+                                {p.variantLabel}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-gray-300 mt-0.5">SKU-{p.sku}</div>
+                        </div>
+                        <span />
+                        <span />
+                        <span className="text-[13px] font-semibold text-diose-black">
+                          ${p.price.toLocaleString("es-MX")}
+                          {p.unit && <span className="text-[10px] font-normal text-gray-400">{p.unit}</span>}
+                        </span>
+                        <span
+                          className={`text-[13px] ${
+                            p.stockStatus === "STOCK_BAJO"
+                              ? "text-diose-amber font-medium"
+                              : p.stockStatus === "AGOTADO"
+                                ? "text-diose-danger font-semibold"
+                                : "text-gray-700"
+                          }`}
+                        >
+                          {p.stock} uds
+                        </span>
+                        <StatusTag status={p.stockStatus} />
+                        <div className="flex gap-2.5 items-center">
+                          <span onClick={() => openEdit(p)} className="text-xs text-gray-600 underline cursor-pointer">
+                            Editar
+                          </span>
+                          <span onClick={() => openDuplicate(p)} className="text-xs text-gray-400 underline cursor-pointer hover:text-diose-black">
+                            Duplicar
+                          </span>
+                          <span
+                            onClick={() => setConfirmProductId(p.id)}
+                            className="text-xs text-gray-300 cursor-pointer hover:text-diose-danger"
+                          >
+                            ✕
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              );
+            })}
+
+            {pageRows.length === 0 && (
               <div className="px-4 py-10 text-center text-xs text-gray-400">No se encontraron productos.</div>
             )}
           </div>
@@ -722,7 +893,7 @@ export default function ProductsManager({
 
         <div className="flex justify-between items-center pt-4">
           <span className="text-xs text-gray-400">
-            Mostrando {pageItems.length} de {filtered.length} productos
+            Mostrando {pageRows.length} de {groupedRows.length} ({filtered.length} productos en total)
           </span>
           <div className="flex gap-1 items-center">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
