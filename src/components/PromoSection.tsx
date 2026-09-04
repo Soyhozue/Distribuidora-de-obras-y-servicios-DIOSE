@@ -1,5 +1,7 @@
 import Link from "next/link";
 import RevealOnScroll from "./RevealOnScroll";
+import ShopPromoCard from "./ShopPromoCard";
+import type { Product } from "@/data/products";
 
 type Promo = {
   id: string;
@@ -10,6 +12,7 @@ type Promo = {
   badgeText: string | null;
   sectionLabel: string | null;
   link: string | null;
+  linkedProduct?: Product | null;
 };
 
 function PromoCard({ promo }: { promo: Promo }) {
@@ -101,9 +104,19 @@ export default function PromoSection({ promos }: { promos: Promo[] }) {
               </>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {group.items.map((promo) => (
-                <PromoCard key={promo.id} promo={promo} />
-              ))}
+              {group.items.map((promo) =>
+                promo.linkedProduct ? (
+                  <ShopPromoCard
+                    key={promo.id}
+                    imageUrl={promo.imageUrl}
+                    mediaType={promo.mediaType}
+                    badgeText={promo.badgeText}
+                    product={promo.linkedProduct}
+                  />
+                ) : (
+                  <PromoCard key={promo.id} promo={promo} />
+                )
+              )}
             </div>
           </RevealOnScroll>
         ))}

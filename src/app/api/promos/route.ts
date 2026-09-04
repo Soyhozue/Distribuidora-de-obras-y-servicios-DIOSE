@@ -25,6 +25,7 @@ export async function POST(request: Request) {
       badgeText: body.badgeText || undefined,
       sectionLabel: body.sectionLabel || undefined,
       link: body.link || undefined,
+      linkedProductId: body.linkedProductId || undefined,
     });
     return NextResponse.json(promo);
   } catch {

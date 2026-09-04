@@ -707,7 +707,17 @@ export async function updateSiteSettings(input: SiteSettingsInput) {
 }
 
 export async function getPromoImages() {
-  return prisma.promoImage.findMany({ orderBy: { order: "asc" } });
+  const promos = await prisma.promoImage.findMany({ orderBy: { order: "asc" } });
+  const productIds = [...new Set(promos.map((p) => p.linkedProductId).filter((id): id is string => !!id))];
+  if (productIds.length === 0) {
+    return promos.map((p) => ({ ...p, linkedProduct: null as Product | null }));
+  }
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    include: { category: true, brand: true },
+  });
+  const byId = new Map(products.map((p) => [p.id, mapProduct(p)]));
+  return promos.map((p) => ({ ...p, linkedProduct: p.linkedProductId ? byId.get(p.linkedProductId) ?? null : null }));
 }
 
 export async function getPromoSectionLabels() {
@@ -729,6 +739,7 @@ export async function createPromoImage(input: {
   badgeText?: string;
   sectionLabel?: string;
   link?: string;
+  linkedProductId?: string;
 }) {
   const count = await prisma.promoImage.count();
   return prisma.promoImage.create({ data: { ...input, order: count } });

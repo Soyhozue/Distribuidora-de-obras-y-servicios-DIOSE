@@ -202,7 +202,11 @@ type Promo = {
   badgeText: string | null;
   sectionLabel: string | null;
   link: string | null;
+  linkedProductId?: string | null;
+  linkedProduct?: { id: string; name: string; brand: string; price: number; images?: string[] } | null;
 };
+
+type PickableProduct = { id: string; name: string; brand: string; price: number; images?: string[] };
 
 async function uploadImage(file: File): Promise<string> {
   const body = new FormData();
@@ -245,11 +249,13 @@ export default function SettingsManager({
   heroSlides: initialHeroSlides,
   promos,
   sectionLabels,
+  products,
 }: {
   settings: Settings;
   heroSlides: HeroSlide[];
   promos: Promo[];
   sectionLabels: string[];
+  products: PickableProduct[];
 }) {
   const router = useRouter();
   const showToast = useToastStore((s) => s.show);
@@ -270,7 +276,9 @@ export default function SettingsManager({
     badgeText: "",
     sectionLabel: "",
     link: "",
+    linkedProductId: "",
   });
+  const [productSearch, setProductSearch] = useState("");
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [creatingPromo, setCreatingPromo] = useState(false);
   const [uploadingPartnerLogo, setUploadingPartnerLogo] = useState(false);
@@ -374,6 +382,7 @@ export default function SettingsManager({
           badgeText: promoForm.badgeText || undefined,
           sectionLabel: promoForm.sectionLabel || undefined,
           link: promoForm.link || undefined,
+          linkedProductId: promoForm.linkedProductId || undefined,
         }),
       });
       if (!res.ok) {
@@ -381,7 +390,8 @@ export default function SettingsManager({
         showToast(data.error ?? "No se pudo agregar la promoción.", "error");
         return;
       }
-      setPromoForm({ imageUrl: "", mediaType: "IMAGE", title: "", subtitle: "", badgeText: "", sectionLabel: "", link: "" });
+      setPromoForm({ imageUrl: "", mediaType: "IMAGE", title: "", subtitle: "", badgeText: "", sectionLabel: "", link: "", linkedProductId: "" });
+      setProductSearch("");
       router.refresh();
     } finally {
       setCreatingPromo(false);
@@ -1004,6 +1014,11 @@ export default function SettingsManager({
                     )}
                     {p.title && <div className="text-[11px] font-medium text-diose-black px-2 pt-0.5 truncate">{p.title}</div>}
                     {p.badgeText && <div className="text-[10px] text-gray-400 px-2 pb-1.5 truncate">{p.badgeText}</div>}
+                    {p.linkedProduct && (
+                      <div className="text-[9px] text-diose-success font-medium px-2 pb-1.5 truncate">
+                        Vinculado: {p.linkedProduct.name}
+                      </div>
+                    )}
                     <button
                       onClick={() => setConfirmPromoId(p.id)}
                       className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-diose-black text-white text-[10px] flex items-center justify-center cursor-pointer rounded-full"
@@ -1087,9 +1102,91 @@ export default function SettingsManager({
                     {creatingPromo ? "Agregando..." : "Añadir"}
                   </button>
                 </div>
+
+                <div className="mt-4 border border-diose-border-light p-3.5">
+                  <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-gray-400 mb-1">
+                    Vincular a un producto (opcional)
+                  </div>
+                  <div className="text-[11px] text-gray-400 mb-3">
+                    Si eliges un producto, esta promoción se muestra como banner ancho: la imagen a un lado y el
+                    producto con botón de &quot;Añadir al carrito&quot; al otro. Ideal para ofertas de un producto específico.
+                  </div>
+                  {promoForm.linkedProductId ? (
+                    (() => {
+                      const chosen = products.find((p) => p.id === promoForm.linkedProductId);
+                      if (!chosen) return null;
+                      return (
+                        <div className="flex items-center gap-3 bg-diose-gray px-3 py-2">
+                          <div className="w-9 h-9 bg-white border border-diose-border-light shrink-0 overflow-hidden">
+                            {chosen.images?.[0] && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={chosen.images[0]} alt="" className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-diose-black truncate">{chosen.name}</div>
+                            <div className="text-[11px] text-gray-400">
+                              {chosen.brand} · ${chosen.price.toLocaleString("es-MX")}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setPromoForm((f) => ({ ...f, linkedProductId: "" }))}
+                            className="text-[11px] text-diose-danger hover:underline cursor-pointer shrink-0"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <>
+                      <input
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        placeholder="Buscar producto por nombre o marca..."
+                        className="border border-diose-border px-3 py-2 text-sm outline-none w-full mb-2"
+                      />
+                      {productSearch.trim() && (
+                        <div className="max-h-40 overflow-y-auto border border-diose-border-light">
+                          {products
+                            .filter(
+                              (p) =>
+                                p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                                p.brand.toLowerCase().includes(productSearch.toLowerCase())
+                            )
+                            .slice(0, 8)
+                            .map((p) => (
+                              <button
+                                key={p.id}
+                                onClick={() => {
+                                  setPromoForm((f) => ({ ...f, linkedProductId: p.id }));
+                                  setProductSearch("");
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 text-left border-b border-diose-border-light last:border-b-0"
+                              >
+                                <div className="w-7 h-7 bg-[#F0F0F0] shrink-0 overflow-hidden">
+                                  {p.images?.[0] && (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[11px] font-medium text-diose-black truncate">{p.name}</div>
+                                  <div className="text-[10px] text-gray-400">
+                                    {p.brand} · ${p.price.toLocaleString("es-MX")}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
                 <div className="text-[11px] text-gray-400 mt-3">
                   Consejo: usa el mismo nombre de sección en varias promociones para agruparlas bajo un mismo
-                  encabezado tipo "cinta de precaución" en la página de inicio.
+                  encabezado tipo &quot;cinta de precaución&quot; en la página de inicio.
                 </div>
               </div>
             </div>
