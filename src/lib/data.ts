@@ -691,6 +691,11 @@ export type SiteSettingsInput = {
   aboutCityLine: string;
   aboutStateLine: string;
   announcementText: string;
+  announcementBgColor: string;
+  announcementTextColor: string;
+  announcementFontSize: number;
+  announcementSpeed: number;
+  announcementFontFamily: string;
 };
 
 export async function updateSiteSettings(input: SiteSettingsInput) {

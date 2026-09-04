@@ -222,6 +222,11 @@ model SiteSettings {
   aboutCityLine   String   @default("Cd. Juárez")
   aboutStateLine  String   @default("Chihuahua, México")
   announcementText String  @default("")
+  announcementBgColor   String @default("#1d5fb8")
+  announcementTextColor String @default("#ffffff")
+  announcementFontSize  Int    @default(12)
+  announcementSpeed     Int    @default(28)
+  announcementFontFamily String @default("sans")
   updatedAt       DateTime @updatedAt
 }
 

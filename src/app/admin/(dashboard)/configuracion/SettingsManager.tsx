@@ -186,6 +186,11 @@ type Settings = {
   aboutCityLine: string;
   aboutStateLine: string;
   announcementText: string;
+  announcementBgColor: string;
+  announcementTextColor: string;
+  announcementFontSize: number;
+  announcementSpeed: number;
+  announcementFontFamily: string;
 };
 
 type Promo = {
@@ -868,8 +873,103 @@ export default function SettingsManager({
                 value={form.announcementText}
                 onChange={(e) => setField("announcementText", e.target.value)}
                 placeholder="Ej: Envíos a todo Ciudad Juárez · Cotiza por WhatsApp · Materiales con garantía"
-                className={`${inputCls} w-full`}
+                className={`${inputCls} w-full mb-4`}
               />
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                <Field label="Color de fondo">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={form.announcementBgColor}
+                      onChange={(e) => setField("announcementBgColor", e.target.value)}
+                      className="w-9 h-9 border border-diose-border cursor-pointer shrink-0"
+                    />
+                    <input
+                      value={form.announcementBgColor}
+                      onChange={(e) => setField("announcementBgColor", e.target.value)}
+                      className={`${inputCls} w-full`}
+                    />
+                  </div>
+                </Field>
+                <Field label="Color del texto">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={form.announcementTextColor}
+                      onChange={(e) => setField("announcementTextColor", e.target.value)}
+                      className="w-9 h-9 border border-diose-border cursor-pointer shrink-0"
+                    />
+                    <input
+                      value={form.announcementTextColor}
+                      onChange={(e) => setField("announcementTextColor", e.target.value)}
+                      className={`${inputCls} w-full`}
+                    />
+                  </div>
+                </Field>
+                <Field label={`Tamaño de letra: ${form.announcementFontSize}px`}>
+                  <input
+                    type="range"
+                    min={10}
+                    max={20}
+                    value={form.announcementFontSize}
+                    onChange={(e) => setField("announcementFontSize", Number(e.target.value))}
+                    className="w-full accent-diose-amber cursor-pointer"
+                  />
+                </Field>
+                <Field label={`Velocidad: ${form.announcementSpeed}s por vuelta`}>
+                  <input
+                    type="range"
+                    min={8}
+                    max={60}
+                    value={form.announcementSpeed}
+                    onChange={(e) => setField("announcementSpeed", Number(e.target.value))}
+                    className="w-full accent-diose-amber cursor-pointer"
+                  />
+                  <span className="text-[10px] text-gray-400">Menos = más rápido</span>
+                </Field>
+              </div>
+
+              <Field label="Tipografía">
+                <div className="flex gap-2">
+                  {(["sans", "heading"] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setField("announcementFontFamily", f)}
+                      className={`px-4 py-2 text-xs font-semibold cursor-pointer border transition-colors ${
+                        form.announcementFontFamily === f
+                          ? "bg-diose-black text-white border-diose-black"
+                          : "border-diose-border text-gray-600 hover:border-diose-black"
+                      }`}
+                    >
+                      {f === "sans" ? "Regular (Outfit)" : "Impacto (Bebas Neue)"}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
+              {form.announcementText.trim() && (
+                <div className="mt-4">
+                  <div className="text-[10px] uppercase tracking-[0.1em] text-gray-400 mb-1.5">Vista previa</div>
+                  <div
+                    className="overflow-hidden whitespace-nowrap select-none border border-diose-border-light"
+                    style={{ background: form.announcementBgColor }}
+                  >
+                    <div
+                      className="py-1.5 px-4 font-semibold tracking-[0.04em] truncate"
+                      style={{
+                        color: form.announcementTextColor,
+                        fontSize: `${form.announcementFontSize}px`,
+                        fontFamily:
+                          form.announcementFontFamily === "heading" ? "var(--font-heading)" : "var(--font-sans)",
+                      }}
+                    >
+                      {form.announcementText}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="bg-white border border-diose-border p-6">

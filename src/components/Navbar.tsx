@@ -18,7 +18,14 @@ export default async function Navbar({ active }: { active?: string }) {
   const settings = await getSiteSettings();
   return (
     <>
-    <AnnouncementBar text={settings.announcementText} />
+    <AnnouncementBar
+      text={settings.announcementText}
+      bgColor={settings.announcementBgColor}
+      textColor={settings.announcementTextColor}
+      fontSize={settings.announcementFontSize}
+      speed={settings.announcementSpeed}
+      fontFamily={settings.announcementFontFamily}
+    />
     <nav className="sticky top-0 z-30 h-16 bg-white border-b border-diose-border-light px-5 md:px-12">
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
         {/* Logo */}
