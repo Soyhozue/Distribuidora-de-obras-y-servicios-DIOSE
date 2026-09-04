@@ -7,6 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductPurchasePanel from "./ProductPurchasePanel";
 import ProductGallery from "./ProductGallery";
 import { getProductById, getProductVariants, getRelatedProducts, getSiteSettings } from "@/lib/data";
+import { parseInches } from "@/lib/measures";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,19 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const applications = product.applications ?? [];
   const characteristics = product.characteristics ?? [];
 
+  // Regla a escala: solo cuando la medida se expresa en pulgadas (tornillería y
+  // similares). Si la etiqueta es "500 ML" o "Azul" no aplica y no se muestra.
+  const currentInches = parseInches(product.variantLabel);
+  const familyInches = variants
+    .map((v) => parseInches(v.variantLabel))
+    .filter((n): n is number => n !== null);
+  // Todas las medidas de la familia se dibujan sobre la misma escala, redondeada
+  // hacia arriba al siguiente medio pulgada, para que se comparen entre sí.
+  const rulerMax =
+    currentInches !== null
+      ? Math.max(0.5, Math.ceil(Math.max(currentInches, ...familyInches) * 2) / 2)
+      : 0;
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Navbar active="Catálogo" />
@@ -73,7 +87,21 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
         {/* LEFT: GALLERY */}
         <div className="md:w-[46%] shrink-0">
-          <ProductGallery product={product} />
+          <ProductGallery
+            product={product}
+            scale={
+              currentInches !== null
+                ? {
+                    inches: currentInches,
+                    label: product.variantLabel ?? `${currentInches}"`,
+                    rulerMax: rulerMax,
+                    marks: variants
+                      .map((v) => ({ label: v.variantLabel ?? "", inches: parseInches(v.variantLabel) }))
+                      .filter((m): m is { label: string; inches: number } => m.inches !== null && !!m.label),
+                  }
+                : undefined
+            }
+          />
           <div className="mt-4 flex flex-col gap-4">
             <span className="text-[10px] tracking-[0.14em] uppercase text-gray-400 border border-diose-border-light px-3 py-1.5 self-start">
               {product.category}

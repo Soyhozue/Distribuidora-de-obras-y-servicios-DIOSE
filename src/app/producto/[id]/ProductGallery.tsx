@@ -2,25 +2,44 @@
 
 import { useState } from "react";
 import { ProductIcon } from "@/components/icons";
+import SizeRuler, { type RulerMark } from "@/components/SizeRuler";
 import type { Product } from "@/data/products";
 
-export default function ProductGallery({ product }: { product: Product }) {
+export type GalleryScale = { inches: number; label: string; rulerMax: number; marks: RulerMark[] };
+
+export default function ProductGallery({ product, scale }: { product: Product; scale?: GalleryScale }) {
   const images = product.images ?? [];
   const [active, setActive] = useState(0);
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
-      <div className="w-full aspect-square bg-gray-50 border border-diose-border-light flex flex-col items-center justify-center overflow-hidden">
-        {images.length > 0 ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={images[active]} alt={product.name} className="w-full h-full object-contain p-4" />
-        ) : (
-          <>
-            <ProductIcon icon={product.icon} size={110} color="#d1d5db" strokeWidth={0.7} />
-            <span className="text-[10px] text-gray-300 tracking-[0.16em] uppercase mt-3">Imagen del producto</span>
-          </>
+      <div className="flex gap-4 w-full items-stretch">
+        {scale && (
+          <SizeRuler
+            inches={scale.inches}
+            label={scale.label}
+            rulerMax={scale.rulerMax}
+            marks={scale.marks}
+          />
         )}
+
+        <div className="flex-1 aspect-square bg-gray-50 border border-diose-border-light relative overflow-hidden">
+          {images.length > 0 ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={images[active]}
+              alt={product.name}
+              className="absolute inset-0 w-full h-full object-contain p-4 animate-reveal-down"
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <ProductIcon icon={product.icon} size={110} color="#d1d5db" strokeWidth={0.7} />
+              <span className="text-[10px] text-gray-300 tracking-[0.16em] uppercase mt-3">Imagen del producto</span>
+            </div>
+          )}
+        </div>
       </div>
+
       {images.length > 1 && (
         <div className="flex gap-2">
           {images.map((url, i) => (
@@ -36,6 +55,12 @@ export default function ProductGallery({ product }: { product: Product }) {
             </button>
           ))}
         </div>
+      )}
+
+      {scale && (
+        <p className="text-[10px] text-gray-400 text-center leading-relaxed max-w-xs">
+          Escala comparativa entre las medidas disponibles de este producto.
+        </p>
       )}
     </div>
   );

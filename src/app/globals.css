@@ -68,11 +68,47 @@
   animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Sin fill-mode a propósito: el estado en reposo es el elemento completo, así
+   que si la animación no llega a correr (pestaña en segundo plano, motor sin
+   soporte) el contenido se ve igual en vez de quedarse invisible. */
+@keyframes grow-down {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+.animate-grow-down {
+  transform-origin: top center;
+  animation: grow-down 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes reveal-down {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+.animate-reveal-down {
+  animation: reveal-down 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marquee-track {
     animation: none;
   }
   .reveal-visible {
+    animation: none;
+  }
+  .animate-grow-down,
+  .animate-reveal-down,
+  .animate-slide-in-left {
     animation: none;
   }
 }
