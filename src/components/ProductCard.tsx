@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ProductIcon, CartIcon } from "./icons";
+import { ProductIcon } from "./icons";
 import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toastStore";
 import type { Product } from "@/data/products";
@@ -14,21 +14,27 @@ function formatPrice(price: number) {
 export function StockBadge({ status }: { status: Product["stockStatus"] }) {
   if (status === "AGOTADO") {
     return (
-      <span className="text-[9px] border border-diose-danger text-diose-danger px-2 py-0.5 tracking-[0.08em] uppercase">
-        Agotado
+      <span className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-diose-danger shrink-0" />
+        <span className="text-[9px] text-diose-danger tracking-[0.08em] uppercase font-medium">Agotado</span>
       </span>
     );
   }
   if (status === "STOCK_BAJO") {
     return (
-      <span className="text-[9px] bg-diose-amber/10 border border-diose-amber text-diose-amber px-2 py-0.5 tracking-[0.08em] uppercase">
-        Stock bajo
+      <span className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-diose-amber shrink-0" />
+        <span className="text-[9px] text-diose-amber tracking-[0.08em] uppercase font-medium">Stock bajo</span>
       </span>
     );
   }
   return (
-    <span className="text-[9px] bg-diose-amber text-white px-2 py-0.5 tracking-[0.08em] uppercase">
-      En stock
+    <span className="flex items-center gap-1.5">
+      <span className="relative flex w-1.5 h-1.5 shrink-0">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-diose-success opacity-75" />
+        <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-diose-success" />
+      </span>
+      <span className="text-[9px] text-diose-success tracking-[0.08em] uppercase font-medium">En stock</span>
     </span>
   );
 }
@@ -120,20 +126,31 @@ function CartFab({
       disabled={agotado}
       aria-label="Agregar al carrito"
       title={agotado ? "Agotado" : "Agregar al carrito"}
-      className={`absolute bottom-2.5 right-2.5 w-10 h-10 rounded-full flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.28)] cursor-pointer transition-all duration-200 ${
+      className={`group/cart absolute bottom-2.5 right-2.5 w-7 h-7 rounded-full border flex items-center justify-center shadow-[0_3px_10px_rgba(0,0,0,0.22)] cursor-pointer transition-all duration-200 ${
         agotado
-          ? "bg-gray-300 cursor-not-allowed"
+          ? "bg-gray-200 border-gray-300 cursor-not-allowed"
           : added
-            ? "bg-diose-success scale-110"
-            : "bg-diose-amber hover:bg-diose-amber-dark hover:scale-110"
+            ? "bg-diose-success border-diose-success scale-110"
+            : "bg-white border-diose-black hover:bg-diose-black hover:scale-110"
       }`}
     >
       {added ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20,6 9,17 4,12" />
         </svg>
       ) : (
-        <CartIcon size={16} color="#fff" strokeWidth={2} />
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          className={agotado ? "stroke-gray-400" : "stroke-diose-black group-hover/cart:stroke-white"}
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
       )}
     </button>
   );
