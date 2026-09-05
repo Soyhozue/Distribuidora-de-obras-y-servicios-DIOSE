@@ -149,6 +149,29 @@ export async function getRelatedProducts(categoryName: string, excludeId: string
   return products.map(mapProduct);
 }
 
+export type ScrewFinderOption = { id: string; name: string; diameterLabel: string; variantLabel: string };
+
+/**
+ * Combinaciones grosor+medida disponibles para el buscador de tornillería del
+ * inicio. Solo entran productos con ambos campos puestos y que sí se venden
+ * (no variantes agotadas de otra medida ocultas por STOREFRONT_WHERE — aquí
+ * se listan TODAS las medidas, agotadas incluidas, para no ocultar del
+ * buscador algo que simplemente no está seleccionado por default).
+ */
+export async function getScrewFinderOptions(): Promise<ScrewFinderOption[]> {
+  const rows = await prisma.product.findMany({
+    where: {
+      diameterLabel: { not: null },
+      variantLabel: { not: null },
+      category: { name: { contains: "tornill", mode: "insensitive" } },
+    },
+    select: { id: true, name: true, diameterLabel: true, variantLabel: true },
+  });
+  return rows
+    .filter((r): r is typeof r & { diameterLabel: string; variantLabel: string } => !!r.diameterLabel && !!r.variantLabel)
+    .map((r) => ({ id: r.id, name: r.name, diameterLabel: r.diameterLabel, variantLabel: r.variantLabel }));
+}
+
 export async function getSubcategories(): Promise<
   { id: string; name: string; categoryId: string; categoryName: string; count: number }[]
 > {

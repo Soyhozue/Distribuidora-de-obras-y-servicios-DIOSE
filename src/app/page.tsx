@@ -7,17 +7,19 @@ import HeroCarousel from "@/components/HeroCarousel";
 import HeroTitle from "@/components/HeroTitle";
 import PromoSection from "@/components/PromoSection";
 import RevealOnScroll from "@/components/RevealOnScroll";
+import ScrewFinder from "@/components/ScrewFinder";
 import { ProductIcon } from "@/components/icons";
-import { getCategoriesWithCounts, getFeaturedProducts, getPromoImages, getSiteSettings, parseHeroSlides, pickIcon } from "@/lib/data";
+import { getCategoriesWithCounts, getFeaturedProducts, getPromoImages, getScrewFinderOptions, getSiteSettings, parseHeroSlides, pickIcon } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [featured, settings, promos, categories] = await Promise.all([
+  const [featured, settings, promos, categories, screwOptions] = await Promise.all([
     getFeaturedProducts(),
     getSiteSettings(),
     getPromoImages(),
     getCategoriesWithCounts(),
+    getScrewFinderOptions(),
   ]);
   const heroSlides = parseHeroSlides(settings.heroSlides);
   const activeCategories = categories.filter((c) => c.count > 0);
@@ -97,6 +99,8 @@ export default async function Home() {
           </div>
         </section>
       )}
+
+      <ScrewFinder options={screwOptions} />
 
       {/* FEATURED PRODUCTS */}
       {featured.length > 0 && (
