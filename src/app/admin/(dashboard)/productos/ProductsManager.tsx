@@ -1047,21 +1047,6 @@ export default function ProductsManager({
                 </datalist>
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Grosor / diámetro (opcional)</span>
-                <input
-                  value={form.diameterLabel}
-                  onChange={(e) => setForm({ ...form, diameterLabel: e.target.value })}
-                  placeholder='Ej: 1/4" — para tornillería'
-                  list="diameter-options"
-                  className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
-                />
-                <datalist id="diameter-options">
-                  {['1/4"', '5/16"', '3/8"', '7/16"', '1/2"', '9/16"', '5/8"', '3/4"'].map((d) => (
-                    <option key={d} value={d} />
-                  ))}
-                </datalist>
-              </label>
-              <label className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Marca</span>
                 <select
                   value={form.brandId}
@@ -1075,6 +1060,30 @@ export default function ProductsManager({
                   ))}
                 </select>
               </label>
+
+              {/tornill/i.test(categories.find((c) => c.id === form.categoryId)?.name ?? "") && (
+                <div className="col-span-2 border border-diose-amber/40 bg-diose-amber/5 p-3 flex flex-col gap-2">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-diose-amber">
+                    Tornillería — grosor / diámetro
+                  </div>
+                  <div className="text-[11px] text-gray-500 -mt-1">
+                    Aplica a toda la familia (todas las medidas de largo comparten el mismo grosor). Se muestra
+                    como un círculo a escala en la ficha del producto.
+                  </div>
+                  <select
+                    value={form.diameterLabel}
+                    onChange={(e) => setForm({ ...form, diameterLabel: e.target.value })}
+                    className="border border-diose-border px-3 py-2 text-sm outline-none bg-white w-1/2"
+                  >
+                    <option value="">Sin especificar</option>
+                    {['1/4"', '5/16"', '3/8"', '7/16"', '1/2"', '9/16"', '5/8"', '3/4"'].map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {!hasVariants ? (
                 <>
