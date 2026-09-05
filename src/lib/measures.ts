@@ -1,6 +1,6 @@
 /**
  * Utilidades para interpretar medidas en pulgadas escritas a mano por el admin
- * (ej. `1/2"`, `5/8"`, `1 1/2"`, `2 pulg`) y convertirlas a milímetros.
+ * (ej. `1/2"`, `5/8"`, `1 1/2"`, `1"-1/4"`, `2 pulg`) y convertirlas a milímetros.
  */
 
 const UNICODE_FRACTIONS: Record<string, string> = {
@@ -28,6 +28,8 @@ export function parseInches(label: string | null | undefined): number | null {
     .replace(/["″”]/g, " ")
     .replace(/\bin\b/gi, " ")
     .replace(/\bpulg(adas?)?\b/gi, " ")
+    // Números mixtos escritos con guión en vez de espacio: 1"-1/4", 1-1/4
+    .replace(/-/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
