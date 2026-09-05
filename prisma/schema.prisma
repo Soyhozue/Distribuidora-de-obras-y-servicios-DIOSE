@@ -90,7 +90,6 @@ model Product {
   variantOrder     Int     @default(0)
   isPrimaryVariant Boolean @default(true)
   minOrderQty      Int     @default(1)
-  minOrderAmount   Decimal? @db.Decimal(10, 2)
   packLabel        String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

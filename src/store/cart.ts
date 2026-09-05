@@ -3,7 +3,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Product } from "@/data/products";
-import { effectiveMinOrderQty } from "@/lib/minOrder";
 
 export type CartLine = {
   product: Product;
@@ -46,7 +45,7 @@ export const useCartStore = create<CartState>()(
         set({
           lines: get().lines.map((l) =>
             l.product.id === productId
-              ? { ...l, quantity: Math.max(effectiveMinOrderQty(l.product), quantity) }
+              ? { ...l, quantity: Math.max(l.product.minOrderQty ?? 1, quantity) }
               : l
           ),
         }),

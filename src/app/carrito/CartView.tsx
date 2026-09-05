@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CloseIcon, ProductIcon, WhatsAppIcon } from "@/components/icons";
 import { cartTotals, useCartStore } from "@/store/cart";
-import { effectiveMinOrderQty } from "@/lib/minOrder";
 
 function formatPrice(price: number) {
   return `$${price.toLocaleString("es-MX")}`;
@@ -104,7 +103,7 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
                 </div>
                 <div className="flex items-center border border-diose-border shrink-0">
                   {(() => {
-                    const step = effectiveMinOrderQty(line.product);
+                    const step = Math.max(1, line.product.minOrderQty ?? 1);
                     return (
                       <>
                         <button

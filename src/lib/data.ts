@@ -41,7 +41,6 @@ type DbProduct = {
   variantLabel?: string | null;
   variantOrder?: number;
   minOrderQty?: number;
-  minOrderAmount?: { toString(): string } | null;
   packLabel?: string | null;
 };
 
@@ -72,7 +71,6 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
     variantLabel: p.variantLabel ?? undefined,
     variantOrder: p.variantOrder ?? 0,
     minOrderQty: p.minOrderQty ?? 1,
-    minOrderAmount: p.minOrderAmount != null ? Number(p.minOrderAmount.toString()) : undefined,
     packLabel: p.packLabel ?? undefined,
   };
 }
@@ -186,7 +184,6 @@ export type ProductInput = {
   variantLabel?: string;
   variantOrder?: number;
   minOrderQty?: number;
-  minOrderAmount?: number;
   packLabel?: string;
 };
 
@@ -202,9 +199,6 @@ function validateProductInput(input: ProductInput) {
   }
   if (input.minOrderQty != null && (!Number.isInteger(input.minOrderQty) || input.minOrderQty < 1)) {
     throw new Error("La cantidad mínima de venta debe ser un número entero de al menos 1.");
-  }
-  if (input.minOrderAmount != null && (!Number.isFinite(input.minOrderAmount) || input.minOrderAmount <= 0)) {
-    throw new Error("La compra mínima en pesos debe ser mayor a 0.");
   }
 }
 

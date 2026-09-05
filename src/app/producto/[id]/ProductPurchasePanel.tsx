@@ -4,15 +4,10 @@ import { useState } from "react";
 import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toastStore";
 import { WhatsAppIcon } from "@/components/icons";
-import { effectiveMinOrderQty } from "@/lib/minOrder";
 import type { Product } from "@/data/products";
 
-function formatPrice(price: number) {
-  return `$${price.toLocaleString("es-MX")}`;
-}
-
 export default function ProductPurchasePanel({ product, whatsapp }: { product: Product; whatsapp: string }) {
-  const step = effectiveMinOrderQty(product);
+  const step = Math.max(1, product.minOrderQty ?? 1);
   const [quantity, setQuantity] = useState(step);
   const [added, setAdded] = useState(false);
   const add = useCartStore((s) => s.add);
@@ -63,12 +58,7 @@ export default function ProductPurchasePanel({ product, whatsapp }: { product: P
           </span>
         </button>
       </div>
-      {step > 1 && !product.packLabel && product.minOrderAmount && (
-        <div className="text-[11px] text-gray-400 -mt-2.5 mb-4">
-          Compra mínima: {formatPrice(product.minOrderAmount)} ({step} piezas a este precio).
-        </div>
-      )}
-      {step > 1 && !product.packLabel && !product.minOrderAmount && (
+      {step > 1 && !product.packLabel && (
         <div className="text-[11px] text-gray-400 -mt-2.5 mb-4">Se vende en múltiplos de {step} piezas.</div>
       )}
       <a
