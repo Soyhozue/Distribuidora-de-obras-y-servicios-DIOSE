@@ -53,6 +53,7 @@ type FormState = {
   featured: boolean;
   images: string[];
   minOrderQty: string;
+  minOrderAmount: string;
   packLabel: string;
 };
 
@@ -63,6 +64,7 @@ type VariantRow = {
   price: string;
   stock: string;
   minOrderQty: string;
+  minOrderAmount: string;
 };
 
 type Subcategory = { id: string; name: string; categoryId: string; count: number };
@@ -72,7 +74,7 @@ type ProductRow =
   | { kind: "family"; groupId: string; members: ManagedProduct[] };
 
 function emptyVariantRow(): VariantRow {
-  return { variantLabel: "", sku: "", price: "", stock: "0", minOrderQty: "1" };
+  return { variantLabel: "", sku: "", price: "", stock: "0", minOrderQty: "1", minOrderAmount: "" };
 }
 
 function rowFromProduct(p: ManagedProduct): VariantRow {
@@ -83,6 +85,7 @@ function rowFromProduct(p: ManagedProduct): VariantRow {
     price: String(p.price),
     stock: String(p.stock),
     minOrderQty: String(p.minOrderQty ?? 1),
+    minOrderAmount: p.minOrderAmount ? String(p.minOrderAmount) : "",
   };
 }
 
@@ -119,6 +122,7 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     featured: false,
     images: [],
     minOrderQty: "1",
+    minOrderAmount: "",
     packLabel: "",
   };
 }
@@ -239,6 +243,7 @@ export default function ProductsManager({
       featured: !!p.featured,
       images: p.images ?? [],
       minOrderQty: String(p.minOrderQty ?? 1),
+      minOrderAmount: p.minOrderAmount ? String(p.minOrderAmount) : "",
       packLabel: p.packLabel ?? "",
     });
     const siblings = p.variantGroupId
@@ -275,6 +280,7 @@ export default function ProductsManager({
       featured: false,
       images: p.images ?? [],
       minOrderQty: String(p.minOrderQty ?? 1),
+      minOrderAmount: p.minOrderAmount ? String(p.minOrderAmount) : "",
       packLabel: p.packLabel ?? "",
     });
     setHasVariants(false);
@@ -376,6 +382,10 @@ export default function ProductsManager({
       setFormError("La cantidad mínima de venta debe ser un número entero de al menos 1.");
       return;
     }
+    if (form.minOrderAmount && (!Number(form.minOrderAmount) || Number(form.minOrderAmount) <= 0)) {
+      setFormError("La compra mínima en pesos debe ser mayor a 0.");
+      return;
+    }
     const payload = {
       ...(await sharedFields()),
       sku: form.sku,
@@ -383,6 +393,7 @@ export default function ProductsManager({
       stock: Number(form.stock),
       stockStatus: form.stockStatus,
       minOrderQty: form.minOrderQty ? Number(form.minOrderQty) : 1,
+      minOrderAmount: form.minOrderAmount ? Number(form.minOrderAmount) : undefined,
       packLabel: form.packLabel.trim() || undefined,
       variantGroupId: undefined,
       variantLabel: undefined,
@@ -428,6 +439,10 @@ export default function ProductsManager({
         setFormError(`La cantidad mínima de "${row.variantLabel}" debe ser un entero de al menos 1.`);
         return;
       }
+      if (row.minOrderAmount && (!Number(row.minOrderAmount) || Number(row.minOrderAmount) <= 0)) {
+        setFormError(`La compra mínima en pesos de "${row.variantLabel}" debe ser mayor a 0.`);
+        return;
+      }
     }
     const familyKey = form.name.trim();
     const shared = await sharedFields();
@@ -443,6 +458,7 @@ export default function ProductsManager({
         stock,
         stockStatus: deriveStockStatus(stock),
         minOrderQty: Number(row.minOrderQty) || 1,
+        minOrderAmount: row.minOrderAmount ? Number(row.minOrderAmount) : undefined,
         variantGroupId: familyKey,
         variantLabel: row.variantLabel.trim(),
         variantOrder: i,
@@ -1130,6 +1146,29 @@ export default function ProductsManager({
                         />
                       </label>
                     </div>
+
+                    <div className="h-px bg-diose-border-light" />
+
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                      O compra mínima en pesos (opcional)
+                    </div>
+                    <div className="text-[11px] text-gray-400 -mt-1.5">
+                      Si lo pones, tiene prioridad sobre la cantidad mínima de arriba: la cantidad de piezas se
+                      calcula sola según el precio. Útil para piezas baratas donde no todos quieren comprar el
+                      mismo número — ej. &quot;mínimo $100&quot; en vez de &quot;mínimo 100 piezas&quot;.
+                    </div>
+                    <label className="flex flex-col gap-1 w-1/2">
+                      <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Compra mínima ($)</span>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={form.minOrderAmount}
+                        onChange={(e) => setForm({ ...form, minOrderAmount: e.target.value })}
+                        placeholder="Ej: 100"
+                        className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                      />
+                    </label>
                   </div>
                 </>
               ) : (
@@ -1139,8 +1178,8 @@ export default function ProductsManager({
                     <span className="normal-case text-gray-300">— arrastra ⠿ para reordenar</span>
                   </div>
                   <div className="border border-diose-border overflow-hidden">
-                    <div className="grid grid-cols-[20px_1fr_1fr_90px_70px_90px_78px] gap-1.5 px-2.5 py-2 bg-[#F9F9F9] border-b border-diose-border-light">
-                      {["", "Etiqueta", "SKU", "Precio", "Stock", "Mín.", ""].map((h, hi) => (
+                    <div className="grid grid-cols-[20px_1fr_1fr_75px_60px_60px_70px_78px] gap-1.5 px-2.5 py-2 bg-[#F9F9F9] border-b border-diose-border-light">
+                      {["", "Etiqueta", "SKU", "Precio", "Stock", "Mín.", "Mín. $", ""].map((h, hi) => (
                         <span key={hi} className="text-[9px] font-semibold tracking-[0.1em] uppercase text-gray-400">
                           {h}
                         </span>
@@ -1166,7 +1205,7 @@ export default function ProductsManager({
                           setDraggingIndex(null);
                           setDragOverIndex(null);
                         }}
-                        className={`grid grid-cols-[20px_1fr_1fr_90px_70px_90px_78px] gap-1.5 px-2.5 py-1.5 border-b border-gray-100 last:border-b-0 items-center ${
+                        className={`grid grid-cols-[20px_1fr_1fr_75px_60px_60px_70px_78px] gap-1.5 px-2.5 py-1.5 border-b border-gray-100 last:border-b-0 items-center ${
                           draggingIndex === i ? "opacity-40" : ""
                         } ${dragOverIndex === i && draggingIndex !== i ? "bg-diose-amber/10" : ""}`}
                       >
@@ -1211,6 +1250,17 @@ export default function ProductsManager({
                           step="1"
                           value={row.minOrderQty}
                           onChange={(e) => updateVariantRow(i, { minOrderQty: e.target.value })}
+                          title="Cantidad mínima en piezas"
+                          className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
+                        />
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={row.minOrderAmount}
+                          onChange={(e) => updateVariantRow(i, { minOrderAmount: e.target.value })}
+                          placeholder="—"
+                          title="Compra mínima en pesos (si se llena, manda sobre el mínimo en piezas)"
                           className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
                         />
                         <div className="flex items-center gap-1 justify-end">

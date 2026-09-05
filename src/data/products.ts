@@ -23,6 +23,7 @@ export type Product = {
   variantLabel?: string;
   variantOrder?: number;
   minOrderQty?: number;
+  minOrderAmount?: number;
   packLabel?: string;
   subcategory?: string;
   subcategoryId?: string;
