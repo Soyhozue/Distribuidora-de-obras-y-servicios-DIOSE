@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatMm } from "@/lib/measures";
 
 export type RulerMark = { label: string; inches: number };
@@ -212,6 +212,30 @@ function CalibrationPanel({
 }) {
   const cardWidth = (CARD_WIDTH_MM / MM_PER_INCH) * draftPpi;
   const cardHeight = (CARD_HEIGHT_MM / MM_PER_INCH) * draftPpi;
+  const isSmallScreen = typeof window !== "undefined" && window.innerWidth < 640;
+  // A ppi altos la tarjeta (acostada, en pantallas anchas) o el conjunto
+  // completo se vuelve más ancho que el panel. En vez de dejarlo desbordarse
+  // y verse roto, se escala la vista previa completa para que siempre quepa
+  // — el valor de calibración numérico no cambia, solo el dibujo.
+  const previewRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
+
+  useEffect(() => {
+    const container = previewRef.current;
+    const content = contentRef.current;
+    if (!container || !content) return;
+    const measure = () => {
+      const available = container.clientWidth;
+      const needed = content.scrollWidth;
+      setPreviewScale(needed > available ? Math.max(0.35, available / needed) : 1);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [cardWidth, isSmallScreen]);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3">
@@ -226,26 +250,36 @@ function CalibrationPanel({
             rectángulo — o hasta que la pieza mida igual que tu tornillo de {label}. Se guarda en este dispositivo,
             así que ajústalo también en tu celular.
           </p>
+          {isSmallScreen && (
+            <p className="text-[11px] text-diose-amber mt-2 leading-relaxed">
+              Para mayor precisión, si puedes, hazlo desde una computadora — la pantalla es más grande y es más
+              fácil comparar contra la tarjeta.
+            </p>
+          )}
         </div>
 
-        <div className="flex-1 overflow-auto px-5">
-        <div className="border border-diose-border-light bg-[#FAFAFA] p-4 flex flex-col items-center gap-4">
+        <div ref={previewRef} className="flex-1 overflow-hidden px-5 flex items-center justify-center">
+        <div
+          ref={contentRef}
+          className="border border-diose-border-light bg-[#FAFAFA] p-4 flex flex-col items-center gap-4 shrink-0"
+          style={{ transform: `scale(${previewScale})`, transformOrigin: "center" }}
+        >
           {/* En celular la tarjeta va vertical: acostada no cabe a lo ancho. */}
           <div
             className="hidden sm:flex border-2 border-diose-amber bg-white shrink-0 items-end justify-end p-1.5"
             style={{ width: cardWidth, height: cardHeight, borderRadius: cardHeight * 0.06 }}
           >
-            <span className="text-[9px] text-gray-400 tracking-[0.1em] uppercase">Tarjeta</span>
+            <span className="text-[9px] text-gray-400 tracking-[0.1em] uppercase whitespace-nowrap">Tarjeta</span>
           </div>
           <div
             className="flex sm:hidden border-2 border-diose-amber bg-white shrink-0 items-end justify-center p-1.5"
             style={{ width: cardHeight, height: cardWidth, borderRadius: cardHeight * 0.06 }}
           >
-            <span className="text-[9px] text-gray-400 tracking-[0.1em] uppercase">Tarjeta</span>
+            <span className="text-[9px] text-gray-400 tracking-[0.1em] uppercase whitespace-nowrap">Tarjeta</span>
           </div>
 
           <div className="flex items-start gap-2 shrink-0">
-            <div className="relative w-6" style={{ height: inches * draftPpi }}>
+            <div className="relative w-6 shrink-0" style={{ height: inches * draftPpi }}>
               <div
                 className="absolute left-0 right-0 mx-auto bg-diose-black"
                 style={{ top: 0, width: 20, height: 5 }}
@@ -260,10 +294,15 @@ function CalibrationPanel({
                 }}
               />
             </div>
-            <span className="text-[10px] text-gray-400 self-center">{label}</span>
+            <span className="text-[10px] text-gray-400 self-center whitespace-nowrap">{label}</span>
           </div>
         </div>
         </div>
+        {previewScale < 1 && (
+          <div className="px-5 -mt-2">
+            <span className="text-[10px] text-gray-300">Vista previa a escala reducida para que quepa en pantalla</span>
+          </div>
+        )}
 
         <div className="px-5 pt-3 pb-5 border-t border-diose-border-light shrink-0 bg-white">
         <input
