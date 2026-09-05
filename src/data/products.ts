@@ -21,6 +21,7 @@ export type Product = {
   images?: string[];
   variantGroupId?: string;
   variantLabel?: string;
+  variantOrder?: number;
   minOrderQty?: number;
   packLabel?: string;
   subcategory?: string;

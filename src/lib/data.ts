@@ -39,6 +39,7 @@ type DbProduct = {
   images: string[];
   variantGroupId?: string | null;
   variantLabel?: string | null;
+  variantOrder?: number;
   minOrderQty?: number;
   packLabel?: string | null;
 };
@@ -68,6 +69,7 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
     images: p.images,
     variantGroupId: p.variantGroupId ?? undefined,
     variantLabel: p.variantLabel ?? undefined,
+    variantOrder: p.variantOrder ?? 0,
     minOrderQty: p.minOrderQty ?? 1,
     packLabel: p.packLabel ?? undefined,
   };
@@ -120,12 +122,13 @@ export type ProductVariant = {
 };
 
 export async function getProductVariants(variantGroupId: string): Promise<ProductVariant[]> {
-  // Includes the current product too, always in the same creation order, so
-  // the buttons stay in a fixed position no matter which variant is active.
+  // Includes the current product too, always in the same fixed order (the
+  // one the admin set), so the buttons stay in place no matter which variant
+  // is active.
   const rows = await prisma.product.findMany({
     where: { variantGroupId },
     select: { id: true, variantLabel: true, price: true, stockStatus: true },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ variantOrder: "asc" }, { createdAt: "asc" }],
   });
   return rows.map((r) => ({
     id: r.id,
@@ -179,6 +182,7 @@ export type ProductInput = {
   images?: string[];
   variantGroupId?: string;
   variantLabel?: string;
+  variantOrder?: number;
   minOrderQty?: number;
   packLabel?: string;
 };
@@ -232,7 +236,7 @@ export async function updateProduct(id: string, input: ProductInput) {
     if (before?.isPrimaryVariant && before.variantGroupId && before.variantGroupId !== (input.variantGroupId ?? null)) {
       const nextPrimary = await prisma.product.findFirst({
         where: { variantGroupId: before.variantGroupId },
-        orderBy: { createdAt: "asc" },
+        orderBy: [{ variantOrder: "asc" }, { createdAt: "asc" }],
       });
       if (nextPrimary) {
         await prisma.product.update({ where: { id: nextPrimary.id }, data: { isPrimaryVariant: true } });
@@ -271,7 +275,7 @@ export async function deleteProduct(id: string) {
   if (product?.isPrimaryVariant && product.variantGroupId) {
     const nextPrimary = await prisma.product.findFirst({
       where: { variantGroupId: product.variantGroupId },
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ variantOrder: "asc" }, { createdAt: "asc" }],
     });
     if (nextPrimary) {
       await prisma.product.update({ where: { id: nextPrimary.id }, data: { isPrimaryVariant: true } });

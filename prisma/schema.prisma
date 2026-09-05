@@ -87,6 +87,7 @@ model Product {
   comboItems  ComboItem[]
   variantGroupId   String?
   variantLabel     String?
+  variantOrder     Int     @default(0)
   isPrimaryVariant Boolean @default(true)
   minOrderQty      Int     @default(1)
   packLabel        String?

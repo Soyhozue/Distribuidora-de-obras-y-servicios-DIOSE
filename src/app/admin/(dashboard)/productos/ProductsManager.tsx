@@ -239,7 +239,11 @@ export default function ProductsManager({
       minOrderQty: String(p.minOrderQty ?? 1),
       packLabel: p.packLabel ?? "",
     });
-    const siblings = p.variantGroupId ? products.filter((sib) => sib.variantGroupId === p.variantGroupId) : [];
+    const siblings = p.variantGroupId
+      ? products
+          .filter((sib) => sib.variantGroupId === p.variantGroupId)
+          .sort((a, b) => (a.variantOrder ?? 0) - (b.variantOrder ?? 0))
+      : [];
     const isFamily = siblings.length > 0;
     setHasVariants(isFamily);
     const rows = (isFamily ? siblings : [p]).map(rowFromProduct);
@@ -289,6 +293,19 @@ export default function ProductsManager({
   function updateVariantRow(index: number, patch: Partial<VariantRow>) {
     setVariantRows((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   }
+
+  function moveVariantRow(from: number, to: number) {
+    setVariantRows((rows) => {
+      if (to < 0 || to >= rows.length || from === to) return rows;
+      const next = [...rows];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   async function handleImageUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -414,7 +431,8 @@ export default function ProductsManager({
     const shared = await sharedFields();
     const errors: string[] = [];
 
-    for (const row of variantRows) {
+    for (let i = 0; i < variantRows.length; i++) {
+      const row = variantRows[i];
       const stock = Number(row.stock) || 0;
       const payload = {
         ...shared,
@@ -425,6 +443,7 @@ export default function ProductsManager({
         minOrderQty: Number(row.minOrderQty) || 1,
         variantGroupId: familyKey,
         variantLabel: row.variantLabel.trim(),
+        variantOrder: i,
       };
       const res = row.id
         ? await fetch(`/api/products/${row.id}`, {
@@ -1110,12 +1129,13 @@ export default function ProductsManager({
               ) : (
                 <div className="col-span-2 flex flex-col gap-2.5">
                   <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
-                    Medidas de &quot;{form.name.trim() || "..."}&quot;
+                    Medidas de &quot;{form.name.trim() || "..."}&quot;{" "}
+                    <span className="normal-case text-gray-300">— arrastra ⠿ para reordenar</span>
                   </div>
                   <div className="border border-diose-border overflow-hidden">
-                    <div className="grid grid-cols-[1fr_1fr_90px_70px_90px_28px] gap-1.5 px-2.5 py-2 bg-[#F9F9F9] border-b border-diose-border-light">
-                      {["Etiqueta", "SKU", "Precio", "Stock", "Mín.", ""].map((h) => (
-                        <span key={h} className="text-[9px] font-semibold tracking-[0.1em] uppercase text-gray-400">
+                    <div className="grid grid-cols-[20px_1fr_1fr_90px_70px_90px_78px] gap-1.5 px-2.5 py-2 bg-[#F9F9F9] border-b border-diose-border-light">
+                      {["", "Etiqueta", "SKU", "Precio", "Stock", "Mín.", ""].map((h, hi) => (
+                        <span key={hi} className="text-[9px] font-semibold tracking-[0.1em] uppercase text-gray-400">
                           {h}
                         </span>
                       ))}
@@ -1123,8 +1143,33 @@ export default function ProductsManager({
                     {variantRows.map((row, i) => (
                       <div
                         key={i}
-                        className="grid grid-cols-[1fr_1fr_90px_70px_90px_28px] gap-1.5 px-2.5 py-1.5 border-b border-gray-100 last:border-b-0 items-center"
+                        draggable
+                        onDragStart={() => setDraggingIndex(i)}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (dragOverIndex !== i) setDragOverIndex(i);
+                        }}
+                        onDragLeave={() => setDragOverIndex((cur) => (cur === i ? null : cur))}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggingIndex !== null) moveVariantRow(draggingIndex, i);
+                          setDraggingIndex(null);
+                          setDragOverIndex(null);
+                        }}
+                        onDragEnd={() => {
+                          setDraggingIndex(null);
+                          setDragOverIndex(null);
+                        }}
+                        className={`grid grid-cols-[20px_1fr_1fr_90px_70px_90px_78px] gap-1.5 px-2.5 py-1.5 border-b border-gray-100 last:border-b-0 items-center ${
+                          draggingIndex === i ? "opacity-40" : ""
+                        } ${dragOverIndex === i && draggingIndex !== i ? "bg-diose-amber/10" : ""}`}
                       >
+                        <span
+                          className="text-gray-300 cursor-grab active:cursor-grabbing select-none text-center"
+                          title="Arrastra para reordenar"
+                        >
+                          ⠿
+                        </span>
                         <input
                           value={row.variantLabel}
                           onChange={(e) => updateVariantRow(i, { variantLabel: e.target.value })}
@@ -1162,14 +1207,34 @@ export default function ProductsManager({
                           onChange={(e) => updateVariantRow(i, { minOrderQty: e.target.value })}
                           className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
                         />
-                        <button
-                          type="button"
-                          onClick={() => removeVariantRow(i)}
-                          disabled={variantRows.length <= 1}
-                          className="text-gray-300 hover:text-diose-danger cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm"
-                        >
-                          ✕
-                        </button>
+                        <div className="flex items-center gap-1 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => moveVariantRow(i, i - 1)}
+                            disabled={i === 0}
+                            title="Subir"
+                            className="text-gray-300 hover:text-diose-black cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed text-xs leading-none"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveVariantRow(i, i + 1)}
+                            disabled={i === variantRows.length - 1}
+                            title="Bajar"
+                            className="text-gray-300 hover:text-diose-black cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed text-xs leading-none"
+                          >
+                            ▼
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeVariantRow(i)}
+                            disabled={variantRows.length <= 1}
+                            className="text-gray-300 hover:text-diose-danger cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm ml-1"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
