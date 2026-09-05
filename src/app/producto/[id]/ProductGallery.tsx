@@ -5,7 +5,13 @@ import { ProductIcon } from "@/components/icons";
 import SizeRuler, { type RulerMark } from "@/components/SizeRuler";
 import type { Product } from "@/data/products";
 
-export type GalleryScale = { inches: number; label: string; rulerMax: number; marks: RulerMark[] };
+export type GalleryScale = {
+  inches: number;
+  label: string;
+  rulerMax: number;
+  marks: RulerMark[];
+  diameter?: { inches: number; label: string };
+};
 
 export default function ProductGallery({ product, scale }: { product: Product; scale?: GalleryScale }) {
   const images = product.images ?? [];
@@ -20,6 +26,7 @@ export default function ProductGallery({ product, scale }: { product: Product; s
             label={scale.label}
             rulerMax={scale.rulerMax}
             marks={scale.marks}
+            diameter={scale.diameter}
           />
         )}
 

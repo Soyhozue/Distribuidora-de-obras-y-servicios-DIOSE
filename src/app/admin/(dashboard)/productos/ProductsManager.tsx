@@ -49,6 +49,7 @@ type FormState = {
   stockStatus: Product["stockStatus"];
   categoryId: string;
   subcategoryName: string;
+  diameterLabel: string;
   brandId: string;
   featured: boolean;
   images: string[];
@@ -115,6 +116,7 @@ function emptyForm(categories: Option[], brands: Option[]): FormState {
     stockStatus: "EN_STOCK",
     categoryId: categories[0]?.id ?? "",
     subcategoryName: "",
+    diameterLabel: "",
     brandId: brands[0]?.id ?? "",
     featured: false,
     images: [],
@@ -235,6 +237,7 @@ export default function ProductsManager({
       stockStatus: p.stockStatus,
       categoryId: p.categoryId,
       subcategoryName: p.subcategory ?? "",
+      diameterLabel: p.diameterLabel ?? "",
       brandId: p.brandId,
       featured: !!p.featured,
       images: p.images ?? [],
@@ -271,6 +274,7 @@ export default function ProductsManager({
       stockStatus: "EN_STOCK",
       categoryId: p.categoryId,
       subcategoryName: p.subcategory ?? "",
+      diameterLabel: p.diameterLabel ?? "",
       brandId: p.brandId,
       featured: false,
       images: p.images ?? [],
@@ -361,6 +365,7 @@ export default function ProductsManager({
       weight: form.weight ? Number(form.weight) : undefined,
       categoryId: form.categoryId,
       subcategoryId,
+      diameterLabel: form.diameterLabel.trim() || undefined,
       brandId: form.brandId,
       featured: form.featured,
       images: form.images,
@@ -1039,6 +1044,21 @@ export default function ProductsManager({
                     .map((s) => (
                       <option key={s.id} value={s.name} />
                     ))}
+                </datalist>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Grosor / diámetro (opcional)</span>
+                <input
+                  value={form.diameterLabel}
+                  onChange={(e) => setForm({ ...form, diameterLabel: e.target.value })}
+                  placeholder='Ej: 1/4" — para tornillería'
+                  list="diameter-options"
+                  className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+                />
+                <datalist id="diameter-options">
+                  {['1/4"', '5/16"', '3/8"', '7/16"', '1/2"', '9/16"', '5/8"', '3/4"'].map((d) => (
+                    <option key={d} value={d} />
+                  ))}
                 </datalist>
               </label>
               <label className="flex flex-col gap-1">

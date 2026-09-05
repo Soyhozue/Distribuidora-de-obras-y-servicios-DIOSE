@@ -24,6 +24,7 @@ export type Product = {
   variantOrder?: number;
   minOrderQty?: number;
   packLabel?: string;
+  diameterLabel?: string;
   subcategory?: string;
   subcategoryId?: string;
 };

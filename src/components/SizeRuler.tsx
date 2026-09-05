@@ -43,11 +43,13 @@ export default function SizeRuler({
   label,
   rulerMax,
   marks = [],
+  diameter,
 }: {
   inches: number;
   label: string;
   rulerMax: number;
   marks?: RulerMark[];
+  diameter?: { inches: number; label: string };
 }) {
   const [ppi, setPpi] = useState(DEFAULT_PPI);
   const [calibrated, setCalibrated] = useState(false);
@@ -71,6 +73,14 @@ export default function SizeRuler({
 
   const totalEighths = Math.round(rulerMax * 8);
   const others = marks.filter((m) => m.inches !== inches);
+
+  // El círculo del grosor comparte la misma escala calibrada que el largo,
+  // pero con un tope propio: un tornillo grueso a un ppi alto crecería mucho
+  // más que la columna angosta de la regla.
+  const DIAMETER_MAX_PX = 74;
+  const diameterPxRaw = diameter ? diameter.inches * pxPerInch : 0;
+  const diameterPx = Math.min(diameterPxRaw, DIAMETER_MAX_PX);
+  const diameterCapped = diameterPxRaw > DIAMETER_MAX_PX;
 
   function saveCalibration() {
     try {
@@ -163,6 +173,24 @@ export default function SizeRuler({
           />
         </div>
       </div>
+
+      {diameter && (
+        <div className="mt-3 pt-3 border-t border-diose-border-light flex flex-col items-center gap-1.5">
+          <div className="text-[9px] font-semibold tracking-[0.12em] uppercase text-gray-400 self-start">
+            Grosor
+          </div>
+          <div
+            className="rounded-full border-2 border-diose-black bg-gradient-to-br from-gray-300 to-gray-500 animate-scale-in shrink-0"
+            style={{ width: diameterPx, height: diameterPx }}
+          />
+          <div className="text-[10px] text-gray-500 text-center leading-tight">
+            {diameter.label} · {formatMm(diameter.inches)}
+          </div>
+          {diameterCapped && (
+            <div className="text-[9px] text-gray-300 text-center leading-tight">(dibujo a escala reducida)</div>
+          )}
+        </div>
+      )}
 
       <div className="mt-1.5">
         <div className="text-[11px] font-semibold text-diose-black leading-tight">{label}</div>

@@ -88,6 +88,7 @@ model Product {
   variantGroupId   String?
   variantLabel     String?
   variantOrder     Int     @default(0)
+  diameterLabel    String?
   isPrimaryVariant Boolean @default(true)
   minOrderQty      Int     @default(1)
   packLabel        String?

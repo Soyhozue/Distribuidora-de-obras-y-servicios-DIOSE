@@ -42,6 +42,7 @@ type DbProduct = {
   variantOrder?: number;
   minOrderQty?: number;
   packLabel?: string | null;
+  diameterLabel?: string | null;
 };
 
 function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: string } {
@@ -72,6 +73,7 @@ function mapProduct(p: DbProduct): Product & { categoryId: string; brandId: stri
     variantOrder: p.variantOrder ?? 0,
     minOrderQty: p.minOrderQty ?? 1,
     packLabel: p.packLabel ?? undefined,
+    diameterLabel: p.diameterLabel ?? undefined,
   };
 }
 
@@ -185,6 +187,7 @@ export type ProductInput = {
   variantOrder?: number;
   minOrderQty?: number;
   packLabel?: string;
+  diameterLabel?: string;
 };
 
 function validateProductInput(input: ProductInput) {

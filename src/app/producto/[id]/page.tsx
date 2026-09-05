@@ -56,6 +56,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
       ? Math.max(0.5, Math.ceil(Math.max(currentInches, ...familyInches) * 2) / 2)
       : 0;
 
+  // Grosor (diámetro): es el mismo para toda la familia, no cambia por medida.
+  const diameterInches = parseInches(product.diameterLabel);
+  const diameter =
+    diameterInches !== null && product.diameterLabel
+      ? { inches: diameterInches, label: product.diameterLabel }
+      : undefined;
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Navbar active="Catálogo" />
@@ -98,6 +105,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                     marks: variants
                       .map((v) => ({ label: v.variantLabel ?? "", inches: parseInches(v.variantLabel) }))
                       .filter((m): m is { label: string; inches: number } => m.inches !== null && !!m.label),
+                    diameter,
                   }
                 : undefined
             }

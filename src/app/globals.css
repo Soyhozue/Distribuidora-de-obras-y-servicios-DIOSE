@@ -99,6 +99,15 @@
   animation: slide-in-left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+@keyframes scale-in {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marquee-track {
     animation: none;
@@ -108,7 +117,8 @@
   }
   .animate-grow-down,
   .animate-reveal-down,
-  .animate-slide-in-left {
+  .animate-slide-in-left,
+  .animate-scale-in {
     animation: none;
   }
 }
