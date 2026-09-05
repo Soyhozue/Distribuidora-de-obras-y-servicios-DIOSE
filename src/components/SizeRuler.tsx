@@ -38,6 +38,7 @@ export default function SizeRuler({
   const fitsRealScale = naturalHeight <= MAX_TAPE_PX;
   const pxPerInch = fitsRealScale ? ppi : MAX_TAPE_PX / rulerMax;
   const tapeHeight = rulerMax * pxPerInch;
+  const activeTop = inches * pxPerInch;
 
   const totalEighths = Math.round(rulerMax * 8);
   const others = marks.filter((m) => m.inches !== inches);
@@ -51,34 +52,37 @@ export default function SizeRuler({
   const diameterCapped = diameterPxRaw > DIAMETER_MAX_PX;
 
   return (
-    <div className="shrink-0 w-[92px] flex flex-col">
+    <div className="shrink-0 w-[108px] flex flex-col">
       <div className="text-[9px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-1.5">
         {fitsRealScale ? "Tamaño real" : "Escala"}
       </div>
 
-      <div className="flex gap-1.5" style={{ height: tapeHeight }}>
+      <div className="relative flex gap-2" style={{ height: tapeHeight, marginTop: 14 }}>
         {/* CINTA GRADUADA */}
         <div className="relative flex-1 bg-[#FAFAFA] border border-diose-border-light overflow-hidden">
+          {/* tramo medido: relleno sólido, no un lavado casi invisible */}
           <div
-            className="absolute left-0 top-0 w-full bg-gradient-to-b from-diose-amber/25 to-diose-amber/5 animate-grow-down"
-            style={{ height: inches * pxPerInch }}
+            className="absolute left-0 top-0 w-full bg-diose-amber/20 border-r-2 border-diose-amber/40 animate-grow-down"
+            style={{ height: activeTop }}
           />
 
           {Array.from({ length: totalEighths + 1 }, (_, i) => {
             const isInch = i % 8 === 0;
             const isHalf = i % 4 === 0;
             const isQuarter = i % 2 === 0;
-            const tickWidth = isInch ? 16 : isHalf ? 11 : isQuarter ? 7 : 4;
+            const tickWidth = isInch ? 18 : isHalf ? 13 : isQuarter ? 8 : 5;
             return (
               <div key={i}>
                 <div
-                  className={`absolute left-0 ${isInch ? "bg-diose-black" : "bg-gray-300"}`}
-                  style={{ top: (i / 8) * pxPerInch, width: tickWidth, height: 1 }}
+                  className={`absolute left-0 ${isInch ? "bg-diose-black" : "bg-gray-400"}`}
+                  style={{ top: (i / 8) * pxPerInch, width: tickWidth, height: isInch ? 2 : 1 }}
                 />
                 {isHalf && (
                   <span
-                    className="absolute text-[9px] text-gray-400 leading-none"
-                    style={{ left: 19, top: (i / 8) * pxPerInch - 4 }}
+                    className={`absolute leading-none ${
+                      isInch ? "text-[10px] font-bold text-diose-black" : "text-[9px] font-medium text-gray-500"
+                    }`}
+                    style={{ left: 22, top: (i / 8) * pxPerInch - 5 }}
                   >
                     {fractionLabel(i)}
                   </span>
@@ -95,9 +99,10 @@ export default function SizeRuler({
             />
           ))}
 
+          {/* línea activa: gruesa y con resplandor, para que no pase desapercibida */}
           <div
-            className="absolute left-0 w-full border-t-2 border-diose-amber animate-slide-in-left"
-            style={{ top: inches * pxPerInch - 1 }}
+            className="absolute left-0 w-full border-t-[3px] border-diose-amber animate-slide-in-left"
+            style={{ top: activeTop - 1.5, boxShadow: "0 0 6px rgba(29,95,184,0.55)" }}
           />
         </div>
 
@@ -117,10 +122,20 @@ export default function SizeRuler({
             }}
           />
         </div>
+
+        {/* ETIQUETA FLOTANTE: la medida activa, justo a la altura de la línea */}
+        <div
+          className="absolute left-0 right-0 flex justify-center pointer-events-none animate-slide-in-left"
+          style={{ top: activeTop - 11 }}
+        >
+          <span className="bg-diose-amber text-white text-[11px] font-bold px-2 py-1 rounded-sm shadow-[0_2px_8px_rgba(0,0,0,0.4)] whitespace-nowrap">
+            {label}
+          </span>
+        </div>
       </div>
 
       {diameter && (
-        <div className="mt-3 pt-3 border-t border-diose-border-light flex flex-col items-center gap-1.5">
+        <div className="mt-4 pt-3 border-t border-diose-border-light flex flex-col items-center gap-1.5">
           <div className="text-[9px] font-semibold tracking-[0.12em] uppercase text-gray-400 self-start">
             Grosor
           </div>
@@ -128,8 +143,11 @@ export default function SizeRuler({
             className="rounded-full border-2 border-diose-black bg-gradient-to-br from-gray-300 to-gray-500 animate-scale-in shrink-0"
             style={{ width: diameterPx, height: diameterPx }}
           />
-          <div className="text-[10px] text-gray-500 text-center leading-tight">
-            {diameter.label} · {formatMm(diameter.inches)}
+          <div className="text-[11px] font-semibold text-diose-black text-center leading-tight">
+            {diameter.label}
+          </div>
+          <div className="text-[10px] text-gray-400 text-center leading-tight -mt-1">
+            {formatMm(diameter.inches)}
           </div>
           {diameterCapped && (
             <div className="text-[9px] text-gray-300 text-center leading-tight">(dibujo a escala reducida)</div>
@@ -137,8 +155,9 @@ export default function SizeRuler({
         </div>
       )}
 
-      <div className="mt-1.5">
-        <div className="text-[11px] font-semibold text-diose-black leading-tight">{label}</div>
+      <div className="mt-3 pt-3 border-t border-diose-border-light">
+        <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-0.5">Largo</div>
+        <div className="text-[15px] font-bold text-diose-black leading-tight">{label}</div>
         <div className="text-[10px] text-gray-400 leading-tight">{formatMm(inches)}</div>
         <button
           onClick={openPanel}
