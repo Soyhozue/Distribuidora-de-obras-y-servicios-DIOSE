@@ -183,7 +183,9 @@ export default function ProductsManager({
       if (p.variantGroupId) {
         if (seenGroups.has(p.variantGroupId)) continue;
         seenGroups.add(p.variantGroupId);
-        const members = filtered.filter((m) => m.variantGroupId === p.variantGroupId);
+        const members = filtered
+          .filter((m) => m.variantGroupId === p.variantGroupId)
+          .sort((a, b) => (a.variantOrder ?? 0) - (b.variantOrder ?? 0));
         rows.push({ kind: "family", groupId: p.variantGroupId, members });
       } else {
         rows.push({ kind: "single", product: p });
