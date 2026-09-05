@@ -82,7 +82,13 @@ export default function SizeRuler({
                     className={`absolute leading-none ${
                       isInch ? "text-[10px] font-bold text-diose-black" : "text-[9px] font-medium text-gray-500"
                     }`}
-                    style={{ left: 22, top: (i / 8) * pxPerInch - 5 }}
+                    style={{
+                      left: 22,
+                      // Los números se centran en su marca, pero al principio y al
+                      // final de la cinta eso los saca del contenedor (que recorta
+                      // lo que se sale) — se recorren hacia adentro solo lo necesario.
+                      top: Math.max(0, Math.min((i / 8) * pxPerInch - 5, tapeHeight - 11)),
+                    }}
                   >
                     {fractionLabel(i)}
                   </span>
