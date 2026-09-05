@@ -932,7 +932,11 @@ export default function ProductsManager({
 
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-lg p-7 max-h-[90vh] overflow-y-auto">
+          <div
+            className={`bg-white w-full p-7 max-h-[90vh] overflow-y-auto transition-[max-width] ${
+              hasVariants ? "max-w-3xl" : "max-w-lg"
+            }`}
+          >
             <div className="font-heading text-lg text-diose-black mb-5">
               {form.id ? "Editar producto" : isDuplicating ? "Duplicar producto" : "Añadir producto"}
             </div>
