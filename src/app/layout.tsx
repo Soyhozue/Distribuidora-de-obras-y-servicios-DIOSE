@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Outfit } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import ToastProvider from "@/components/ToastProvider";
 
@@ -55,11 +56,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Reading the nonce here (set by middleware alongside the CSP header) is
+  // what tells Next.js to tag its own inline/chunk scripts with it — without
+  // this the CSP silently blocks every script Next injects, breaking all
+  // client-side JS on the site.
+  // Not read below — just calling headers() here is what makes Next.js pick
+  // up the nonce from the CSP response header and apply it to the scripts
+  // it injects (Next's documented CSP-with-nonce recipe).
+  void (await headers()).get("x-nonce");
+
   return (
     <html
       lang="es"
