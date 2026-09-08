@@ -285,6 +285,69 @@ export async function updateProductStock(id: string, stock: number) {
   return prisma.product.update({ where: { id }, data: { stock, stockStatus } });
 }
 
+type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+// Statuses in which stock is considered "committed" — already taken out of
+// inventory because the order is real (paid, or confirmed by an admin for
+// cash/transfer/WhatsApp orders).
+const STOCK_COMMITTED_STATUSES = ["CONFIRMADO", "EN_CAMINO", "ENTREGADO"];
+
+async function refreshStockStatus(tx: PrismaTx, productId: string) {
+  const p = await tx.product.findUniqueOrThrow({ where: { id: productId }, select: { stock: true } });
+  const stockStatus = p.stock === 0 ? "AGOTADO" : p.stock <= 10 ? "STOCK_BAJO" : "EN_STOCK";
+  await tx.product.update({ where: { id: productId }, data: { stockStatus } });
+}
+
+// Atomic conditional decrement: only succeeds if there's still enough stock
+// at the moment it runs, closing the race where two concurrent orders both
+// pass an earlier "is there stock?" check and both get confirmed.
+async function decrementStockAtomic(tx: PrismaTx, productId: string, quantity: number, orderNumber: number) {
+  const result = await tx.product.updateMany({
+    where: { id: productId, stock: { gte: quantity } },
+    data: { stock: { decrement: quantity } },
+  });
+  if (result.count === 0) {
+    throw new Error(`Stock insuficiente para confirmar el pedido #${orderNumber}.`);
+  }
+  await refreshStockStatus(tx, productId);
+}
+
+async function restockAtomic(tx: PrismaTx, productId: string, quantity: number) {
+  await tx.product.update({ where: { id: productId }, data: { stock: { increment: quantity } } });
+  await refreshStockStatus(tx, productId);
+}
+
+/**
+ * Moves inventory in or out as an order's status crosses into or out of the
+ * "committed" group (CONFIRMADO/EN_CAMINO/ENTREGADO). Called from both the
+ * admin status update and the Mercado Pago webhook so stock is only ever
+ * touched once per order, at the moment it's actually confirmed sold.
+ */
+async function applyOrderStatusStockEffects(
+  tx: PrismaTx,
+  orderId: string,
+  oldStatus: string,
+  newStatus: string
+) {
+  if (oldStatus === newStatus) return;
+  const wasCommitted = STOCK_COMMITTED_STATUSES.includes(oldStatus);
+  const isCommitted = STOCK_COMMITTED_STATUSES.includes(newStatus);
+  if (wasCommitted === isCommitted) return;
+
+  const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
+  if (!order) return;
+
+  if (!wasCommitted && isCommitted) {
+    for (const item of order.items) {
+      await decrementStockAtomic(tx, item.productId, item.quantity, order.number);
+    }
+  } else if (wasCommitted && !isCommitted) {
+    for (const item of order.items) {
+      await restockAtomic(tx, item.productId, item.quantity);
+    }
+  }
+}
+
 export async function deleteProduct(id: string) {
   const hasOrderHistory = await prisma.orderItem.findFirst({ where: { productId: id } });
   if (hasOrderHistory) {
@@ -377,7 +440,21 @@ function isJuarezCity(city: string) {
 }
 
 export async function createOrder(input: CreateOrderInput, sessionUserId?: string) {
-  const subtotal = input.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+  // Never trust a client-supplied unit price — a tampered request could set
+  // any price it wants. Re-derive every line from the product's real,
+  // current price in the database.
+  const priceRows = await prisma.product.findMany({
+    where: { id: { in: input.items.map((i) => i.productId) } },
+    select: { id: true, price: true },
+  });
+  const priceById = new Map(priceRows.map((p) => [p.id, Number(p.price)]));
+  const items = input.items.map((i) => {
+    const price = priceById.get(i.productId);
+    if (price === undefined) throw new Error("Producto no encontrado.");
+    return { ...i, unitPrice: price };
+  });
+
+  const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
 
   let shipping = 0;
   if (input.items.length > 0 && !isJuarezCity(input.city)) {
@@ -467,7 +544,7 @@ export async function createOrder(input: CreateOrderInput, sessionUserId?: strin
       invoiceRegime: input.invoice?.regime,
       invoiceCfdiUse: input.invoice?.cfdiUse,
       items: {
-        create: input.items.map((i) => ({
+        create: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
           unitPrice: i.unitPrice,
@@ -756,6 +833,22 @@ export async function deleteCombo(id: string) {
 
 const VALID_ORDER_STATUSES = ["PENDIENTE", "CONFIRMADO", "EN_CAMINO", "ENTREGADO", "CANCELADO"];
 
+/**
+ * Marks an order CONFIRMADO after Mercado Pago reports it as paid, and
+ * decrements stock for it — idempotent, so a retried webhook notification
+ * (Mercado Pago resends until it gets a 200) never double-charges inventory.
+ */
+export async function confirmPaidOrder(orderId: string) {
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.order.findUnique({ where: { id: orderId }, select: { status: true } });
+    if (!current || STOCK_COMMITTED_STATUSES.includes(current.status) || current.status === "CANCELADO") {
+      return;
+    }
+    await tx.order.update({ where: { id: orderId }, data: { status: "CONFIRMADO" } });
+    await applyOrderStatusStockEffects(tx, orderId, current.status, "CONFIRMADO");
+  });
+}
+
 export async function updateOrderStatus(
   id: string,
   data: { status?: string; internalNotes?: string; notifyWhatsapp?: boolean }
@@ -763,13 +856,20 @@ export async function updateOrderStatus(
   if (data.status && !VALID_ORDER_STATUSES.includes(data.status)) {
     throw new Error("Estado de pedido inválido.");
   }
-  return prisma.order.update({
-    where: { id },
-    data: {
-      status: data.status as never,
-      internalNotes: data.internalNotes,
-      notifyWhatsapp: data.notifyWhatsapp,
-    },
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.order.findUniqueOrThrow({ where: { id }, select: { status: true } });
+    const updated = await tx.order.update({
+      where: { id },
+      data: {
+        status: data.status as never,
+        internalNotes: data.internalNotes,
+        notifyWhatsapp: data.notifyWhatsapp,
+      },
+    });
+    if (data.status) {
+      await applyOrderStatusStockEffects(tx, id, current.status, data.status);
+    }
+    return updated;
   });
 }
 

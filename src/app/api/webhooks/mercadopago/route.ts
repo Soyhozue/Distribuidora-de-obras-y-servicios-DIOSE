@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
-import { prisma } from "@/lib/prisma";
+import { confirmPaidOrder } from "@/lib/data";
 
 export async function POST(request: Request) {
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -25,10 +25,7 @@ export async function POST(request: Request) {
     const orderId = payment.external_reference;
     if (!orderId) return new NextResponse(null, { status: 200 });
 
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: "CONFIRMADO" },
-    });
+    await confirmPaidOrder(orderId);
   } catch {
     // Always return 200 so MP doesn't retry endlessly
   }
