@@ -287,3 +287,12 @@ model PasswordReset {
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+// Fixed-window request counter per (route + IP), used to throttle public
+// endpoints (contact form, checkout, registration) that have no per-account
+// lockout of their own.
+model RateLimit {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+}

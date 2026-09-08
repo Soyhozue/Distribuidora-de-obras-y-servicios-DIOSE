@@ -3,11 +3,15 @@ import { MercadoPagoConfig, Preference } from "mercadopago";
 import { createOrder, type CreateOrderInput } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://diose.com.mx";
 
 export async function POST(request: Request) {
   try {
+    const allowed = await checkRateLimit(`checkout-mp:${getClientIp(request)}`, 10, 10 * 60_000);
+    if (!allowed) return rateLimitResponse();
+
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     if (!accessToken) {
       return NextResponse.json({ error: "Mercado Pago no configurado" }, { status: 503 });

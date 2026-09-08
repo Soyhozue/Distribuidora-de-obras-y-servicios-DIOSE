@@ -3,8 +3,12 @@ import { createOrder, type CreateOrderInput } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { sendOrderConfirmation } from "@/lib/email";
 import { getSessionUserId } from "@/lib/auth";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
+  const allowed = await checkRateLimit(`orders:${getClientIp(request)}`, 10, 10 * 60_000);
+  if (!allowed) return rateLimitResponse();
+
   const body = (await request.json()) as CreateOrderInput;
 
   if (!body.customerEmail || !body.customerName || !body.items?.length) {
