@@ -43,7 +43,7 @@ function buildCsp(nonce: string) {
   ].join("; ");
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const valid = await isValidAdminSession(request);
 

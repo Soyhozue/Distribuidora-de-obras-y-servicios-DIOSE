@@ -1,6 +1,12 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 
+// Generado en cada solicitud, no al compilar: si se pre-renderizara como
+// estático necesitaría una base de datos real disponible durante `next
+// build` (rompe CI sin credenciales de producción), y además reflejaría
+// productos nuevos solo hasta el próximo despliegue.
+export const dynamic = "force-dynamic";
+
 const BASE_URL = "https://diose.vercel.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
