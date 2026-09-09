@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { createEmailVerification } from "@/lib/data";
 import { sendVerificationEmail } from "@/lib/email";
+import { reportError } from "@/lib/errorReporting";
 
 export async function POST() {
   const userId = await getSessionUserId();
@@ -13,7 +14,9 @@ export async function POST() {
   if (user.emailVerified) return NextResponse.json({ ok: true });
 
   const token = await createEmailVerification(user.id);
-  await sendVerificationEmail(user.email, user.name, token).catch(() => {});
+  await sendVerificationEmail(user.email, user.name, token).catch((err) =>
+    reportError("No se pudo enviar el correo de verificación:", err)
+  );
 
   return NextResponse.json({ ok: true });
 }

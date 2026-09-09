@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
 import { createOrderSchema, firstIssueMessage } from "@/lib/validation";
+import { reportError } from "@/lib/errorReporting";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://diose.com.mx";
 
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url });
   } catch (err: unknown) {
-    console.error("MercadoPago checkout error:", err);
+    await reportError("MercadoPago checkout error:", err);
     const message = err instanceof Error ? err.message : "Error desconocido";
     return NextResponse.json({ error: `Error al conectar con Mercado Pago: ${message}` }, { status: 500 });
   }

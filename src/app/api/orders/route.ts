@@ -5,6 +5,7 @@ import { sendOrderConfirmation } from "@/lib/email";
 import { getSessionUserId } from "@/lib/auth";
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
 import { createOrderSchema, firstIssueMessage } from "@/lib/validation";
+import { reportError } from "@/lib/errorReporting";
 
 export async function POST(request: Request) {
   const allowed = await checkRateLimit(`orders:${getClientIp(request)}`, 10, 10 * 60_000);
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     shipping: Number(order.shipping),
     discount: Number(order.discount),
     total: Number(order.total),
-  }).catch(() => {});
+  }).catch((err) => reportError(`No se pudo enviar confirmación de pedido #${order.number}:`, err));
 
   return NextResponse.json({ id: order.id, number: order.number });
 }

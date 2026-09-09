@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
+import { emailSchema } from "@/lib/validation";
+import { reportError } from "@/lib/errorReporting";
 import crypto from "crypto";
 
 export async function POST(request: Request) {
-  const { email } = await request.json();
-  if (!email) return NextResponse.json({ error: "Email requerido" }, { status: 400 });
+  const allowed = await checkRateLimit(`forgot:${getClientIp(request)}`, 5, 10 * 60_000);
+  if (!allowed) return rateLimitResponse();
 
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  const body = await request.json();
+  const parsed = emailSchema.safeParse(body?.email);
+  if (!parsed.success) return NextResponse.json({ error: "Email requerido" }, { status: 400 });
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data } });
   // Always return success to avoid user enumeration
   if (!user) return NextResponse.json({ ok: true });
 
@@ -16,7 +23,9 @@ export async function POST(request: Request) {
 
   await prisma.passwordReset.create({ data: { userId: user.id, token, expiresAt } });
 
-  await sendPasswordResetEmail(user.email, user.name, token).catch(() => {});
+  await sendPasswordResetEmail(user.email, user.name, token).catch((err) =>
+    reportError("No se pudo enviar el correo de recuperación:", err)
+  );
 
   return NextResponse.json({ ok: true });
 }
