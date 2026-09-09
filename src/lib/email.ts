@@ -73,6 +73,64 @@ export async function sendOrderConfirmation(order: {
   });
 }
 
+export async function sendLowStockAlert(
+  to: string,
+  items: { name: string; sku: string; stock: number; stockStatus: "STOCK_BAJO" | "AGOTADO" }[]
+) {
+  if (!process.env.RESEND_API_KEY) return;
+
+  const rowsHtml = items
+    .map(
+      (i) => `
+    <tr>
+      <td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;">${i.name}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #eee;font-size:12px;color:#999;">${i.sku}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;text-align:center;">${i.stock}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #eee;font-size:12px;text-align:center;font-weight:600;color:${i.stockStatus === "AGOTADO" ? "#dc2626" : "#d97706"};">
+        ${i.stockStatus === "AGOTADO" ? "AGOTADO" : "STOCK BAJO"}
+      </td>
+    </tr>`
+    )
+    .join("");
+
+  await getResend().emails.send({
+    from: FROM,
+    to,
+    subject: `DIOSE – ${items.length} producto${items.length === 1 ? "" : "s"} con stock bajo`,
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px;">
+  <div style="max-width:580px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;">
+    <div style="background:#0A0A0A;padding:24px 32px;text-align:center;">
+      <span style="font-size:22px;font-weight:bold;color:#fff;letter-spacing:6px;">DIOSE</span>
+    </div>
+    <div style="padding:32px;">
+      <h2 style="font-size:18px;font-weight:600;margin:0 0 8px;">Aviso de inventario</h2>
+      <p style="color:#666;font-size:14px;margin:0 0 24px;">
+        ${items.length === 1 ? "Este producto acaba de quedarse" : "Estos productos acaban de quedarse"} con poco o ningún stock tras una venta reciente.
+      </p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
+        <thead>
+          <tr style="border-bottom:2px solid #0A0A0A;">
+            <th style="text-align:left;padding:8px 0;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;">Producto</th>
+            <th style="text-align:left;padding:8px 0;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;">SKU</th>
+            <th style="text-align:center;padding:8px 0;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;">Stock</th>
+            <th style="text-align:center;padding:8px 0;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;">Estado</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="background:#f9f9f9;padding:20px 32px;border-top:1px solid #eee;font-size:12px;color:#999;text-align:center;">
+      DIOSE · Panel administrativo
+    </div>
+  </div>
+</body>
+</html>`,
+  });
+}
+
 export async function sendPasswordResetEmail(email: string, name: string, token: string) {
   if (!process.env.RESEND_API_KEY) return;
   const link = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://diose.vercel.app"}/recuperar?token=${token}`;

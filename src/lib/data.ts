@@ -292,10 +292,27 @@ type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 // cash/transfer/WhatsApp orders).
 const STOCK_COMMITTED_STATUSES = ["CONFIRMADO", "EN_CAMINO", "ENTREGADO"];
 
-async function refreshStockStatus(tx: PrismaTx, productId: string) {
-  const p = await tx.product.findUniqueOrThrow({ where: { id: productId }, select: { stock: true } });
-  const stockStatus = p.stock === 0 ? "AGOTADO" : p.stock <= 10 ? "STOCK_BAJO" : "EN_STOCK";
-  await tx.product.update({ where: { id: productId }, data: { stockStatus } });
+export type LowStockAlert = { name: string; sku: string; stock: number; stockStatus: "STOCK_BAJO" | "AGOTADO" };
+
+function computeStockStatus(stock: number): "EN_STOCK" | "STOCK_BAJO" | "AGOTADO" {
+  return stock === 0 ? "AGOTADO" : stock <= 10 ? "STOCK_BAJO" : "EN_STOCK";
+}
+
+// Updates the cached stockStatus label and reports back only when stock
+// just crossed INTO "bajo"/"agotado" (not every time it's touched while
+// already there) — the caller uses this to email the owner once per dip,
+// not once per sale.
+async function refreshStockStatus(tx: PrismaTx, productId: string): Promise<LowStockAlert | null> {
+  const p = await tx.product.findUniqueOrThrow({
+    where: { id: productId },
+    select: { stock: true, stockStatus: true, name: true, sku: true },
+  });
+  const newStatus = computeStockStatus(p.stock);
+  await tx.product.update({ where: { id: productId }, data: { stockStatus: newStatus } });
+
+  const justCrossedIntoLow = newStatus !== "EN_STOCK" && newStatus !== p.stockStatus;
+  if (!justCrossedIntoLow) return null;
+  return { name: p.name, sku: p.sku, stock: p.stock, stockStatus: newStatus };
 }
 
 // Atomic conditional decrement: only succeeds if there's still enough stock
@@ -309,7 +326,7 @@ async function decrementStockAtomic(tx: PrismaTx, productId: string, quantity: n
   if (result.count === 0) {
     throw new Error(`Stock insuficiente para confirmar el pedido #${orderNumber}.`);
   }
-  await refreshStockStatus(tx, productId);
+  return refreshStockStatus(tx, productId);
 }
 
 async function restockAtomic(tx: PrismaTx, productId: string, quantity: number) {
@@ -322,29 +339,49 @@ async function restockAtomic(tx: PrismaTx, productId: string, quantity: number) 
  * "committed" group (CONFIRMADO/EN_CAMINO/ENTREGADO). Called from both the
  * admin status update and the Mercado Pago webhook so stock is only ever
  * touched once per order, at the moment it's actually confirmed sold.
+ * Returns any products that just dropped into low/no stock, so the caller
+ * can email the owner once the transaction has committed.
  */
 async function applyOrderStatusStockEffects(
   tx: PrismaTx,
   orderId: string,
   oldStatus: string,
   newStatus: string
-) {
-  if (oldStatus === newStatus) return;
+): Promise<LowStockAlert[]> {
+  if (oldStatus === newStatus) return [];
   const wasCommitted = STOCK_COMMITTED_STATUSES.includes(oldStatus);
   const isCommitted = STOCK_COMMITTED_STATUSES.includes(newStatus);
-  if (wasCommitted === isCommitted) return;
+  if (wasCommitted === isCommitted) return [];
 
   const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
-  if (!order) return;
+  if (!order) return [];
 
+  const alerts: LowStockAlert[] = [];
   if (!wasCommitted && isCommitted) {
     for (const item of order.items) {
-      await decrementStockAtomic(tx, item.productId, item.quantity, order.number);
+      const alert = await decrementStockAtomic(tx, item.productId, item.quantity, order.number);
+      if (alert) alerts.push(alert);
     }
   } else if (wasCommitted && !isCommitted) {
     for (const item of order.items) {
       await restockAtomic(tx, item.productId, item.quantity);
     }
+  }
+  return alerts;
+}
+
+// Fire-and-forget: called after the stock-changing transaction has already
+// committed, so a slow or failed email never holds up confirming an order.
+async function notifyLowStock(alerts: LowStockAlert[]) {
+  if (alerts.length === 0) return;
+  try {
+    const settings = await prisma.siteSettings.findUnique({ where: { id: "main" } });
+    if (!settings?.email) return;
+    const { sendLowStockAlert } = await import("./email");
+    await sendLowStockAlert(settings.email, alerts);
+  } catch (err) {
+    const { reportError } = await import("./errorReporting");
+    await reportError("No se pudo enviar la alerta de stock bajo:", err);
   }
 }
 
@@ -839,14 +876,15 @@ const VALID_ORDER_STATUSES = ["PENDIENTE", "CONFIRMADO", "EN_CAMINO", "ENTREGADO
  * (Mercado Pago resends until it gets a 200) never double-charges inventory.
  */
 export async function confirmPaidOrder(orderId: string) {
-  return prisma.$transaction(async (tx) => {
+  const alerts = await prisma.$transaction(async (tx) => {
     const current = await tx.order.findUnique({ where: { id: orderId }, select: { status: true } });
     if (!current || STOCK_COMMITTED_STATUSES.includes(current.status) || current.status === "CANCELADO") {
-      return;
+      return [];
     }
     await tx.order.update({ where: { id: orderId }, data: { status: "CONFIRMADO" } });
-    await applyOrderStatusStockEffects(tx, orderId, current.status, "CONFIRMADO");
+    return applyOrderStatusStockEffects(tx, orderId, current.status, "CONFIRMADO");
   });
+  await notifyLowStock(alerts);
 }
 
 export async function updateOrderStatus(
@@ -856,9 +894,10 @@ export async function updateOrderStatus(
   if (data.status && !VALID_ORDER_STATUSES.includes(data.status)) {
     throw new Error("Estado de pedido inválido.");
   }
-  return prisma.$transaction(async (tx) => {
+  let alerts: LowStockAlert[] = [];
+  const updated = await prisma.$transaction(async (tx) => {
     const current = await tx.order.findUniqueOrThrow({ where: { id }, select: { status: true } });
-    const updated = await tx.order.update({
+    const result = await tx.order.update({
       where: { id },
       data: {
         status: data.status as never,
@@ -867,10 +906,12 @@ export async function updateOrderStatus(
       },
     });
     if (data.status) {
-      await applyOrderStatusStockEffects(tx, id, current.status, data.status);
+      alerts = await applyOrderStatusStockEffects(tx, id, current.status, data.status);
     }
-    return updated;
+    return result;
   });
+  await notifyLowStock(alerts);
+  return updated;
 }
 
 export async function getSiteSettings() {
