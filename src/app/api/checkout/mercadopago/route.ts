@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
-import { createOrder, type CreateOrderInput } from "@/lib/data";
+import { createOrder } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
+import { createOrderSchema, firstIssueMessage } from "@/lib/validation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://diose.com.mx";
 
@@ -17,11 +18,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Mercado Pago no configurado" }, { status: 503 });
     }
 
-    const body = (await request.json()) as CreateOrderInput;
-
-    if (!body.customerEmail || !body.customerName || !body.items?.length) {
-      return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
+    const parsed = createOrderSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: firstIssueMessage(parsed.error) }, { status: 400 });
     }
+    const body = parsed.data;
 
     // Verify stock before charging
     const productIds = body.items.map((i) => i.productId);

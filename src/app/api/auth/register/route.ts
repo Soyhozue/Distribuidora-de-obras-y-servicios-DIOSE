@@ -3,17 +3,18 @@ import { registerUser, createEmailVerification } from "@/lib/data";
 import { createSession } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
+import { registerSchema, firstIssueMessage } from "@/lib/validation";
 
 export async function POST(request: Request) {
   const allowed = await checkRateLimit(`register:${getClientIp(request)}`, 5, 10 * 60_000);
   if (!allowed) return rateLimitResponse();
 
-  const body = await request.json();
-  if (!body.name || !body.email || !body.password) {
-    return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
+  const parsed = registerSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: firstIssueMessage(parsed.error) }, { status: 400 });
   }
   try {
-    const user = await registerUser(body);
+    const user = await registerUser(parsed.data);
     await createSession(user.id);
 
     // Best-effort: the account is already created and the session started,

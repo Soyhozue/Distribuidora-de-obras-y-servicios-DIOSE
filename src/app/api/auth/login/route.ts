@@ -2,17 +2,18 @@ import { NextResponse } from "next/server";
 import { verifyUserCredentials } from "@/lib/data";
 import { createSession } from "@/lib/auth";
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
+import { loginSchema, firstIssueMessage } from "@/lib/validation";
 
 export async function POST(request: Request) {
   const allowed = await checkRateLimit(`login:${getClientIp(request)}`, 20, 10 * 60_000);
   if (!allowed) return rateLimitResponse();
 
-  const body = await request.json();
-  if (!body.email || !body.password) {
-    return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
+  const parsed = loginSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: firstIssueMessage(parsed.error) }, { status: 400 });
   }
   try {
-    const user = await verifyUserCredentials(body.email, body.password);
+    const user = await verifyUserCredentials(parsed.data.email, parsed.data.password);
     if (!user) {
       return NextResponse.json({ error: "Correo o contraseña incorrectos" }, { status: 401 });
     }

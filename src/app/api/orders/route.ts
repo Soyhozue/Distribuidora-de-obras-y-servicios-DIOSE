@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
-import { createOrder, type CreateOrderInput } from "@/lib/data";
+import { createOrder } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { sendOrderConfirmation } from "@/lib/email";
 import { getSessionUserId } from "@/lib/auth";
 import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit";
+import { createOrderSchema, firstIssueMessage } from "@/lib/validation";
 
 export async function POST(request: Request) {
   const allowed = await checkRateLimit(`orders:${getClientIp(request)}`, 10, 10 * 60_000);
   if (!allowed) return rateLimitResponse();
 
-  const body = (await request.json()) as CreateOrderInput;
-
-  if (!body.customerEmail || !body.customerName || !body.items?.length) {
-    return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
+  const parsed = createOrderSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: firstIssueMessage(parsed.error) }, { status: 400 });
   }
+  const body = parsed.data;
 
   const productIds = body.items.map((i) => i.productId);
   const products = await prisma.product.findMany({
