@@ -18,10 +18,14 @@ export default function MobileMenu({
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  // Cierra el menú al navegar
-  useEffect(() => {
+  // Cierra el menú al navegar — ajustado durante el render (patrón de React
+  // para derivar estado de un cambio de prop) en vez de un efecto, para que
+  // no dispare un render extra después de pintar.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   // Bloquea scroll cuando el menú está abierto
   useEffect(() => {

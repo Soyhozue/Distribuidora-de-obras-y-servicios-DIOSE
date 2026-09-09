@@ -22,8 +22,20 @@ export default function AdminSearch() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Limpia resultados al instante cuando la búsqueda queda vacía — ajustado
+  // durante el render (patrón de React) en vez de un efecto, para que no
+  // dispare un render extra después de pintar.
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (query !== prevQuery) {
+    setPrevQuery(query);
+    if (!query.trim()) {
+      setResults([]);
+      setOpen(false);
+    }
+  }
+
   useEffect(() => {
-    if (!query.trim()) { setResults([]); setOpen(false); return; }
+    if (!query.trim()) return;
     const t = setTimeout(async () => {
       setLoading(true);
       try {

@@ -34,7 +34,10 @@ function CatalogSection({
     setItems(await res.json());
   }, [endpoint]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time fetch on mount, setState only happens after the awaited response
+    void load();
+  }, [load]);
 
   async function create() {
     if (!newName.trim()) return;
@@ -184,7 +187,10 @@ function SubcategorySection() {
     setItems(await res.json());
   }, [categoryId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- refetches when categoryId changes; the empty-category branch clears the list synchronously, which is the intended immediate reset
+    void load();
+  }, [load]);
 
   async function create() {
     if (!newName.trim() || !categoryId) return;

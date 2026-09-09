@@ -147,7 +147,10 @@ export default function AdsManager({ products, settings }: { products: Product[]
     }
   }
 
-  useEffect(() => { loadHistory(); }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time fetch on mount, setState only happens after the awaited response
+    void loadHistory();
+  }, []);
 
   async function saveCombo() {
     setSaving(true);

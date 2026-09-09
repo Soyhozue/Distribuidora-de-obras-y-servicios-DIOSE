@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import { SearchIcon, ChevronDownIcon } from "@/components/icons";
 import type { Product } from "@/data/products";
@@ -71,9 +71,15 @@ export default function CatalogoClient({
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageProducts = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  useEffect(() => {
+  // Vuelve a la página 1 cuando cambian los filtros — ajustado durante el
+  // render (patrón de React para derivar estado de un cambio de prop) en
+  // vez de un efecto, para que no dispare un render extra después de pintar.
+  const filterKey = JSON.stringify([query, category, subcategory, brand, onlyInStock, sort]);
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [query, category, subcategory, brand, onlyInStock, sort]);
+  }
 
   return (
     <>
