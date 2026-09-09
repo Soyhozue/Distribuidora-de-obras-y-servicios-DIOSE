@@ -3,6 +3,7 @@ import { Bebas_Neue, Outfit } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 import ToastProvider from "@/components/ToastProvider";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const bebasNeue = Bebas_Neue({
   variable: "--font-bebas-neue",
@@ -61,13 +62,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Reading the nonce here (set by middleware alongside the CSP header) is
+  // Reading the nonce here (set by proxy.ts alongside the CSP header) is
   // what tells Next.js to tag its own inline/chunk scripts with it — without
   // this the CSP silently blocks every script Next injects, breaking all
-  // client-side JS on the site.
-  // Not read below — just calling headers() here is what makes Next.js pick
-  // up the nonce from the CSP response header and apply it to the scripts
-  // it injects (Next's documented CSP-with-nonce recipe).
+  // client-side JS on the site. Not read below; just calling headers() is
+  // enough (Next's documented CSP-with-nonce recipe).
   void (await headers()).get("x-nonce");
 
   return (
@@ -78,6 +77,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <ToastProvider />
+        <GoogleAnalytics />
       </body>
     </html>
   );

@@ -26,6 +26,14 @@ function buildCsp(nonce: string) {
   // etc.) — never in production builds, so this only loosens script-src
   // locally, not for real visitors.
   const devEval = process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : "";
+  // Google Analytics's script loads fine under 'strict-dynamic' (it's
+  // brought in by a nonced <Script> tag — see GoogleAnalytics.tsx), but its
+  // tracking beacons are separate network requests that connect-src must
+  // allow explicitly. Left out entirely unless GA is actually configured,
+  // so a site without analytics keeps the tighter default.
+  const gaConnect = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+    ? " https://*.google-analytics.com https://*.analytics.google.com"
+    : "";
   return [
     `default-src 'self'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${devEval}`,
@@ -33,7 +41,7 @@ function buildCsp(nonce: string) {
     `img-src 'self' blob: data: https://*.public.blob.vercel-storage.com`,
     `media-src 'self' https://*.public.blob.vercel-storage.com`,
     `font-src 'self' data:`,
-    `connect-src 'self'`,
+    `connect-src 'self'${gaConnect}`,
     `frame-src 'self' https://www.google.com https://maps.google.com`,
     `object-src 'none'`,
     `base-uri 'self'`,
