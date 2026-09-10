@@ -12,6 +12,14 @@ type Option = { id: string; name: string };
 
 const PAGE_SIZE = 8;
 
+// Medidas de largo típicas en tornillería — botones de un clic para no
+// tener que escribir cada una a mano.
+const COMMON_LENGTH_OPTIONS = [
+  '1/4"', '3/8"', '1/2"', '5/8"', '3/4"', '7/8"',
+  '1"', '1 1/4"', '1 1/2"', '1 3/4"',
+  '2"', '2 1/2"', '3"', '3 1/2"', '4"',
+];
+
 function StatusTag({ status }: { status: Product["stockStatus"] }) {
   if (status === "AGOTADO") {
     return (
@@ -296,6 +304,7 @@ export default function ProductsManager({
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [hasVariants, setHasVariants] = useState(false);
   const [variantRows, setVariantRows] = useState<VariantRow[]>([emptyVariantRow()]);
+  const [bulkLabelsText, setBulkLabelsText] = useState("");
   const [originalVariantIds, setOriginalVariantIds] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
@@ -386,6 +395,7 @@ export default function ProductsManager({
     setIsDuplicating(false);
     setHasVariants(false);
     setVariantRows([emptyVariantRow()]);
+    setBulkLabelsText("");
     setOriginalVariantIds([]);
     setModalOpen(true);
   }
@@ -453,6 +463,7 @@ export default function ProductsManager({
     });
     setHasVariants(false);
     setVariantRows([emptyVariantRow()]);
+    setBulkLabelsText("");
     setOriginalVariantIds([]);
     setFormError("");
     setModalOpen(true);
@@ -460,6 +471,40 @@ export default function ProductsManager({
 
   function addVariantRow() {
     setVariantRows((rows) => [...rows, emptyVariantRow()]);
+  }
+
+  // Un clic en un tamaño común llena la primera fila con la etiqueta vacía
+  // en vez de siempre agregar una fila nueva — así encadenar varios clics
+  // no deja huecos entre medias ya escritas a mano.
+  function addQuickVariantLabel(label: string) {
+    setVariantRows((rows) => {
+      if (rows.some((r) => r.variantLabel.trim() === label)) return rows;
+      const emptyIndex = rows.findIndex((r) => !r.variantLabel.trim());
+      if (emptyIndex !== -1) {
+        return rows.map((r, i) => (i === emptyIndex ? { ...r, variantLabel: label } : r));
+      }
+      return [...rows, { ...emptyVariantRow(), variantLabel: label }];
+    });
+  }
+
+  // Pegar varias medidas separadas por coma o salto de línea de una sola
+  // vez, en lugar de escribir y tabular fila por fila.
+  function addBulkVariantLabels(text: string) {
+    const labels = text
+      .split(/[,\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (labels.length === 0) return;
+    setVariantRows((rows) => {
+      const existing = new Set(rows.map((r) => r.variantLabel.trim()).filter(Boolean));
+      const newRows = labels
+        .filter((l) => !existing.has(l))
+        .map((l) => ({ ...emptyVariantRow(), variantLabel: l }));
+      if (newRows.length === 0) return rows;
+      const isRowFullyBlank = (r: VariantRow) => !r.variantLabel.trim() && !r.sku.trim() && !r.price.trim();
+      const kept = rows.filter((r) => !isRowFullyBlank(r));
+      return [...kept, ...newRows];
+    });
   }
 
   function removeVariantRow(index: number) {
@@ -1429,6 +1474,59 @@ export default function ProductsManager({
                     Medidas de &quot;{form.name.trim() || "..."}&quot;{" "}
                     <span className="normal-case text-gray-300">— arrastra ⠿ para reordenar</span>
                   </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[9px] uppercase tracking-[0.1em] text-gray-400">
+                      Tamaños comunes — clic para añadir
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {COMMON_LENGTH_OPTIONS.map((label) => {
+                        const used = variantRows.some((r) => r.variantLabel.trim() === label);
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => addQuickVariantLabel(label)}
+                            disabled={used}
+                            className={`text-xs px-2.5 py-1 border cursor-pointer ${
+                              used
+                                ? "border-diose-border-light text-gray-300 cursor-not-allowed"
+                                : "border-diose-border text-gray-700 hover:border-diose-amber hover:text-diose-amber"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[9px] uppercase tracking-[0.1em] text-gray-400">
+                      O pega varias de una vez (separadas por coma o renglón)
+                    </span>
+                    <div className="flex gap-1.5">
+                      <textarea
+                        value={bulkLabelsText}
+                        onChange={(e) => setBulkLabelsText(e.target.value)}
+                        placeholder={'Ej: 1/2", 3/4", 1", 1 1/4"'}
+                        rows={1}
+                        className="flex-1 border border-diose-border px-2.5 py-1.5 text-xs outline-none min-w-0 resize-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          addBulkVariantLabels(bulkLabelsText);
+                          setBulkLabelsText("");
+                        }}
+                        disabled={!bulkLabelsText.trim()}
+                        className="text-xs px-3 border border-diose-black bg-diose-black text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                      >
+                        Agregar
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="border border-diose-border overflow-hidden">
                     <div className="grid grid-cols-[20px_1fr_1fr_90px_70px_90px_78px] gap-1.5 px-2.5 py-2 bg-[#F9F9F9] border-b border-diose-border-light">
                       {["", "Etiqueta", "SKU", "Precio", "Stock", "Mín.", ""].map((h, hi) => (
