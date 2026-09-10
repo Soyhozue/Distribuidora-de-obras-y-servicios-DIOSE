@@ -16,19 +16,19 @@ function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
 }
 
-// "1/4\", 3/8\", ... 7 7/8\", 8\"" — cada octavo de pulgada, sin saltos,
-// como se usan las medidas de tornillería.
-function buildEighthInchOptions(minEighths: number, maxEighths: number): string[] {
+// "1/4\", 3/8\", ... 7 7/8\", 8\"" — cada fracción de pulgada según el
+// denominador dado (8 = octavos, 16 = dieciseisavos), sin saltos.
+function buildFractionInchOptions(minUnits: number, maxUnits: number, denominator: number): string[] {
   const labels: string[] = [];
-  for (let e = minEighths; e <= maxEighths; e++) {
-    const whole = Math.floor(e / 8);
-    const remainder = e % 8;
+  for (let e = minUnits; e <= maxUnits; e++) {
+    const whole = Math.floor(e / denominator);
+    const remainder = e % denominator;
     if (remainder === 0) {
       labels.push(`${whole}"`);
       continue;
     }
-    const divisor = gcd(remainder, 8);
-    const fraction = `${remainder / divisor}/${8 / divisor}`;
+    const divisor = gcd(remainder, denominator);
+    const fraction = `${remainder / divisor}/${denominator / divisor}`;
     // Guion en vez de espacio entre el entero y la fracción: en botones
     // angostos un solo espacio casi no se nota y "1 1/4"" se confunde con
     // "11/4"" (once cuartos). parseInches() en lib/measures.ts ya soporta
@@ -38,10 +38,14 @@ function buildEighthInchOptions(minEighths: number, maxEighths: number): string[
   return labels;
 }
 
-// Medidas típicas en tornillería (largo y grosor/diámetro) — botones y
-// opciones de un clic para no tener que escribir cada una a mano.
-// De 1/4" a 8", en octavos.
-const INCH_FRACTION_OPTIONS = buildEighthInchOptions(2, 64);
+// Medidas de largo típicas en tornillería — botones de un clic. De 1/4" a
+// 8", en octavos (lo que realmente se usa para el largo de un tornillo).
+const LENGTH_INCH_OPTIONS = buildFractionInchOptions(2, 64, 8);
+
+// Grosor/diámetro — necesita más precisión que el largo (5/16", 7/16",
+// 9/16", 11/16"... son medidas de diámetro reales y no caen en ninguna
+// marca de octavo). De 1/4" a 8", en dieciseisavos.
+const DIAMETER_INCH_OPTIONS = buildFractionInchOptions(4, 128, 16);
 
 function StatusTag({ status }: { status: Product["stockStatus"] }) {
   if (status === "AGOTADO") {
@@ -1406,7 +1410,7 @@ export default function ProductsManager({
                     className="border border-diose-border px-3 py-2 text-sm outline-none bg-white w-1/2"
                   >
                     <option value="">Sin especificar</option>
-                    {INCH_FRACTION_OPTIONS.map((d) => (
+                    {DIAMETER_INCH_OPTIONS.map((d) => (
                       <option key={d} value={d}>
                         {d}
                       </option>
@@ -1510,7 +1514,7 @@ export default function ProductsManager({
                       Tamaños comunes — clic para añadir
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {INCH_FRACTION_OPTIONS.map((label) => {
+                      {LENGTH_INCH_OPTIONS.map((label) => {
                         const used = variantRows.some((r) => r.variantLabel.trim() === label);
                         return (
                           <button
