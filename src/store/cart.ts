@@ -86,5 +86,12 @@ export function cartTotals(lines: CartLine[], city = "Ciudad Juárez") {
   }
   const total = subtotal + shipping;
   const pieceCount = lines.reduce((sum, l) => sum + l.quantity, 0);
-  return { subtotal, shipping, total, pieceCount, totalWeight, isJuarez };
+  // Para productos que se venden por bolsa/paquete (minOrderQty > 1), un
+  // "artículo" es una bolsa completa, no cada pieza suelta dentro de ella —
+  // si agregaste 1 bolsa de 35, esto cuenta 1, no 35.
+  const itemCount = lines.reduce((sum, l) => {
+    const packSize = l.product.minOrderQty ?? 1;
+    return sum + (packSize > 1 ? Math.round(l.quantity / packSize) : l.quantity);
+  }, 0);
+  return { subtotal, shipping, total, pieceCount, itemCount, totalWeight, isJuarez };
 }
