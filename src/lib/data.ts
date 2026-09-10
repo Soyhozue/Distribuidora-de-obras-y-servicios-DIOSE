@@ -85,7 +85,11 @@ export type ManagedProduct = Product & { categoryId: string; brandId: string };
 export async function getAllProducts(): Promise<ManagedProduct[]> {
   const products = await prisma.product.findMany({
     include: PRODUCT_INCLUDE,
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    // Agrupado por categoría primero para que nunca se mezclen productos de
+    // categorías distintas en la lista del admin — sortOrder (y luego
+    // nombre) solo decide el orden DENTRO de cada categoría. Un producto
+    // nuevo siempre cae junto a los de su propia categoría.
+    orderBy: [{ category: { name: "asc" } }, { sortOrder: "asc" }, { name: "asc" }],
   });
   return products.map(mapProduct);
 }

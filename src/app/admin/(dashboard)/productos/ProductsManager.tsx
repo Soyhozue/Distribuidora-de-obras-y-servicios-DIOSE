@@ -891,13 +891,28 @@ export default function ProductsManager({
               </div>
             )}
 
-            {pageRows.map((row, rowIndex) => {
-              if (row.kind === "single") {
-                const p = row.product;
-                return (
-                  <div
-                    key={p.id}
-                    draggable={canReorder && !savingOrder}
+            {(() => {
+              function rowCategoryOf(r: ProductRow) {
+                return r.kind === "single" ? r.product.category : r.members[0].category;
+              }
+              let lastCategory: string | null = null;
+
+              return pageRows.map((row, rowIndex) => {
+                const rowCategory = rowCategoryOf(row);
+                const categoryHeader = rowCategory !== lastCategory && (
+                  <div className="px-4 py-1.5 bg-diose-gray/60 border-b border-diose-border-light text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+                    {rowCategory}
+                  </div>
+                );
+                lastCategory = rowCategory;
+
+                if (row.kind === "single") {
+                  const p = row.product;
+                  return (
+                    <div key={p.id}>
+                      {categoryHeader}
+                      <div
+                        draggable={canReorder && !savingOrder}
                     onDragStart={() => setDraggingRowIndex(rowIndex)}
                     onDragOver={(e) => {
                       if (!canReorder) return;
@@ -985,6 +1000,7 @@ export default function ProductsManager({
                       </span>
                     </div>
                   </div>
+                  </div>
                 );
               }
 
@@ -1002,6 +1018,7 @@ export default function ProductsManager({
 
               return (
                 <div key={groupId}>
+                  {categoryHeader}
                   <div
                     draggable={canReorder && !savingOrder}
                     onDragStart={() => setDraggingRowIndex(rowIndex)}
@@ -1143,7 +1160,8 @@ export default function ProductsManager({
                     ))}
                 </div>
               );
-            })}
+              });
+            })()}
 
             {pageRows.length === 0 && (
               <div className="px-4 py-10 text-center text-xs text-gray-400">No se encontraron productos.</div>
