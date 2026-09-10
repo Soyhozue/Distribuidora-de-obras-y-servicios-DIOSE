@@ -983,6 +983,9 @@ export type SiteSettingsInput = {
   email: string;
   address: string;
   mapsUrl: string;
+  bankName: string;
+  bankClabe: string;
+  bankHolder: string;
   heroSlides: HeroSlide[];
   heroEyebrow: string;
   heroTitle: string;
@@ -1078,8 +1081,10 @@ export async function getCustomers() {
     phone: u.phone ?? "",
     createdAt: u.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }),
     orderCount: u.orders.length,
+    // Solo pedidos ya confirmados (pago recibido) cuentan como gastado real
+    // — uno PENDIENTE todavía no se cobró.
     totalSpent: u.orders
-      .filter((o) => o.status !== "CANCELADO")
+      .filter((o) => o.status === "CONFIRMADO" || o.status === "EN_CAMINO" || o.status === "ENTREGADO")
       .reduce((sum, o) => sum + Number(o.total.toString()), 0),
   }));
 }

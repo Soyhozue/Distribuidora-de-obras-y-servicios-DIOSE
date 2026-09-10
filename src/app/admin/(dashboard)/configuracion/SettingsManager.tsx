@@ -338,6 +338,9 @@ type Settings = {
   email: string;
   address: string;
   mapsUrl: string;
+  bankName: string;
+  bankClabe: string;
+  bankHolder: string;
   heroEyebrow: string;
   heroTitle: string;
   heroTitleHighlight: string;
@@ -677,6 +680,44 @@ export default function SettingsManager({
                     placeholder="Pega aquí el enlace de Compartir → Copiar enlace, o el código completo de Compartir → Insertar un mapa"
                     rows={2}
                     className={`${inputCls} resize-none`}
+                  />
+                </Field>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === "contacto" && (
+          <div className="bg-white border border-diose-border p-6">
+            <div className="font-heading text-lg text-diose-black mb-1">Datos bancarios para transferencia</div>
+            <div className="text-xs text-gray-400 mb-5">
+              Se le muestran al cliente cuando elige &quot;Transferencia bancaria&quot; en el checkout, junto con
+              su número de pedido para que lo use como referencia. Déjalos vacíos para ocultar esa sección.
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Banco">
+                <input
+                  value={form.bankName}
+                  onChange={(e) => setField("bankName", e.target.value)}
+                  placeholder="BBVA"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Titular de la cuenta">
+                <input
+                  value={form.bankHolder}
+                  onChange={(e) => setField("bankHolder", e.target.value)}
+                  placeholder="Distribuidora de Obras y Servicios"
+                  className={inputCls}
+                />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label="CLABE interbancaria (18 dígitos)">
+                  <input
+                    value={form.bankClabe}
+                    onChange={(e) => setField("bankClabe", e.target.value.replace(/\D/g, "").slice(0, 18))}
+                    placeholder="012180001234567895"
+                    className={inputCls}
                   />
                 </Field>
               </div>

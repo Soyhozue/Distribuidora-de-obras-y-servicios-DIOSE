@@ -221,7 +221,7 @@ export default function CheckoutPage() {
       }
       const data = await res.json();
       clear();
-      router.push(`/pedido-confirmado?n=${data.number ?? ""}`);
+      router.push(`/pedido-confirmado?n=${data.number ?? ""}&metodo=${payment}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Hubo un problema. Intenta de nuevo.");
     } finally {
