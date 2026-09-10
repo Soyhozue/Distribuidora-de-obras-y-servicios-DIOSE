@@ -34,9 +34,10 @@ function buildEighthInchOptions(minEighths: number, maxEighths: number): string[
   return labels;
 }
 
-// Medidas de largo típicas en tornillería — botones de un clic para no
-// tener que escribir cada una a mano. De 1/4" a 8", en octavos.
-const COMMON_LENGTH_OPTIONS = buildEighthInchOptions(2, 64);
+// Medidas típicas en tornillería (largo y grosor/diámetro) — botones y
+// opciones de un clic para no tener que escribir cada una a mano.
+// De 1/4" a 8", en octavos.
+const INCH_FRACTION_OPTIONS = buildEighthInchOptions(2, 64);
 
 function StatusTag({ status }: { status: Product["stockStatus"] }) {
   if (status === "AGOTADO") {
@@ -1401,7 +1402,7 @@ export default function ProductsManager({
                     className="border border-diose-border px-3 py-2 text-sm outline-none bg-white w-1/2"
                   >
                     <option value="">Sin especificar</option>
-                    {['1/4"', '5/16"', '3/8"', '7/16"', '1/2"', '9/16"', '5/8"', '3/4"'].map((d) => (
+                    {INCH_FRACTION_OPTIONS.map((d) => (
                       <option key={d} value={d}>
                         {d}
                       </option>
@@ -1498,7 +1499,7 @@ export default function ProductsManager({
                       Tamaños comunes — clic para añadir
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {COMMON_LENGTH_OPTIONS.map((label) => {
+                      {INCH_FRACTION_OPTIONS.map((label) => {
                         const used = variantRows.some((r) => r.variantLabel.trim() === label);
                         return (
                           <button
