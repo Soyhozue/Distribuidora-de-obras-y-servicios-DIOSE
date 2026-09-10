@@ -651,7 +651,9 @@ export async function getDashboardStats() {
     prisma.order.count(),
     prisma.order.count({ where: { status: "PENDIENTE" } }),
     prisma.order.aggregate({
-      where: { status: { not: "CANCELADO" } },
+      // Solo pedidos ya confirmados (pago recibido) cuentan como ingreso real
+      // — uno PENDIENTE todavía no se cobró, y contarlo infla la cifra.
+      where: { status: { in: ["CONFIRMADO", "EN_CAMINO", "ENTREGADO"] } },
       _sum: { total: true },
     }),
   ]);

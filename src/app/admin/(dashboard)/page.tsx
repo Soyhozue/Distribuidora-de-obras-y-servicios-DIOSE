@@ -26,7 +26,7 @@ export default async function AdminDashboardPage() {
 
   const stats = [
     { label: "Total de pedidos", value: String(dashboardStats.totalOrders), hint: `${dashboardStats.pendingOrders} pendientes`, dark: false },
-    { label: "Ingresos totales", value: formatPrice(dashboardStats.revenue), hint: "Excluye cancelados", dark: true },
+    { label: "Ingresos totales", value: formatPrice(dashboardStats.revenue), hint: "Solo pedidos confirmados", dark: true },
     { label: "Productos activos", value: String(productCount), hint: `${lowStockCount} con stock bajo`, dark: false },
     { label: "Pedidos pendientes", value: String(dashboardStats.pendingOrders), hint: "Requieren atención", dark: false },
   ];
