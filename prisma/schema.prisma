@@ -92,6 +92,10 @@ model Product {
   isPrimaryVariant Boolean @default(true)
   minOrderQty      Int     @default(1)
   packLabel        String?
+  // Orden manual del producto (o de toda su familia de medidas) en el
+  // catálogo y en el panel de admin — distinto de variantOrder, que solo
+  // ordena las medidas DENTRO de una familia.
+  sortOrder   Int         @default(0)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }

@@ -210,6 +210,45 @@ export default function ProductsManager({
   const totalPages = Math.max(1, Math.ceil(groupedRows.length / PAGE_SIZE));
   const pageRows = groupedRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  // Reordering writes a position to every product in the full catalog (see
+  // reorderProducts in lib/data.ts), so "which row is next to which" only
+  // means the same thing here as it will after the filters are cleared —
+  // dragging is disabled while a search/category/brand filter narrows the
+  // list to avoid silently scrambling the order of hidden products.
+  const canReorder = !search && !categoryFilter && !brandFilter;
+  const [draggingRowIndex, setDraggingRowIndex] = useState<number | null>(null);
+  const [dragOverRowIndex, setDragOverRowIndex] = useState<number | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  async function moveTopLevelRow(fromPageIndex: number, toPageIndex: number) {
+    const base = (page - 1) * PAGE_SIZE;
+    const fromGlobal = base + fromPageIndex;
+    const toGlobal = base + toPageIndex;
+    if (fromGlobal === toGlobal) return;
+
+    const reordered = [...groupedRows];
+    const [moved] = reordered.splice(fromGlobal, 1);
+    reordered.splice(toGlobal, 0, moved);
+
+    setSavingOrder(true);
+    try {
+      const rows = reordered.map((row) =>
+        row.kind === "single" ? { kind: "single" as const, id: row.product.id } : { kind: "family" as const, id: row.groupId }
+      );
+      const res = await fetch("/api/products/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      });
+      if (!res.ok) throw new Error();
+      router.refresh();
+    } catch {
+      showToast("No se pudo guardar el nuevo orden. Intenta de nuevo.", "error");
+    } finally {
+      setSavingOrder(false);
+    }
+  }
+
   function openCreate() {
     setForm(emptyForm(categories, brands));
     setFormError("");
@@ -695,7 +734,8 @@ export default function ProductsManager({
       <div className="flex-1 p-9 pt-5 overflow-hidden">
         <div className="bg-white border border-diose-border overflow-hidden">
           <div className="min-w-[870px] overflow-x-auto">
-            <div className="grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black items-center gap-2">
+            <div className="grid grid-cols-[20px_36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black items-center gap-2">
+              <span />
               <input
                 type="checkbox"
                 className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
@@ -714,16 +754,49 @@ export default function ProductsManager({
               ))}
             </div>
 
-            {pageRows.map((row) => {
+            {!canReorder && (
+              <div className="px-4 py-1.5 bg-diose-amber/5 border-b border-diose-border-light text-[11px] text-gray-500">
+                Quita los filtros y la búsqueda para poder reordenar arrastrando.
+              </div>
+            )}
+
+            {pageRows.map((row, rowIndex) => {
               if (row.kind === "single") {
                 const p = row.product;
                 return (
                   <div
                     key={p.id}
-                    className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] ${
+                    draggable={canReorder && !savingOrder}
+                    onDragStart={() => setDraggingRowIndex(rowIndex)}
+                    onDragOver={(e) => {
+                      if (!canReorder) return;
+                      e.preventDefault();
+                      if (dragOverRowIndex !== rowIndex) setDragOverRowIndex(rowIndex);
+                    }}
+                    onDragLeave={() => setDragOverRowIndex((cur) => (cur === rowIndex ? null : cur))}
+                    onDrop={(e) => {
+                      if (!canReorder) return;
+                      e.preventDefault();
+                      if (draggingRowIndex !== null) moveTopLevelRow(draggingRowIndex, rowIndex);
+                      setDraggingRowIndex(null);
+                      setDragOverRowIndex(null);
+                    }}
+                    onDragEnd={() => {
+                      setDraggingRowIndex(null);
+                      setDragOverRowIndex(null);
+                    }}
+                    className={`grid grid-cols-[20px_36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] ${
                       p.stockStatus === "AGOTADO" ? "opacity-70" : ""
+                    } ${draggingRowIndex === rowIndex ? "opacity-40" : ""} ${
+                      dragOverRowIndex === rowIndex && draggingRowIndex !== rowIndex ? "bg-diose-amber/10" : ""
                     }`}
                   >
+                    <span
+                      className={`text-gray-300 select-none text-center ${canReorder ? "cursor-grab active:cursor-grabbing" : "opacity-0"}`}
+                      title="Arrastra para reordenar"
+                    >
+                      ⠿
+                    </span>
                     <input
                       type="checkbox"
                       className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
@@ -798,7 +871,36 @@ export default function ProductsManager({
 
               return (
                 <div key={groupId}>
-                  <div className="grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] bg-diose-gray/40">
+                  <div
+                    draggable={canReorder && !savingOrder}
+                    onDragStart={() => setDraggingRowIndex(rowIndex)}
+                    onDragOver={(e) => {
+                      if (!canReorder) return;
+                      e.preventDefault();
+                      if (dragOverRowIndex !== rowIndex) setDragOverRowIndex(rowIndex);
+                    }}
+                    onDragLeave={() => setDragOverRowIndex((cur) => (cur === rowIndex ? null : cur))}
+                    onDrop={(e) => {
+                      if (!canReorder) return;
+                      e.preventDefault();
+                      if (draggingRowIndex !== null) moveTopLevelRow(draggingRowIndex, rowIndex);
+                      setDraggingRowIndex(null);
+                      setDragOverRowIndex(null);
+                    }}
+                    onDragEnd={() => {
+                      setDraggingRowIndex(null);
+                      setDragOverRowIndex(null);
+                    }}
+                    className={`grid grid-cols-[20px_36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] bg-diose-gray/40 ${
+                      draggingRowIndex === rowIndex ? "opacity-40" : ""
+                    } ${dragOverRowIndex === rowIndex && draggingRowIndex !== rowIndex ? "bg-diose-amber/10" : ""}`}
+                  >
+                    <span
+                      className={`text-gray-300 select-none text-center ${canReorder ? "cursor-grab active:cursor-grabbing" : "opacity-0"}`}
+                      title="Arrastra para reordenar"
+                    >
+                      ⠿
+                    </span>
                     <input
                       type="checkbox"
                       className="w-3.5 h-3.5 cursor-pointer accent-diose-black"
@@ -852,10 +954,11 @@ export default function ProductsManager({
                     members.map((p) => (
                       <div
                         key={p.id}
-                        className={`grid grid-cols-[36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] pl-2 ${
+                        className={`grid grid-cols-[20px_36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 border-b border-gray-100 items-center gap-2 hover:bg-[#FAFAFA] pl-2 ${
                           p.stockStatus === "AGOTADO" ? "opacity-70" : ""
                         }`}
                       >
+                        <span />
                         <input
                           type="checkbox"
                           className="w-3.5 h-3.5 cursor-pointer accent-diose-black"

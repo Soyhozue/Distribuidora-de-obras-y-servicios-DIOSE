@@ -85,7 +85,7 @@ export type ManagedProduct = Product & { categoryId: string; brandId: string };
 export async function getAllProducts(): Promise<ManagedProduct[]> {
   const products = await prisma.product.findMany({
     include: PRODUCT_INCLUDE,
-    orderBy: { name: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
   return products.map(mapProduct);
 }
@@ -103,7 +103,7 @@ export async function getStorefrontProducts(): Promise<Product[]> {
   const products = await prisma.product.findMany({
     where: STOREFRONT_WHERE,
     include: PRODUCT_INCLUDE,
-    orderBy: { name: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
   return products.map(mapProduct);
 }
@@ -275,6 +275,24 @@ export async function updateProduct(id: string, input: ProductInput) {
     }
     throw err;
   }
+}
+
+/**
+ * Persists the admin's drag-and-drop order for the top-level product list
+ * (one row per standalone product, or per variant family). A family's
+ * position is one value shared by every member — the storefront and admin
+ * list only ever show the primary variant, but sortOrder is written to all
+ * of them so whichever member Prisma happens to return first still carries
+ * the right value.
+ */
+export async function reorderProducts(rows: { kind: "single" | "family"; id: string }[]) {
+  await prisma.$transaction(
+    rows.map((row, index) =>
+      row.kind === "single"
+        ? prisma.product.update({ where: { id: row.id }, data: { sortOrder: index } })
+        : prisma.product.updateMany({ where: { variantGroupId: row.id }, data: { sortOrder: index } })
+    )
+  );
 }
 
 export async function updateProductStock(id: string, stock: number) {
