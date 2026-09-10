@@ -134,6 +134,123 @@ async function uploadImage(file: File): Promise<string> {
   return data.url as string;
 }
 
+/**
+ * A <select> that can switch into "add new" mode inline — used for
+ * Categoría and Marca so the admin doesn't have to leave the product form
+ * (Configuración) just to add one before finishing the product they're on.
+ */
+function CreatableSelect({
+  label,
+  value,
+  options,
+  onChange,
+  itemLabel,
+  onCreate,
+}: {
+  label: string;
+  value: string;
+  options: Option[];
+  onChange: (id: string) => void;
+  itemLabel: string;
+  onCreate: (name: string) => Promise<Option | { error: string }>;
+}) {
+  const showToast = useToastStore((s) => s.show);
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleCreate() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setSaving(true);
+    try {
+      const result = await onCreate(trimmed);
+      if ("error" in result) {
+        showToast(result.error, "error");
+        return;
+      }
+      onChange(result.id);
+      setName("");
+      setAdding(false);
+    } catch {
+      showToast(`No se pudo crear ${itemLabel.toLowerCase()}.`, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (adding) {
+    return (
+      <label className="flex flex-col gap-1">
+        <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">{label}</span>
+        <div className="flex gap-1.5">
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleCreate();
+              }
+              if (e.key === "Escape") {
+                setAdding(false);
+                setName("");
+              }
+            }}
+            placeholder={`Nueva ${itemLabel.toLowerCase()}...`}
+            className="flex-1 border border-diose-border px-3 py-2 text-sm outline-none bg-white min-w-0"
+          />
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={saving || !name.trim()}
+            className="text-xs px-3 border border-diose-black bg-diose-black text-white disabled:opacity-40 cursor-pointer"
+          >
+            {saving ? "..." : "OK"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAdding(false);
+              setName("");
+            }}
+            className="text-xs px-2 text-gray-400 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      </label>
+    );
+  }
+
+  return (
+    <label className="flex flex-col gap-1">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">{label}</span>
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="text-[10px] text-diose-amber underline cursor-pointer"
+        >
+          + Nueva
+        </button>
+      </div>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
+      >
+        {options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export default function ProductsManager({
   products,
   categories,
@@ -149,6 +266,20 @@ export default function ProductsManager({
 }) {
   const router = useRouter();
   const showToast = useToastStore((s) => s.show);
+
+  // Categorías/marcas creadas al vuelo desde este formulario — se muestran
+  // de inmediato mientras router.refresh() trae la lista real del servidor.
+  const [extraCategories, setExtraCategories] = useState<Option[]>([]);
+  const [extraBrands, setExtraBrands] = useState<Option[]>([]);
+  const allCategories = useMemo(
+    () => [...categories, ...extraCategories.filter((e) => !categories.some((c) => c.id === e.id))],
+    [categories, extraCategories]
+  );
+  const allBrands = useMemo(
+    () => [...brands, ...extraBrands.filter((e) => !brands.some((b) => b.id === e.id))],
+    [brands, extraBrands]
+  );
+
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [brandFilter, setBrandFilter] = useState<string>("");
@@ -1118,20 +1249,25 @@ export default function ProductsManager({
                   className="border border-diose-border px-3 py-2 text-sm outline-none"
                 />
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Categoría</span>
-                <select
-                  value={form.categoryId}
-                  onChange={(e) => setForm({ ...form, categoryId: e.target.value, subcategoryName: "" })}
-                  className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
-                >
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <CreatableSelect
+                label="Categoría"
+                itemLabel="categoría"
+                value={form.categoryId}
+                options={allCategories}
+                onChange={(id) => setForm((f) => ({ ...f, categoryId: id, subcategoryName: "" }))}
+                onCreate={async (name) => {
+                  const res = await fetch("/api/categories", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name }),
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok) return { error: data.error ?? "No se pudo crear la categoría." };
+                  setExtraCategories((prev) => [...prev, { id: data.id, name: data.name }]);
+                  router.refresh();
+                  return { id: data.id, name: data.name };
+                }}
+              />
               <label className="flex flex-col gap-1">
                 <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Subcategoría (opcional)</span>
                 <input
@@ -1149,22 +1285,27 @@ export default function ProductsManager({
                     ))}
                 </datalist>
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.1em] text-gray-400">Marca</span>
-                <select
-                  value={form.brandId}
-                  onChange={(e) => setForm({ ...form, brandId: e.target.value })}
-                  className="border border-diose-border px-3 py-2 text-sm outline-none bg-white"
-                >
-                  {brands.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <CreatableSelect
+                label="Marca"
+                itemLabel="marca"
+                value={form.brandId}
+                options={allBrands}
+                onChange={(id) => setForm((f) => ({ ...f, brandId: id }))}
+                onCreate={async (name) => {
+                  const res = await fetch("/api/brands", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name }),
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok) return { error: data.error ?? "No se pudo crear la marca." };
+                  setExtraBrands((prev) => [...prev, { id: data.id, name: data.name }]);
+                  router.refresh();
+                  return { id: data.id, name: data.name };
+                }}
+              />
 
-              {/tornill/i.test(categories.find((c) => c.id === form.categoryId)?.name ?? "") && (
+              {/tornill/i.test(allCategories.find((c) => c.id === form.categoryId)?.name ?? "") && (
                 <div className="col-span-2 border border-diose-amber/40 bg-diose-amber/5 p-3 flex flex-col gap-2">
                   <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-diose-amber">
                     Tornillería — grosor / diámetro
