@@ -29,7 +29,11 @@ function buildEighthInchOptions(minEighths: number, maxEighths: number): string[
     }
     const divisor = gcd(remainder, 8);
     const fraction = `${remainder / divisor}/${8 / divisor}`;
-    labels.push(whole === 0 ? `${fraction}"` : `${whole} ${fraction}"`);
+    // Guion en vez de espacio entre el entero y la fracción: en botones
+    // angostos un solo espacio casi no se nota y "1 1/4"" se confunde con
+    // "11/4"" (once cuartos). parseInches() en lib/measures.ts ya soporta
+    // este formato con guion.
+    labels.push(whole === 0 ? `${fraction}"` : `${whole}-${fraction}"`);
   }
   return labels;
 }
@@ -652,7 +656,7 @@ export default function ProductsManager({
     }
     for (const row of variantRows) {
       if (!row.variantLabel.trim()) {
-        setFormError("Cada medida necesita una etiqueta (ej. 1\", 1 1/2\").");
+        setFormError("Cada medida necesita una etiqueta (ej. 1\", 1-1/2\").");
         return;
       }
       if (!row.sku.trim()) {
@@ -1485,6 +1489,13 @@ export default function ProductsManager({
                         />
                       </label>
                     </div>
+                    {Number(form.price) > 0 && Number(form.minOrderQty) > 1 && (
+                      <div className="text-[11px] text-diose-black bg-diose-amber/10 border border-diose-amber/30 px-2.5 py-1.5">
+                        <strong>${(Number(form.price) * Number(form.minOrderQty)).toLocaleString("es-MX")}</strong> es
+                        lo que pagará el cliente por el mínimo de {form.minOrderQty} piezas (${form.price} c/u). Si
+                        ese total no es el precio real del paquete, ajusta el precio por pieza arriba.
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
@@ -1528,7 +1539,7 @@ export default function ProductsManager({
                       <textarea
                         value={bulkLabelsText}
                         onChange={(e) => setBulkLabelsText(e.target.value)}
-                        placeholder={'Ej: 1/2", 3/4", 1", 1 1/4"'}
+                        placeholder={'Ej: 1/2", 3/4", 1", 1-1/4"'}
                         rows={1}
                         className="flex-1 border border-diose-border px-2.5 py-1.5 text-xs outline-none min-w-0 resize-none"
                       />
@@ -1587,7 +1598,7 @@ export default function ProductsManager({
                         <input
                           value={row.variantLabel}
                           onChange={(e) => updateVariantRow(i, { variantLabel: e.target.value })}
-                          placeholder='1", 1 1/2"...'
+                          placeholder='1", 1-1/2"...'
                           className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
                         />
                         <input
@@ -1613,14 +1624,21 @@ export default function ProductsManager({
                           onChange={(e) => updateVariantRow(i, { stock: e.target.value })}
                           className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
                         />
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          value={row.minOrderQty}
-                          onChange={(e) => updateVariantRow(i, { minOrderQty: e.target.value })}
-                          className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0"
-                        />
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={row.minOrderQty}
+                            onChange={(e) => updateVariantRow(i, { minOrderQty: e.target.value })}
+                            className="border border-diose-border px-2 py-1.5 text-xs outline-none min-w-0 w-full"
+                          />
+                          {Number(row.price) > 0 && Number(row.minOrderQty) > 1 && (
+                            <span className="text-[9px] text-diose-amber leading-tight" title="Precio × cantidad mínima">
+                              = ${(Number(row.price) * Number(row.minOrderQty)).toLocaleString("es-MX")}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1 justify-end">
                           <button
                             type="button"
