@@ -5,6 +5,7 @@ import { WhatsAppIcon } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useToastStore } from "@/store/toastStore";
 import type { Product } from "@/data/products";
+import { formatPrice } from "@/lib/currency";
 
 const POST_TYPE_OPTIONS = [
   { label: "Producto individual", value: "INDIVIDUAL" as const },
@@ -272,7 +273,7 @@ export default function AdsManager({ products, settings }: { products: Product[]
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[11px] font-medium text-diose-black truncate">{p.name}</div>
-                    <div className={`text-[10px] ${isSel ? "text-diose-amber" : "text-gray-300"}`}>{p.brand} · ${p.price.toLocaleString("es-MX")}</div>
+                    <div className={`text-[10px] ${isSel ? "text-diose-amber" : "text-gray-300"}`}>{p.brand} · {formatPrice(p.price)}</div>
                   </div>
                 </button>
               );
@@ -444,7 +445,7 @@ export default function AdsManager({ products, settings }: { products: Product[]
                     <input
                       value={customPriceStr}
                       onChange={e => setCustomPriceStr(e.target.value)}
-                      placeholder={`$${autoPrice.toLocaleString("es-MX")}`}
+                      placeholder={formatPrice(autoPrice)}
                       className="w-full border border-diose-border px-3 py-2 text-[13px] text-diose-black outline-none focus:border-diose-black"
                     />
                   </div>
@@ -593,7 +594,7 @@ export default function AdsManager({ products, settings }: { products: Product[]
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-diose-black">{c.title}</div>
                     <div className="text-xs text-gray-400 mt-0.5">{c.format} · {c.createdAt}</div>
-                    {c.comboPrice != null && <div className="text-xs text-diose-amber font-semibold mt-0.5">${c.comboPrice.toLocaleString("es-MX")}</div>}
+                    {c.comboPrice != null && <div className="text-xs text-diose-amber font-semibold mt-0.5">{formatPrice(c.comboPrice)}</div>}
                   </div>
                   <span onClick={() => setConfirmComboId(c.id)} className="text-xs text-gray-300 cursor-pointer hover:text-diose-danger shrink-0">✕</span>
                 </div>

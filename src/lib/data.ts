@@ -3,6 +3,7 @@ import { randomUUID, randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import type { Product } from "@/data/products";
 import type { ProductIconKey } from "@/components/icons";
+import { formatPrice } from "@/lib/currency";
 
 export function pickIcon(categoryName: string): ProductIconKey {
   const map: Record<string, ProductIconKey> = {
@@ -702,7 +703,7 @@ export async function getOrderById(id: string) {
       name: i.product.name,
       sku: i.product.sku,
       quantity: i.quantity,
-      price: `$${Number(i.unitPrice.toString()).toLocaleString("es-MX")}`,
+      price: formatPrice(Number(i.unitPrice.toString())),
       image: i.product.images?.[0] ?? null,
     })),
   };

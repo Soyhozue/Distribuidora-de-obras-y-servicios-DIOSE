@@ -7,6 +7,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { useToastStore } from "@/store/toastStore";
 import type { Product } from "@/data/products";
 import type { ManagedProduct } from "@/lib/data";
+import { formatPrice } from "@/lib/currency";
 
 type Option = { id: string; name: string };
 
@@ -1042,8 +1043,8 @@ export default function ProductsManager({
                     </span>
                     <span className="text-xs text-gray-600">{p.brand}</span>
                     <span className="text-[13px] font-semibold text-diose-black">
-                      ${p.price.toLocaleString("es-MX")}
-                      {p.unit && <span className="text-[10px] font-normal text-gray-400">{p.unit}</span>}
+                      {formatPrice(p.price)}
+                      {p.unit && <span className="text-[10px] font-normal text-gray-400"> {p.unit}</span>}
                     </span>
                     <span
                       className={`text-[13px] ${
@@ -1082,8 +1083,8 @@ export default function ProductsManager({
               const prices = members.map((m) => m.price);
               const priceLabel =
                 Math.min(...prices) === Math.max(...prices)
-                  ? `$${prices[0].toLocaleString("es-MX")}`
-                  : `desde $${Math.min(...prices).toLocaleString("es-MX")}`;
+                  ? formatPrice(prices[0])
+                  : `desde ${formatPrice(Math.min(...prices))}`;
               const totalStock = members.reduce((sum, m) => sum + m.stock, 0);
               const groupStatus = deriveStockStatus(totalStock);
               const image = members.find((m) => m.images?.[0])?.images?.[0];
@@ -1199,8 +1200,8 @@ export default function ProductsManager({
                         <span />
                         <span />
                         <span className="text-[13px] font-semibold text-diose-black">
-                          ${p.price.toLocaleString("es-MX")}
-                          {p.unit && <span className="text-[10px] font-normal text-gray-400">{p.unit}</span>}
+                          {formatPrice(p.price)}
+                          {p.unit && <span className="text-[10px] font-normal text-gray-400"> {p.unit}</span>}
                         </span>
                         <span
                           className={`text-[13px] ${
@@ -1495,9 +1496,9 @@ export default function ProductsManager({
                     </div>
                     {Number(form.price) > 0 && Number(form.minOrderQty) > 1 && (
                       <div className="text-[11px] text-diose-black bg-diose-amber/10 border border-diose-amber/30 px-2.5 py-1.5">
-                        <strong>${(Number(form.price) * Number(form.minOrderQty)).toLocaleString("es-MX")}</strong> es
-                        lo que pagará el cliente por el mínimo de {form.minOrderQty} piezas (${form.price} c/u). Si
-                        ese total no es el precio real del paquete, ajusta el precio por pieza arriba.
+                        <strong>{formatPrice(Number(form.price) * Number(form.minOrderQty))}</strong> es lo que
+                        pagará el cliente por el mínimo de {form.minOrderQty} piezas ({formatPrice(Number(form.price))}{" "}
+                        c/u). Si ese total no es el precio real del paquete, ajusta el precio por pieza arriba.
                       </div>
                     )}
                   </div>
@@ -1639,7 +1640,7 @@ export default function ProductsManager({
                           />
                           {Number(row.price) > 0 && Number(row.minOrderQty) > 1 && (
                             <span className="text-[9px] text-diose-amber leading-tight" title="Precio × cantidad mínima">
-                              = ${(Number(row.price) * Number(row.minOrderQty)).toLocaleString("es-MX")}
+                              = {formatPrice(Number(row.price) * Number(row.minOrderQty))}
                             </span>
                           )}
                         </div>

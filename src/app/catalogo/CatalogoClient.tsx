@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import { SearchIcon, ChevronDownIcon } from "@/components/icons";
 import type { Product } from "@/data/products";
+import { formatPrice } from "@/lib/currency";
 
 type CategoryCount = { name: string; count: number };
 type BrandCount = { name: string; count: number };
@@ -210,13 +211,13 @@ export default function CatalogoClient({
                     <div className="mt-auto pt-3 flex items-end justify-between border-t border-white/10">
                       {c.comboPrice ? (
                         <span className="text-diose-amber font-semibold text-lg">
-                          ${c.comboPrice.toLocaleString("es-MX")}
+                          {formatPrice(c.comboPrice)}
                         </span>
                       ) : (
                         <span className="text-white/40 text-sm">Precio especial</span>
                       )}
                       {c.savings && (
-                        <span className="text-[11px] text-green-400">Ahorra ${c.savings.toLocaleString("es-MX")}</span>
+                        <span className="text-[11px] text-green-400">Ahorra {formatPrice(c.savings)}</span>
                       )}
                     </div>
                   </div>

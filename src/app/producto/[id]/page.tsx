@@ -8,6 +8,7 @@ import ProductPurchasePanel from "./ProductPurchasePanel";
 import ProductGallery from "./ProductGallery";
 import { getProductById, getProductVariants, getRelatedProducts, getSiteSettings } from "@/lib/data";
 import { parseInches } from "@/lib/measures";
+import { formatPrice } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +27,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-function formatPrice(price: number) {
-  return `$${price.toLocaleString("es-MX")}`;
-}
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

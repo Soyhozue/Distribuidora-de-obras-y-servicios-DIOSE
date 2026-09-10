@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useToastStore } from "@/store/toastStore";
+import { formatPrice } from "@/lib/currency";
 
 type Customer = {
   id: string;
@@ -14,10 +15,6 @@ type Customer = {
   orderCount: number;
   totalSpent: number;
 };
-
-function formatPrice(n: number) {
-  return `$${n.toLocaleString("es-MX")}`;
-}
 
 export default function ClientesManager({ customers: initial }: { customers: Customer[] }) {
   const router = useRouter();

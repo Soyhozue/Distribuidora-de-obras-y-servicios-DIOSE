@@ -1,3 +1,5 @@
+import { formatPrice } from "./currency";
+
 const JUAREZ_KEYWORDS = ["juárez", "juarez", "cd. juárez", "cd juárez", "ciudad juárez", "ciudad juarez", "cdjuarez", "j uárez"];
 
 export function isLocalJuarez(city: string): boolean {
@@ -23,5 +25,5 @@ export function calcShipping(totalWeightKg: number, city: string): number {
 export function shippingLabel(totalWeightKg: number, city: string): string {
   if (totalWeightKg === 0) return "A calcular (sin peso registrado)";
   if (isLocalJuarez(city)) return "Gratis — envío local Juárez";
-  return `$${calcShipping(totalWeightKg, city).toLocaleString("es-MX")} MXN`;
+  return formatPrice(calcShipping(totalWeightKg, city));
 }

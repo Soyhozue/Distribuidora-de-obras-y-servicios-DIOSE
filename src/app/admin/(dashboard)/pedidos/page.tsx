@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getOrders } from "@/lib/data";
+import { formatPrice } from "@/lib/currency";
 
 export const revalidate = 30;
 
@@ -10,10 +11,6 @@ const STATUS_STYLE: Record<string, string> = {
   ENTREGADO: "border border-gray-600 text-gray-600",
   CANCELADO: "bg-gray-100 text-gray-400",
 };
-
-function formatPrice(price: number) {
-  return `$${price.toLocaleString("es-MX")}`;
-}
 
 export default async function AdminOrdersPage() {
   const orders = await getOrders();

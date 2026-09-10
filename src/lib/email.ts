@@ -1,13 +1,10 @@
 import { Resend } from "resend";
+import { formatPrice } from "./currency";
 
 const FROM = "DIOSE <noreply@diose.mx>";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY ?? "no-key");
-}
-
-function formatPrice(n: number) {
-  return `$${n.toLocaleString("es-MX")}`;
 }
 
 export async function sendOrderConfirmation(order: {

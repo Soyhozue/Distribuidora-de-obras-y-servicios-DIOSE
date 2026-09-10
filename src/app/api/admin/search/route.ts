@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { formatPrice } from "@/lib/currency";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -28,13 +29,13 @@ export async function GET(request: Request) {
     ...orders.map((o) => ({
       type: "pedido" as const,
       label: `Pedido #${o.number}`,
-      sub: `${o.user.name} · $${Number(o.total).toLocaleString("es-MX")}`,
+      sub: `${o.user.name} · ${formatPrice(Number(o.total))}`,
       href: `/admin/pedidos/${o.id}`,
     })),
     ...products.map((p) => ({
       type: "producto" as const,
       label: p.name,
-      sub: `SKU-${p.sku} · $${Number(p.price).toLocaleString("es-MX")}`,
+      sub: `SKU-${p.sku} · ${formatPrice(Number(p.price))}`,
       href: `/admin/productos`,
     })),
   ];

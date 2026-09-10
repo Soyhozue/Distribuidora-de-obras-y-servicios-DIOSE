@@ -5,10 +5,7 @@ import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toastStore";
 import { StockBadge } from "./ProductCard";
 import type { Product } from "@/data/products";
-
-function formatPrice(price: number) {
-  return `$${price.toLocaleString("es-MX")}`;
-}
+import { formatPrice } from "@/lib/currency";
 
 export default function ShopPromoCard({
   imageUrl,

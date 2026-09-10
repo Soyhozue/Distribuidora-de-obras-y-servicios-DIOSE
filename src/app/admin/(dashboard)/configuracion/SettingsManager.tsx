@@ -7,6 +7,7 @@ import HeroSlideLayer from "@/components/HeroSlideLayer";
 import HeroTitle from "@/components/HeroTitle";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useToastStore } from "@/store/toastStore";
+import { formatPrice } from "@/lib/currency";
 
 type CatalogItem = { id: string; name: string; count: number };
 
@@ -1302,7 +1303,7 @@ export default function SettingsManager({
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-diose-black truncate">{chosen.name}</div>
                             <div className="text-[11px] text-gray-400">
-                              {chosen.brand} · ${chosen.price.toLocaleString("es-MX")}
+                              {chosen.brand} · {formatPrice(chosen.price)}
                             </div>
                           </div>
                           <button
@@ -1349,7 +1350,7 @@ export default function SettingsManager({
                                 <div className="flex-1 min-w-0">
                                   <div className="text-[11px] font-medium text-diose-black truncate">{p.name}</div>
                                   <div className="text-[10px] text-gray-400">
-                                    {p.brand} · ${p.price.toLocaleString("es-MX")}
+                                    {p.brand} · {formatPrice(p.price)}
                                   </div>
                                 </div>
                               </button>

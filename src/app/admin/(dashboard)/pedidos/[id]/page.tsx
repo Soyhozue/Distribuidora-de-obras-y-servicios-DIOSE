@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import OrderStatusPanel from "./OrderStatusPanel";
 import { getOrderById } from "@/lib/data";
+import { formatPrice } from "@/lib/currency";
 
 export const revalidate = 0;
 
@@ -11,10 +12,6 @@ const STEPS: { key: string; label: string }[] = [
   { key: "EN_CAMINO", label: "Enviado" },
   { key: "ENTREGADO", label: "Entregado" },
 ];
-
-function formatPrice(price: number) {
-  return `$${price.toLocaleString("es-MX")}`;
-}
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

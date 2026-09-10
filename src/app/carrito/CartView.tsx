@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CloseIcon, ProductIcon, WhatsAppIcon } from "@/components/icons";
 import { cartTotals, useCartStore } from "@/store/cart";
-
-function formatPrice(price: number) {
-  return `$${price.toLocaleString("es-MX")}`;
-}
+import { formatPrice } from "@/lib/currency";
 
 export default function CartView({ whatsapp }: { whatsapp: string }) {
   const lines = useCartStore((s) => s.lines);

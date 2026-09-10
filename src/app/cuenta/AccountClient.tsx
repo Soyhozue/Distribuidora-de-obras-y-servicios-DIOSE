@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/ConfirmModal";
+import { formatPrice } from "@/lib/currency";
 
 const EMPTY_ADDR = { street: "", city: "Ciudad Juárez", state: "Chihuahua", postalCode: "", isDefault: false };
 
@@ -25,10 +26,6 @@ type Address = {
 };
 
 type UserInfo = { name: string; email: string; phone: string | null; emailVerified: boolean };
-
-function formatPrice(price: number) {
-  return `$${price.toLocaleString("es-MX")}`;
-}
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {

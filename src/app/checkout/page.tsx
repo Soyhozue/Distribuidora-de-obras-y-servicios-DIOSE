@@ -5,10 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import { cartTotals, useCartStore } from "@/store/cart";
-
-function formatPrice(n: number) {
-  return `$${n.toLocaleString("es-MX")}`;
-}
+import { formatPrice } from "@/lib/currency";
 
 const PAYMENT_METHODS = [
   { id: "mercadopago", label: "Tarjeta de crédito / débito (MercadoPago)" },
