@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPrice as formatPriceRaw } from "@/lib/currency";
 
 // Redondea a centavos antes de formatear — las fórmulas de comisión arrastran
@@ -36,6 +36,22 @@ function NumberField({
   onChange: (v: number) => void;
   suffix?: string;
 }) {
+  // Texto local independiente del número calculado — así se puede borrar el
+  // "0" y escribir libremente en vez de que el campo se "trabe" en 0 o
+  // anteponga dígitos nuevos delante del cero (bug del <input type="number">
+  // controlado directamente por el valor numérico).
+  const [text, setText] = useState(String(value));
+  const lastPushed = useRef(value);
+
+  useEffect(() => {
+    // Solo resincroniza si el valor cambió por otra vía (no por este campo) —
+    // por ejemplo, si en el futuro algo más resetea el formulario.
+    if (value !== lastPushed.current) {
+      setText(String(value));
+      lastPushed.current = value;
+    }
+  }, [value]);
+
   return (
     <div>
       <label className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-1.5 block">
@@ -43,9 +59,20 @@ function NumberField({
       </label>
       <div className="relative">
         <input
-          type="number"
-          value={Number.isFinite(value) ? value : 0}
-          onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
+          type="text"
+          inputMode="decimal"
+          value={text}
+          onChange={(e) => {
+            const raw = e.target.value;
+            if (!/^\d*\.?\d*$/.test(raw)) return;
+            setText(raw);
+            const num = raw === "" || raw === "." ? 0 : Number(raw);
+            lastPushed.current = num;
+            onChange(num);
+          }}
+          onBlur={() => {
+            if (text === "" || text === ".") setText("0");
+          }}
           className="w-full border border-diose-border px-3.5 py-2.5 text-sm outline-none focus:border-diose-black"
         />
         {suffix && (
@@ -81,12 +108,13 @@ export default function SimuladorClient() {
   const [precio, setPrecio] = useState(500);
   const [cantidad, setCantidad] = useState(1);
   const [esJuarez, setEsJuarez] = useState(false);
-  const [zonaIdx, setZonaIdx] = useState(0);
+  const [envioManual, setEnvioManual] = useState(0);
 
   // El envío siempre lo paga el cliente, aparte del precio del producto —
-  // nunca es un número libre: sale de la misma regla que usa el checkout real
-  // (gratis en Juárez, tarifa por peso fuera de Juárez).
-  const envioCobrado = esJuarez ? 0 : SHIPPING_REFERENCE[zonaIdx].price;
+  // gratis en Juárez (igual que en el checkout real). Fuera de Juárez lo
+  // metes tú a mano por ahora, mientras no tengas definido el peso/costo de
+  // envío de cada producto.
+  const envioCobrado = esJuarez ? 0 : envioManual;
 
   const k = (rate / 100) * (1 + iva / 100); // fracción del total que se va en comisión %
   const fixedAdj = fixed * (1 + iva / 100); // cargo fijo + su IVA
@@ -165,17 +193,20 @@ export default function SimuladorClient() {
               </div>
 
               {!esJuarez && (
-                <select
-                  value={zonaIdx}
-                  onChange={(e) => setZonaIdx(Number(e.target.value))}
-                  className="w-full border border-diose-border px-3.5 py-2.5 text-sm outline-none focus:border-diose-black bg-white"
-                >
-                  {SHIPPING_REFERENCE.map((r, i) => (
-                    <option key={r.label} value={i}>
-                      {r.label} — {formatPrice(r.price)}
-                    </option>
-                  ))}
-                </select>
+                <>
+                  <NumberField label="Envío que le cobras al cliente" value={envioManual} onChange={setEnvioManual} suffix="MXN" />
+                  <details className="text-[11px] text-gray-400 mt-2">
+                    <summary className="cursor-pointer select-none">Ver tarifas de referencia por peso</summary>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                      {SHIPPING_REFERENCE.map((r) => (
+                        <div key={r.label} className="flex justify-between">
+                          <span>{r.label}</span>
+                          <span className="font-medium text-diose-black">{formatPrice(r.price)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </>
               )}
             </div>
 
