@@ -12,13 +12,31 @@ type Option = { id: string; name: string };
 
 const PAGE_SIZE = 8;
 
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+// "1/4\", 3/8\", ... 7 7/8\", 8\"" — cada octavo de pulgada, sin saltos,
+// como se usan las medidas de tornillería.
+function buildEighthInchOptions(minEighths: number, maxEighths: number): string[] {
+  const labels: string[] = [];
+  for (let e = minEighths; e <= maxEighths; e++) {
+    const whole = Math.floor(e / 8);
+    const remainder = e % 8;
+    if (remainder === 0) {
+      labels.push(`${whole}"`);
+      continue;
+    }
+    const divisor = gcd(remainder, 8);
+    const fraction = `${remainder / divisor}/${8 / divisor}`;
+    labels.push(whole === 0 ? `${fraction}"` : `${whole} ${fraction}"`);
+  }
+  return labels;
+}
+
 // Medidas de largo típicas en tornillería — botones de un clic para no
-// tener que escribir cada una a mano.
-const COMMON_LENGTH_OPTIONS = [
-  '1/4"', '3/8"', '1/2"', '5/8"', '3/4"', '7/8"',
-  '1"', '1 1/4"', '1 1/2"', '1 3/4"',
-  '2"', '2 1/2"', '3"', '3 1/2"', '4"',
-];
+// tener que escribir cada una a mano. De 1/4" a 8", en octavos.
+const COMMON_LENGTH_OPTIONS = buildEighthInchOptions(2, 64);
 
 function StatusTag({ status }: { status: Product["stockStatus"] }) {
   if (status === "AGOTADO") {
