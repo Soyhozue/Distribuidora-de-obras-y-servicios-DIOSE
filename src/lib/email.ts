@@ -1,7 +1,8 @@
 import { Resend } from "resend";
 import { formatPrice } from "./currency";
 
-const FROM = "DIOSE <noreply@diose.mx>";
+const FROM = "DIOSE <noreply@diosedistribuidora.com.mx>";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://diosedistribuidora.com.mx";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY ?? "no-key");
@@ -62,7 +63,7 @@ export async function sendOrderConfirmation(order: {
       <p style="text-align:right;font-size:18px;font-weight:700;margin:12px 0 0;border-top:2px solid #0A0A0A;padding-top:12px;">Total: ${formatPrice(order.total)}</p>
     </div>
     <div style="background:#f9f9f9;padding:20px 32px;border-top:1px solid #eee;font-size:12px;color:#999;text-align:center;">
-      DIOSE · Ciudad Juárez, Chihuahua · <a href="https://diose.vercel.app" style="color:#999;">diose.vercel.app</a>
+      DIOSE · Ciudad Juárez, Chihuahua · <a href="https://diosedistribuidora.com.mx" style="color:#999;">diosedistribuidora.com.mx</a>
     </div>
   </div>
 </body>
@@ -130,7 +131,7 @@ export async function sendLowStockAlert(
 
 export async function sendPasswordResetEmail(email: string, name: string, token: string) {
   if (!process.env.RESEND_API_KEY) return;
-  const link = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://diose.vercel.app"}/recuperar?token=${token}`;
+  const link = `${BASE_URL}/recuperar?token=${token}`;
   await getResend().emails.send({
     from: FROM,
     to: email,
@@ -157,7 +158,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
 
 export async function sendVerificationEmail(email: string, name: string, token: string) {
   if (!process.env.RESEND_API_KEY) return;
-  const link = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://diose.vercel.app"}/verificar?token=${token}`;
+  const link = `${BASE_URL}/verificar?token=${token}`;
   await getResend().emails.send({
     from: FROM,
     to: email,

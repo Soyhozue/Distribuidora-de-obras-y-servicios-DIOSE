@@ -7,7 +7,7 @@ import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rateLimit"
 import { createOrderSchema, firstIssueMessage } from "@/lib/validation";
 import { reportError } from "@/lib/errorReporting";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://diose.com.mx";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://diosedistribuidora.com.mx";
 
 export async function POST(request: Request) {
   try {

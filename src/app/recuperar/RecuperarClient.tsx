@@ -16,12 +16,22 @@ export default function RecuperarClient({ token }: { token?: string }) {
     setLoading(true);
     setError("");
     try {
-      await fetch("/api/auth/forgot", {
+      const res = await fetch("/api/auth/forgot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      if (res.status === 429) {
+        setError("Demasiados intentos. Espera unos minutos e inténtalo de nuevo.");
+        return;
+      }
+      if (!res.ok) {
+        setError("No se pudo procesar la solicitud. Intenta de nuevo.");
+        return;
+      }
       setDone(true);
+    } catch {
+      setError("No se pudo conectar. Revisa tu conexión e intenta de nuevo.");
     } finally {
       setLoading(false);
     }

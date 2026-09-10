@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 // productos nuevos solo hasta el próximo despliegue.
 export const dynamic = "force-dynamic";
 
-const BASE_URL = "https://diose.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://diosedistribuidora.com.mx";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await prisma.product.findMany({

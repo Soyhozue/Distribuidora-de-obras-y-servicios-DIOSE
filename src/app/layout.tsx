@@ -17,7 +17,7 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
-const BASE_URL = "https://diose.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://diosedistribuidora.com.mx";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
