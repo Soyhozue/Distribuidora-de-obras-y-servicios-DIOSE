@@ -21,7 +21,7 @@ import {
   SprayCanIcon,
   PlumbingWrenchIcon,
 } from "@/components/icons";
-import { getCategoriesWithCounts, getFeaturedProducts, getPromoImages, getScrewFinderOptions, getSiteSettings, parseHeroSlides, pickIcon } from "@/lib/data";
+import { getCategoriesWithCounts, getFeaturedProducts, getProductsByCategoryName, getPromoImages, getScrewFinderOptions, getSiteSettings, parseHeroSlides, pickIcon } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +66,14 @@ export default async function Home() {
   // hay, otra de las mismas fotos del carrusel principal.
   const sidePhoto =
     promos.find((p) => p.mediaType === "IMAGE")?.imageUrl ?? heroSlides[1]?.url ?? heroSlides[0]?.url ?? null;
+
+  // Categoría con más productos — se muestra completa cerca del inicio en
+  // vez de esconder el catálogo detrás de herramientas o secciones chicas.
+  const highlightCategory = activeCategories.reduce(
+    (best, c) => (c.count > (best?.count ?? 0) ? c : best),
+    activeCategories[0]
+  );
+  const highlightProducts = highlightCategory ? await getProductsByCategoryName(highlightCategory.name, 8) : [];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -152,6 +160,33 @@ export default async function Home() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               {featured.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </RevealOnScroll>
+        </section>
+      )}
+
+      {/* CATEGORÍA DESTACADA — el catálogo completo de la categoría más grande, de frente y al centro */}
+      {highlightProducts.length > 0 && (
+        <section className="px-4 md:px-6 pb-8">
+          <RevealOnScroll className="max-w-7xl mx-auto bg-diose-gray rounded-3xl p-6 md:p-8">
+            <div className="flex justify-between items-baseline mb-4">
+              <div>
+                <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 block mb-1">
+                  Categoría destacada
+                </span>
+                <div className="font-heading text-xl text-diose-black">{highlightCategory.name}</div>
+              </div>
+              <Link
+                href={`/catalogo?categoria=${encodeURIComponent(highlightCategory.name)}`}
+                className="text-xs font-semibold text-diose-blue whitespace-nowrap"
+              >
+                Ver los {highlightCategory.count} →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              {highlightProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

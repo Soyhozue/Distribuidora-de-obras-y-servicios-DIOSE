@@ -145,6 +145,16 @@ export async function getProductVariants(variantGroupId: string): Promise<Produc
   }));
 }
 
+export async function getProductsByCategoryName(categoryName: string, limit = 8): Promise<Product[]> {
+  const products = await prisma.product.findMany({
+    where: { category: { name: categoryName }, ...STOREFRONT_WHERE },
+    include: PRODUCT_INCLUDE,
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    take: limit,
+  });
+  return products.map(mapProduct);
+}
+
 export async function getRelatedProducts(categoryName: string, excludeId: string): Promise<Product[]> {
   const products = await prisma.product.findMany({
     where: { category: { name: categoryName }, id: { not: excludeId }, ...STOREFRONT_WHERE },

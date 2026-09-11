@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { parseInches, formatMm } from "@/lib/measures";
 import { useScreenCalibration } from "@/lib/screenCalibration";
 import CalibrationPanel from "./CalibrationPanel";
+import { BoltIcon } from "./icons";
 
 export type ScrewFinderOption = { id: string; name: string; diameterLabel: string; variantLabel: string };
 
@@ -14,6 +15,7 @@ function sortByInches<T extends { label: string }>(items: T[]): T[] {
 
 export default function ScrewFinder({ options }: { options: ScrewFinderOption[] }) {
   const [mode, setMode] = useState<"visual" | "list">("visual");
+  const [open, setOpen] = useState(false);
 
   const diameters = useMemo(() => {
     const unique = [...new Set(options.map((o) => o.diameterLabel))];
@@ -22,9 +24,38 @@ export default function ScrewFinder({ options }: { options: ScrewFinderOption[] 
 
   if (diameters.length === 0) return null;
 
+  if (!open) {
+    return (
+      <section className="px-4 md:px-6 pb-8">
+        <button
+          onClick={() => setOpen(true)}
+          className="group max-w-7xl mx-auto w-full flex items-center gap-4 bg-diose-gold-tint hover:brightness-95 rounded-3xl px-6 py-5 text-left cursor-pointer transition-[filter] duration-200"
+        >
+          <div className="shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12">
+            <BoltIcon size={30} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-diose-gold-ink mb-0.5">
+              Tornillería
+            </div>
+            <div className="font-heading text-lg md:text-xl text-diose-black tracking-[0.02em] leading-tight">
+              ¿No sabes qué tornillo llevas? Encuéntralo en pantalla
+            </div>
+          </div>
+          <div className="shrink-0 w-9 h-9 rounded-full bg-diose-black flex items-center justify-center transition-transform duration-200 group-hover:translate-x-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+        </button>
+      </section>
+    );
+  }
+
   return (
-    <section className="bg-diose-black px-6 md:px-20 py-8">
-      <div className="max-w-7xl mx-auto">
+    <section className="px-4 md:px-6 pb-8">
+      <div className="max-w-7xl mx-auto bg-diose-black rounded-3xl px-6 md:px-9 py-8 animate-grow-down">
         <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
           <div>
             <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-diose-amber mb-1">
@@ -34,22 +65,34 @@ export default function ScrewFinder({ options }: { options: ScrewFinderOption[] 
               ¿Buscas un tornillo? Encuéntralo aquí
             </div>
           </div>
-          <div className="flex border border-white/20">
+          <div className="flex items-center gap-3">
+            <div className="flex border border-white/20 rounded-full overflow-hidden">
+              <button
+                onClick={() => setMode("visual")}
+                className={`px-4 py-2 text-[11px] font-semibold tracking-[0.06em] uppercase cursor-pointer transition-colors ${
+                  mode === "visual" ? "bg-diose-amber text-white" : "text-white/50 hover:text-white"
+                }`}
+              >
+                Comparar en pantalla
+              </button>
+              <button
+                onClick={() => setMode("list")}
+                className={`px-4 py-2 text-[11px] font-semibold tracking-[0.06em] uppercase cursor-pointer transition-colors ${
+                  mode === "list" ? "bg-diose-amber text-white" : "text-white/50 hover:text-white"
+                }`}
+              >
+                Ya sé la medida
+              </button>
+            </div>
             <button
-              onClick={() => setMode("visual")}
-              className={`px-4 py-2 text-[11px] font-semibold tracking-[0.06em] uppercase cursor-pointer transition-colors ${
-                mode === "visual" ? "bg-diose-amber text-white" : "text-white/50 hover:text-white"
-              }`}
+              onClick={() => setOpen(false)}
+              aria-label="Cerrar"
+              className="shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors"
             >
-              Comparar en pantalla
-            </button>
-            <button
-              onClick={() => setMode("list")}
-              className={`px-4 py-2 text-[11px] font-semibold tracking-[0.06em] uppercase cursor-pointer transition-colors ${
-                mode === "list" ? "bg-diose-amber text-white" : "text-white/50 hover:text-white"
-              }`}
-            >
-              Ya sé la medida
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
         </div>
