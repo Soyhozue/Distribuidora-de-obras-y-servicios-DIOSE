@@ -935,7 +935,7 @@ export default function ProductsManager({
         </div>
       )}
 
-      <div className="flex-1 p-9 pt-5 overflow-hidden">
+      <div className="p-9 pt-5">
         <div className="bg-white border border-diose-border overflow-hidden">
           <div className="min-w-[870px] overflow-x-auto">
             <div className="grid grid-cols-[20px_36px_52px_1fr_110px_90px_80px_70px_110px_180px] px-4 py-2.5 bg-[#F9F9F9] border-b-2 border-diose-black items-center gap-2">
