@@ -9,7 +9,7 @@ import { formatPrice } from "@/lib/currency";
 
 const PAYMENT_METHODS = [
   { id: "mercadopago", label: "Tarjeta de crédito / débito (MercadoPago)" },
-  { id: "transferencia", label: "Transferencia bancaria" },
+  { id: "transferencia", label: "Transferencia bancaria (SPEI)" },
   { id: "efectivo", label: "Pago en efectivo (en sucursal)" },
   { id: "whatsapp", label: "Cotización por WhatsApp" },
 ];
@@ -221,7 +221,7 @@ export default function CheckoutPage() {
       }
       const data = await res.json();
       clear();
-      router.push(`/pedido-confirmado?n=${data.number ?? ""}&metodo=${payment}`);
+      router.push(`/pedido-confirmado?n=${data.number ?? ""}&metodo=${payment}&id=${data.id ?? ""}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Hubo un problema. Intenta de nuevo.");
     } finally {

@@ -664,6 +664,19 @@ export async function getDashboardStats() {
   };
 }
 
+// Datos mínimos para la pantalla pública de "pedido confirmado" — a
+// diferencia de getOrderById, deliberadamente no incluye datos del cliente
+// (nombre, dirección, teléfono) porque esa página solo se protege con un id
+// difícil de adivinar en la URL, no con una sesión.
+export async function getOrderConfirmationInfo(id: string) {
+  const order = await prisma.order.findUnique({
+    where: { id },
+    select: { number: true, total: true, paymentMethod: true, status: true, comprobanteUrl: true },
+  });
+  if (!order) return null;
+  return { ...order, total: Number(order.total) };
+}
+
 export async function getOrderById(id: string) {
   const order = await prisma.order.findUnique({
     where: { id },
@@ -676,6 +689,8 @@ export async function getOrderById(id: string) {
     status: order.status,
     statusLabel: statusLabel(order.status),
     internalNotes: order.internalNotes ?? "",
+    paymentMethod: order.paymentMethod,
+    comprobanteUrl: order.comprobanteUrl,
     notifyWhatsapp: order.notifyWhatsapp,
     invoice: order.wantsInvoice
       ? {

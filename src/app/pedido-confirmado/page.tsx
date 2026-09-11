@@ -1,14 +1,40 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
-import { getSiteSettings } from "@/lib/data";
+import { getSiteSettings, getOrderConfirmationInfo } from "@/lib/data";
+import { formatPrice } from "@/lib/currency";
+import ComprobanteUploader from "./ComprobanteUploader";
+
+function CopyRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <p className="text-[10px] text-gray-400 uppercase tracking-[0.08em]">{label}</p>
+      <p className={`text-sm font-medium text-diose-black select-all ${mono ? "font-mono" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <div className="flex gap-3">
+      <div className="w-5 h-5 rounded-full bg-diose-black text-white text-[11px] font-semibold flex items-center justify-center shrink-0 mt-0.5">
+        {n}
+      </div>
+      <p className="text-sm text-diose-black">{children}</p>
+    </div>
+  );
+}
 
 export default async function PedidoConfirmadoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ n?: string; metodo?: string }>;
+  searchParams: Promise<{ n?: string; metodo?: string; id?: string }>;
 }) {
-  const { n: number, metodo } = await searchParams;
-  const settings = metodo === "transferencia" ? await getSiteSettings() : null;
+  const { n: number, metodo, id } = await searchParams;
+  const isTransfer = metodo === "transferencia";
+  const [settings, order] = await Promise.all([
+    isTransfer ? getSiteSettings() : null,
+    isTransfer && id ? getOrderConfirmationInfo(id) : null,
+  ]);
   const hasBankInfo = !!settings?.bankClabe;
 
   return (
@@ -37,47 +63,52 @@ export default async function PedidoConfirmadoPage({
         Recibimos tu pedido. Nos pondremos en contacto contigo en breve para coordinar el pago y la entrega.
       </p>
 
-      {metodo === "transferencia" && hasBankInfo && (
-        <div className="mt-8 w-full max-w-sm bg-white border border-diose-border p-6 text-left">
-          <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-4">
-            Datos para tu transferencia
-          </p>
-          <div className="flex flex-col gap-3">
-            {settings?.bankName && (
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase tracking-[0.08em]">Banco</p>
-                <p className="text-sm font-medium text-diose-black">{settings.bankName}</p>
-              </div>
-            )}
-            {settings?.bankHolder && (
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase tracking-[0.08em]">Titular</p>
-                <p className="text-sm font-medium text-diose-black">{settings.bankHolder}</p>
-              </div>
-            )}
-            <div>
-              <p className="text-[10px] text-gray-400 uppercase tracking-[0.08em]">CLABE interbancaria</p>
-              <p className="text-sm font-mono font-medium text-diose-black select-all">{settings?.bankClabe}</p>
+      {isTransfer && hasBankInfo && (
+        <div className="mt-8 w-full max-w-sm bg-white border border-diose-border text-left overflow-hidden">
+          <div className="bg-diose-black px-6 py-4">
+            <p className="text-[10px] font-semibold tracking-[0.14em] uppercase text-white/50">Paga por SPEI</p>
+            <p className="text-2xl font-heading tracking-[0.02em] text-white mt-0.5">
+              {order ? formatPrice(order.total) : ""}
+            </p>
+          </div>
+
+          <div className="p-6 flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
+              {settings?.bankName && <CopyRow label="Banco" value={settings.bankName} />}
+              {settings?.bankHolder && <CopyRow label="Titular" value={settings.bankHolder} />}
+              <CopyRow label="CLABE interbancaria" value={settings?.bankClabe ?? ""} mono />
+              {settings?.bankAccountNumber && (
+                <CopyRow label="Número de cuenta" value={settings.bankAccountNumber} mono />
+              )}
             </div>
-            {settings?.bankAccountNumber && (
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase tracking-[0.08em]">Número de cuenta</p>
-                <p className="text-sm font-mono font-medium text-diose-black select-all">{settings.bankAccountNumber}</p>
+
+            <div className="border-t border-diose-border-light pt-4 flex flex-col gap-2.5">
+              <Step n={1}>
+                Transfiere {order ? <strong>{formatPrice(order.total)}</strong> : "el total de tu pedido"} vía SPEI a
+                la CLABE de arriba.
+              </Step>
+              <Step n={2}>
+                Usa <strong>#{number}</strong> como concepto o referencia de la transferencia.
+              </Step>
+              <Step n={3}>Sube tu comprobante abajo — así confirmamos tu pedido más rápido.</Step>
+            </div>
+
+            {id && order?.status === "PENDIENTE" && !order.comprobanteUrl && <ComprobanteUploader orderId={id} />}
+            {order?.comprobanteUrl && (
+              <div className="mt-1 bg-green-50 border border-green-200 px-3.5 py-3 text-xs text-green-700 flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Ya recibimos tu comprobante — estamos verificando tu pago.
               </div>
             )}
           </div>
-          {number && (
-            <div className="mt-4 bg-diose-amber/10 border border-diose-amber/30 px-3 py-2.5 text-xs text-diose-black">
-              Importante: pon <strong>#{number}</strong> como concepto o referencia de tu transferencia — así
-              podemos identificar tu pago y confirmar tu pedido más rápido.
-            </div>
-          )}
         </div>
       )}
 
-      {metodo === "transferencia" && !hasBankInfo && (
+      {isTransfer && !hasBankInfo && (
         <p className="mt-4 text-xs text-gray-400 max-w-sm">
-          Te contactaremos por WhatsApp o correo con los datos para tu transferencia.
+          Te contactaremos por WhatsApp o correo con los datos para tu transferencia SPEI.
         </p>
       )}
 

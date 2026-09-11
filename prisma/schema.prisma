@@ -153,6 +153,8 @@ model Order {
   discount       Decimal       @default(0) @db.Decimal(10, 2)
   total          Decimal       @db.Decimal(10, 2)
   internalNotes  String?
+  comprobanteUrl String?
+  comprobanteAt  DateTime?
   notifyWhatsapp Boolean       @default(false)
   wantsInvoice   Boolean       @default(false)
   invoiceRfc     String?

@@ -90,6 +90,27 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               </div>
             </div>
 
+            {order.paymentMethod === "TRANSFERENCIA" && (
+              <div className="bg-white border border-diose-border p-6">
+                <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-3.5">
+                  Comprobante de transferencia (SPEI)
+                </div>
+                {order.comprobanteUrl ? (
+                  <a href={order.comprobanteUrl} target="_blank" rel="noopener noreferrer" className="block w-40">
+                    <img
+                      src={order.comprobanteUrl}
+                      alt="Comprobante de pago"
+                      className="w-40 border border-diose-border-light object-cover hover:opacity-90 transition-opacity"
+                      loading="lazy"
+                    />
+                    <span className="text-[11px] text-gray-400 underline mt-1 block">Ver completo</span>
+                  </a>
+                ) : (
+                  <p className="text-sm text-gray-400">El cliente todavía no ha subido su comprobante.</p>
+                )}
+              </div>
+            )}
+
             {order.invoice && (
               <div className="bg-white border border-diose-amber p-6">
                 <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-diose-amber mb-3.5">
