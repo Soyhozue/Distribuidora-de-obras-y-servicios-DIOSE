@@ -59,6 +59,12 @@ export default async function PedidoConfirmadoPage({
               <p className="text-[10px] text-gray-400 uppercase tracking-[0.08em]">CLABE interbancaria</p>
               <p className="text-sm font-mono font-medium text-diose-black select-all">{settings?.bankClabe}</p>
             </div>
+            {settings?.bankAccountNumber && (
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase tracking-[0.08em]">Número de cuenta</p>
+                <p className="text-sm font-mono font-medium text-diose-black select-all">{settings.bankAccountNumber}</p>
+              </div>
+            )}
           </div>
           {number && (
             <div className="mt-4 bg-diose-amber/10 border border-diose-amber/30 px-3 py-2.5 text-xs text-diose-black">

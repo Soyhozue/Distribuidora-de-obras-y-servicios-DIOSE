@@ -340,6 +340,7 @@ type Settings = {
   mapsUrl: string;
   bankName: string;
   bankClabe: string;
+  bankAccountNumber: string;
   bankHolder: string;
   heroEyebrow: string;
   heroTitle: string;
@@ -711,16 +712,22 @@ export default function SettingsManager({
                   className={inputCls}
                 />
               </Field>
-              <div className="sm:col-span-2">
-                <Field label="CLABE interbancaria (18 dígitos)">
-                  <input
-                    value={form.bankClabe}
-                    onChange={(e) => setField("bankClabe", e.target.value.replace(/\D/g, "").slice(0, 18))}
-                    placeholder="012180001234567895"
-                    className={inputCls}
-                  />
-                </Field>
-              </div>
+              <Field label="CLABE interbancaria (18 dígitos)">
+                <input
+                  value={form.bankClabe}
+                  onChange={(e) => setField("bankClabe", e.target.value.replace(/\D/g, "").slice(0, 18))}
+                  placeholder="012180001234567895"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Número de cuenta (opcional)">
+                <input
+                  value={form.bankAccountNumber}
+                  onChange={(e) => setField("bankAccountNumber", e.target.value.replace(/\D/g, "").slice(0, 20))}
+                  placeholder="0123456789"
+                  className={inputCls}
+                />
+              </Field>
             </div>
           </div>
         )}

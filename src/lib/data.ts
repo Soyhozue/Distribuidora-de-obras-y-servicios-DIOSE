@@ -985,6 +985,7 @@ export type SiteSettingsInput = {
   mapsUrl: string;
   bankName: string;
   bankClabe: string;
+  bankAccountNumber: string;
   bankHolder: string;
   heroSlides: HeroSlide[];
   heroEyebrow: string;
