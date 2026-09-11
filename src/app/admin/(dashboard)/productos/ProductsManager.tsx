@@ -40,8 +40,8 @@ function buildFractionInchOptions(minUnits: number, maxUnits: number, denominato
 }
 
 // Medidas de largo típicas en tornillería — botones de un clic. De 1/4" a
-// 8", en octavos (lo que realmente se usa para el largo de un tornillo).
-const LENGTH_INCH_OPTIONS = buildFractionInchOptions(2, 64, 8);
+// 9", en octavos (lo que realmente se usa para el largo de un tornillo).
+const LENGTH_INCH_OPTIONS = buildFractionInchOptions(2, 72, 8);
 
 // Grosor/diámetro — necesita más precisión que el largo (5/16", 7/16",
 // 9/16", 11/16"... son medidas de diámetro reales y no caen en ninguna
