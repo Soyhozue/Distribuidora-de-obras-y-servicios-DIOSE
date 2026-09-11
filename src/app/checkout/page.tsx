@@ -428,10 +428,11 @@ export default function CheckoutPage() {
             </div>
           )}
           <div className="h-px bg-gray-300 mb-5" />
-          <div className="flex justify-between mb-9">
+          <div className="flex justify-between items-baseline mb-1">
             <span className="text-base font-semibold text-diose-black">Total</span>
             <span className="text-[22px] font-semibold text-diose-black">{formatPrice(total)}</span>
           </div>
+          <div className="text-right text-[11px] text-gray-400 mb-9">IVA incluido</div>
           <label className="flex items-start gap-2.5 mb-5 cursor-pointer select-none">
             <input
               type="checkbox"

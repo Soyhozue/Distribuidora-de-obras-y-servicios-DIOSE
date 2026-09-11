@@ -140,7 +140,10 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </h1>
 
           <div className="flex items-center gap-4 mb-5">
-            <span className="text-2xl font-semibold text-diose-amber">{formatPrice(product.price)}</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-semibold text-diose-amber">{formatPrice(product.price)}</span>
+              <span className="text-[11px] text-gray-400">(IVA incluido)</span>
+            </div>
             {product.stockStatus !== "AGOTADO" ? (
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 bg-green-500 rounded-full" />

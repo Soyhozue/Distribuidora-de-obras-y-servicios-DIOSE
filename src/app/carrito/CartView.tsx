@@ -187,10 +187,11 @@ export default function CartView({ whatsapp }: { whatsapp: string }) {
               )}
             </div>
             <div className="h-px bg-gray-300 mb-5" />
-            <div className="flex justify-between mb-8">
+            <div className="flex justify-between items-baseline mb-1">
               <span className="text-base font-semibold text-diose-black">Total</span>
               <span className="text-[22px] font-semibold text-diose-black">{formatPrice(total)}</span>
             </div>
+            <div className="text-right text-[11px] text-gray-400 mb-8">IVA incluido</div>
             <Link
               href="/checkout"
               className="block bg-diose-black hover:bg-diose-amber text-white p-4 text-center cursor-pointer mb-3 transition-colors"
