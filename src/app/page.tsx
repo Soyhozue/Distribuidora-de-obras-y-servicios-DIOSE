@@ -3,13 +3,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import ProductCard from "@/components/ProductCard";
-import HeroCarousel from "@/components/HeroCarousel";
 import HeroTitle from "@/components/HeroTitle";
 import PromoSection from "@/components/PromoSection";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import ScrewFinder from "@/components/ScrewFinder";
 import { ProductIcon, TruckIcon, ShieldCheckIcon, HeadsetIcon, LockIcon } from "@/components/icons";
-import { getCategoriesWithCounts, getFeaturedProducts, getPromoImages, getScrewFinderOptions, getSiteSettings, parseHeroSlides, pickIcon } from "@/lib/data";
+import { getCategoriesWithCounts, getFeaturedProducts, getPromoImages, getScrewFinderOptions, getSiteSettings, pickIcon } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -21,48 +20,30 @@ export default async function Home() {
     getCategoriesWithCounts(),
     getScrewFinderOptions(),
   ]);
-  const heroSlides = parseHeroSlides(settings.heroSlides);
   const activeCategories = categories.filter((c) => c.count > 0);
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
 
-      {/* HERO */}
-      <section className="relative bg-diose-black overflow-hidden h-[400px] md:h-[420px]">
-        <HeroCarousel slides={heroSlides} />
-        <div className="relative z-10 h-full flex flex-col justify-end md:justify-center px-5 md:px-20 pb-8 md:pb-0 max-w-2xl">
-          <div className="w-10 h-0.5 bg-diose-amber mb-2.5" />
-          <div
-            className="text-[10px] text-white/80 tracking-[0.2em] uppercase mb-1.5"
-            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
-          >
-            {settings.heroEyebrow}
-          </div>
+      {/* HERO — compact strip, not a full-bleed banner; the store starts right below */}
+      <section className="bg-diose-black px-6 md:px-20 py-7 md:py-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <HeroTitle
-            title={settings.heroTitle}
+            title={settings.heroTitle.replace(/\n/g, " ")}
             highlight={settings.heroTitleHighlight}
             highlightColor={settings.heroTitleHighlightColor}
-            className="font-heading text-white text-[34px] md:text-[56px] leading-[0.95] tracking-[0.02em]"
+            className="font-heading text-white text-[26px] md:text-[32px] leading-[1.05] tracking-[0.02em]"
           />
-          <p
-            className="text-[12px] md:text-[14px] text-white/80 font-light mt-2.5 mb-4 max-w-xs md:max-w-sm leading-relaxed"
-            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
-          >
-            {settings.heroSubtitle}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-2.5 mt-1">
+          <div className="flex items-center gap-5">
+            <p className="hidden lg:block text-[13px] text-white/50 font-light max-w-[220px] leading-snug">
+              {settings.heroSubtitle}
+            </p>
             <Link
               href={settings.heroCta1Link}
-              className="bg-white hover:bg-diose-amber hover:text-white text-diose-black px-6 py-3 text-[12px] font-semibold tracking-[0.12em] uppercase text-center cursor-pointer transition-colors duration-200"
+              className="bg-white hover:bg-diose-amber hover:text-white text-diose-black px-7 py-3.5 text-[12px] font-semibold tracking-[0.12em] uppercase text-center cursor-pointer transition-colors duration-200 whitespace-nowrap shrink-0"
             >
               {settings.heroCta1Label}
-            </Link>
-            <Link
-              href={settings.heroCta2Link}
-              className="bg-white/15 hover:bg-white/30 border border-white/80 text-white px-6 py-3 text-[12px] font-semibold tracking-[0.12em] uppercase text-center cursor-pointer transition-colors duration-200 backdrop-blur-sm"
-            >
-              {settings.heroCta2Label}
             </Link>
           </div>
         </div>
@@ -78,33 +59,39 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* CATEGORIES STRIP */}
+      {/* CATEGORY TILES — the "shop by category" grid that reads as a real store front page */}
       {activeCategories.length > 0 && (
-        <section className="bg-white border-b border-diose-border-light px-6 md:px-20 py-5">
-          <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-4">
-            <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400 whitespace-nowrap">
-              Categorías
-            </span>
-            <div className="flex flex-wrap gap-2">
+        <section className="bg-white px-6 md:px-20 pt-8 pb-3">
+          <div className="max-w-7xl mx-auto">
+            <div className="font-heading text-xl text-diose-black tracking-[0.04em] mb-4">
+              COMPRAR POR CATEGOR&Iacute;A
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
               {activeCategories.map((cat, i) => (
-                <Link
-                  key={cat.name}
-                  href={`/catalogo?categoria=${encodeURIComponent(cat.name)}`}
-                  className={`flex items-center gap-2 pl-3.5 pr-6 py-2 text-[13px] tracking-[0.04em] cursor-pointer rounded-full transition-colors duration-200 ${
-                    i === 0
-                      ? "bg-diose-amber text-white font-medium"
-                      : "border border-diose-border text-gray-700 hover:border-diose-amber hover:text-diose-amber"
-                  }`}
-                >
-                  <ProductIcon
-                    icon={pickIcon(cat.name)}
-                    size={18}
-                    strokeWidth={1.6}
-                    color={i === 0 ? "#ffffff" : "#1d5fb8"}
-                  />
-                  {cat.name}
-                </Link>
+                <RevealOnScroll key={cat.name} delay={i * 60}>
+                  <Link
+                    href={`/catalogo?categoria=${encodeURIComponent(cat.name)}`}
+                    className="group flex flex-col gap-3.5 bg-diose-gray hover:bg-white border border-transparent hover:border-diose-border rounded-lg p-4 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_26px_rgba(7,7,7,0.1)] h-full"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+                      <ProductIcon icon={pickIcon(cat.name)} size={18} strokeWidth={1.6} color="#1d5fb8" />
+                    </div>
+                    <span className="text-[13px] font-medium text-diose-black leading-tight">{cat.name}</span>
+                  </Link>
+                </RevealOnScroll>
               ))}
+              <RevealOnScroll delay={activeCategories.length * 60}>
+                <Link
+                  href="/catalogo"
+                  className="flex flex-col justify-between gap-3.5 bg-diose-amber hover:bg-diose-amber-dark rounded-lg p-4 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_26px_rgba(29,95,184,0.35)] h-full"
+                >
+                  <span className="text-[13px] font-semibold text-white leading-tight">Ver todo el cat&aacute;logo</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </Link>
+              </RevealOnScroll>
             </div>
           </div>
         </section>
