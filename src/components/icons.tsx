@@ -216,6 +216,96 @@ export function FireIcon({ size = 40, color = "#C0C0C0", strokeWidth = 1.2, clas
   );
 }
 
+// Ilustraciones a color para categorías reales del catálogo — cada una con
+// su propia paleta (no un solo trazo monocromo tintado), para que se
+// reconozca la categoría de un vistazo en las fichas circulares del inicio.
+
+export function BoltIcon({ size = 40, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" className={className}>
+      <rect x="17" y="16" width="6" height="19" rx="1" fill="#2b2b2e" />
+      <rect x="17" y="19" width="6" height="1.6" fill="#0f0f10" />
+      <rect x="17" y="23" width="6" height="1.6" fill="#0f0f10" />
+      <rect x="17" y="27" width="6" height="1.6" fill="#0f0f10" />
+      <rect x="17" y="31" width="6" height="1.6" fill="#0f0f10" />
+      <path d="M20 5l10.4 6v12L20 29 9.6 23V11z" fill="#c7cdd4" />
+      <path d="M20 5l10.4 6-10.4 6-10.4-6z" fill="#eef1f4" />
+      <path d="M20 17l10.4-6v12L20 29z" fill="#9aa1aa" />
+      <circle cx="20" cy="17" r="4.2" fill="#5b6169" />
+      <circle cx="20" cy="17" r="4.2" fill="none" stroke="#3d4148" strokeWidth="0.6" />
+    </svg>
+  );
+}
+
+export function SafetyHelmetIcon({ size = 40, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" className={className}>
+      <ellipse cx="20" cy="29.5" rx="15" ry="3" fill="#e4a900" />
+      <path d="M6 28c0-9.4 6.3-16.5 14-16.5S34 18.6 34 28z" fill="#ffc600" />
+      <path d="M20 11.5c-1 0-2 .07-2.9.2C18 15 18.6 21 19.3 28h1.4c.7-7 1.3-13 1.2-16.3-.9-.13-1.9-.2-2.9-.2z" fill="#ffe066" />
+      <rect x="4.5" y="26.5" width="31" height="4" rx="2" fill="#111214" />
+      <rect x="18.5" y="6" width="3" height="6" rx="1" fill="#a8a8a8" />
+    </svg>
+  );
+}
+
+export function TireWrenchIcon({ size = 40, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" className={className}>
+      <circle cx="20" cy="20" r="13" fill="#1c1c1e" />
+      <circle cx="20" cy="20" r="7.5" fill="#3a3a3d" />
+      <circle cx="20" cy="20" r="3" fill="#0f0f10" />
+      <g fill="#0f0f10">
+        <rect x="18.7" y="7" width="2.6" height="4.5" rx="1" />
+        <rect x="18.7" y="28.5" width="2.6" height="4.5" rx="1" />
+        <rect x="7" y="18.7" width="4.5" height="2.6" rx="1" />
+        <rect x="28.5" y="18.7" width="4.5" height="2.6" rx="1" />
+      </g>
+      <path d="M31 6l3 3-13.5 13.5-3-3z" fill="#b6bcc3" />
+      <path d="M34 9l1.6 1.6a1.6 1.6 0 01-2.3 2.3L31.7 11.3z" fill="#dfe3e7" />
+    </svg>
+  );
+}
+
+export function SealantGunIcon({ size = 40, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" className={className}>
+      <rect x="15" y="10" width="18" height="6" rx="1.5" fill="#e8663c" />
+      <rect x="30" y="9" width="4" height="8" rx="1" fill="#c8511f" />
+      <path d="M15 12h-3.5a2 2 0 00-2 2v3a2 2 0 002 2H15z" fill="#7a828c" />
+      <rect x="9" y="16" width="3" height="12" rx="1.2" fill="#5b6169" />
+      <path d="M9 27l-2.5 6.5 4.6-2.6z" fill="#3d4148" />
+      <path d="M33 12c2 .6 3 1.6 3 3s-1 2.6-3 3z" fill="#f4a37c" />
+    </svg>
+  );
+}
+
+export function SprayCanIcon({ size = 40, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" className={className}>
+      <circle cx="12" cy="9" r="1.4" fill="#3aa0e8" />
+      <circle cx="17" cy="6.5" r="1" fill="#ffb020" />
+      <circle cx="14.5" cy="13.5" r="1" fill="#3ac26a" />
+      <rect x="15.5" y="10" width="3" height="4" rx="1" fill="#8a8f97" />
+      <rect x="10" y="14" width="20" height="20" rx="4" fill="#e4383f" />
+      <rect x="10" y="14" width="20" height="5" rx="2.5" fill="#c4262d" />
+      <rect x="13" y="21" width="14" height="9" rx="1.5" fill="#f9f9f9" />
+    </svg>
+  );
+}
+
+export function PlumbingWrenchIcon({ size = 40, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" className={className}>
+      <rect x="6" y="18.5" width="17" height="5" rx="1" fill="#9aa1aa" />
+      <rect x="6" y="18.5" width="17" height="2" fill="#c7cdd4" />
+      <path d="M23 14v13l7-3.5v-6z" fill="#1d5fb8" />
+      <path d="M23 14v13l3.2-1.6V15.6z" fill="#2a72d6" />
+      <circle cx="9" cy="21" r="3.4" fill="none" stroke="#5b6169" strokeWidth="2" />
+    </svg>
+  );
+}
+
 const ICONS = {
   drill: DrillIcon,
   saw: CircleAlertIcon,

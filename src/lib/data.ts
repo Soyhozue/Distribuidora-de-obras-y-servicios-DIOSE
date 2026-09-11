@@ -454,10 +454,24 @@ export async function getBrandOptions() {
 
 export async function getCategoriesWithCounts() {
   const categories = await prisma.category.findMany({
-    include: { _count: { select: { products: true } } },
+    include: {
+      _count: { select: { products: true } },
+      // One real product photo per category, for category tiles that show
+      // an actual picture instead of a flat icon-only swatch.
+      products: {
+        where: { images: { isEmpty: false } },
+        select: { images: true },
+        take: 1,
+        orderBy: { createdAt: "desc" },
+      },
+    },
     orderBy: { name: "asc" },
   });
-  return categories.map((c) => ({ name: c.name, count: c._count.products }));
+  return categories.map((c) => ({
+    name: c.name,
+    count: c._count.products,
+    image: c.products[0]?.images[0] ?? null,
+  }));
 }
 
 export async function getBrandsWithCounts() {
