@@ -8,7 +8,7 @@ import HeroTitle from "@/components/HeroTitle";
 import PromoSection from "@/components/PromoSection";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import ScrewFinder from "@/components/ScrewFinder";
-import { ProductIcon } from "@/components/icons";
+import { ProductIcon, TruckIcon, ShieldCheckIcon, HeadsetIcon, LockIcon } from "@/components/icons";
 import { getCategoriesWithCounts, getFeaturedProducts, getPromoImages, getScrewFinderOptions, getSiteSettings, parseHeroSlides, pickIcon } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -29,12 +29,12 @@ export default async function Home() {
       <Navbar />
 
       {/* HERO */}
-      <section className="relative bg-diose-black overflow-hidden min-h-[420px] md:min-h-0 aspect-[3/4] md:aspect-[29/10]">
+      <section className="relative bg-diose-black overflow-hidden h-[400px] md:h-[420px]">
         <HeroCarousel slides={heroSlides} />
-        <div className="relative z-10 h-full flex flex-col justify-end md:justify-center px-5 md:px-20 pb-10 md:pb-0 max-w-3xl">
-          <div className="w-10 h-0.5 bg-diose-amber mb-3" />
+        <div className="relative z-10 h-full flex flex-col justify-end md:justify-center px-5 md:px-20 pb-8 md:pb-0 max-w-2xl">
+          <div className="w-10 h-0.5 bg-diose-amber mb-2.5" />
           <div
-            className="text-[10px] text-white/80 tracking-[0.2em] uppercase mb-2"
+            className="text-[10px] text-white/80 tracking-[0.2em] uppercase mb-1.5"
             style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
           >
             {settings.heroEyebrow}
@@ -43,28 +43,38 @@ export default async function Home() {
             title={settings.heroTitle}
             highlight={settings.heroTitleHighlight}
             highlightColor={settings.heroTitleHighlightColor}
-            className="font-heading text-white text-[42px] md:text-[86px] leading-[0.9] tracking-[0.02em]"
+            className="font-heading text-white text-[34px] md:text-[56px] leading-[0.95] tracking-[0.02em]"
           />
           <p
-            className="text-[13px] md:text-[15px] text-white/80 font-light mt-3 mb-5 max-w-sm md:max-w-md leading-relaxed"
+            className="text-[12px] md:text-[14px] text-white/80 font-light mt-2.5 mb-4 max-w-xs md:max-w-sm leading-relaxed"
             style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}
           >
             {settings.heroSubtitle}
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 mt-1">
+          <div className="flex flex-col sm:flex-row gap-2.5 mt-1">
             <Link
               href={settings.heroCta1Link}
-              className="bg-white hover:bg-diose-amber hover:text-white text-diose-black px-8 py-3.5 text-[12px] font-semibold tracking-[0.12em] uppercase text-center cursor-pointer transition-colors duration-200"
+              className="bg-white hover:bg-diose-amber hover:text-white text-diose-black px-6 py-3 text-[12px] font-semibold tracking-[0.12em] uppercase text-center cursor-pointer transition-colors duration-200"
             >
               {settings.heroCta1Label}
             </Link>
             <Link
               href={settings.heroCta2Link}
-              className="bg-white/15 hover:bg-white/30 border border-white/80 text-white px-8 py-3.5 text-[12px] font-semibold tracking-[0.12em] uppercase text-center cursor-pointer transition-colors duration-200 backdrop-blur-sm"
+              className="bg-white/15 hover:bg-white/30 border border-white/80 text-white px-6 py-3 text-[12px] font-semibold tracking-[0.12em] uppercase text-center cursor-pointer transition-colors duration-200 backdrop-blur-sm"
             >
               {settings.heroCta2Label}
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* TRUST STRIP — reinforces this is a real online store, not just a catalog page */}
+      <section className="bg-white border-b border-diose-border-light px-6 md:px-20 py-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <TrustBadge icon={<TruckIcon size={20} />} label={settings.aboutFeature2 || "Entrega rápida en Ciudad Juárez"} />
+          <TrustBadge icon={<LockIcon size={20} />} label="Pago seguro con Mercado Pago" />
+          <TrustBadge icon={<ShieldCheckIcon size={20} />} label={settings.aboutFeature1 || "Productos certificados de calidad"} />
+          <TrustBadge icon={<HeadsetIcon size={20} />} label={settings.aboutFeature3 || "Atención personalizada"} />
         </div>
       </section>
 
@@ -129,6 +139,15 @@ export default async function Home() {
 
       <Footer />
       <WhatsAppFloat />
+    </div>
+  );
+}
+
+function TrustBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="shrink-0 w-9 h-9 rounded-full bg-diose-amber/10 flex items-center justify-center">{icon}</div>
+      <span className="text-[12px] text-diose-black leading-tight">{label}</span>
     </div>
   );
 }

@@ -41,6 +41,46 @@ export function WhatsAppIcon({ size = 22, color = "#fff", strokeWidth = 1.8, cla
   );
 }
 
+export function TruckIcon({ size = 22, color = "#1d5fb8", strokeWidth = 1.6, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M1 3h14v13H1z" />
+      <path d="M15 8h4l3 3v5h-7V8z" />
+      <circle cx="6" cy="18" r="2" />
+      <circle cx="17" cy="18" r="2" />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon({ size = 22, color = "#1d5fb8", strokeWidth = 1.6, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 2l8 3.5v6c0 5-3.4 8.7-8 10.5-4.6-1.8-8-5.5-8-10.5v-6L12 2z" />
+      <path d="M8.5 12l2.5 2.5 5-5" />
+    </svg>
+  );
+}
+
+export function HeadsetIcon({ size = 22, color = "#1d5fb8", strokeWidth = 1.6, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3 13a9 9 0 0118 0" />
+      <rect x="3" y="13" width="4" height="6" rx="1.5" />
+      <rect x="17" y="13" width="4" height="6" rx="1.5" />
+      <path d="M19 19v1a3 3 0 01-3 3h-3" />
+    </svg>
+  );
+}
+
+export function LockIcon({ size = 22, color = "#1d5fb8", strokeWidth = 1.6, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="4" y="10" width="16" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 018 0v3" />
+    </svg>
+  );
+}
+
 export function PinIcon({ size = 15, color = "#555", strokeWidth = 1.8, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
