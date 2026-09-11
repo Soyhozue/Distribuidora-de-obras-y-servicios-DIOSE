@@ -1,6 +1,6 @@
 function VisaBadge() {
   return (
-    <div className="w-11 h-7 rounded bg-white flex items-center justify-center shrink-0" title="Visa">
+    <div className="w-11 h-7 rounded-lg bg-diose-gray flex items-center justify-center shrink-0" title="Visa">
       <svg width="30" height="12" viewBox="0 0 30 12" xmlns="http://www.w3.org/2000/svg">
         <text
           x="15"
@@ -22,7 +22,7 @@ function VisaBadge() {
 
 function MastercardBadge() {
   return (
-    <div className="w-11 h-7 rounded bg-white flex items-center justify-center shrink-0" title="Mastercard">
+    <div className="w-11 h-7 rounded-lg bg-diose-gray flex items-center justify-center shrink-0" title="Mastercard">
       <svg width="26" height="16" viewBox="0 0 26 16" xmlns="http://www.w3.org/2000/svg">
         <circle cx="9" cy="8" r="8" fill="#EB001B" />
         <circle cx="17" cy="8" r="8" fill="#F79E1B" />
@@ -34,7 +34,7 @@ function MastercardBadge() {
 
 function AmexBadge() {
   return (
-    <div className="w-11 h-7 rounded bg-[#006FCF] flex items-center justify-center shrink-0" title="American Express">
+    <div className="w-11 h-7 rounded-lg bg-[#006FCF] flex items-center justify-center shrink-0" title="American Express">
       <span className="text-white text-[8px] font-bold tracking-tight">AMEX</span>
     </div>
   );
@@ -43,7 +43,7 @@ function AmexBadge() {
 export default function PaymentBadges() {
   return (
     <div className="flex flex-col gap-2.5">
-      <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-white/40">
+      <span className="text-[10px] font-semibold tracking-[0.16em] uppercase text-gray-400">
         Aceptamos
       </span>
       <div className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export default function PaymentBadges() {
         <MastercardBadge />
         <AmexBadge />
       </div>
-      <span className="text-[11px] text-white/30">
+      <span className="text-[11px] text-gray-400">
         Pagos con tarjeta procesados de forma segura por Mercado Pago
       </span>
     </div>

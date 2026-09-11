@@ -20,8 +20,25 @@
   --color-diose-danger: #b54040;
   --color-diose-success: #2a7a2a;
 
-  --font-heading: var(--font-bebas-neue), sans-serif;
-  --font-sans: var(--font-outfit), sans-serif;
+  /* Rediseño 2026 — acentos multicolor (mismo tono/saturación en oklch) */
+  --color-diose-red: oklch(54% 0.19 29);
+  --color-diose-red-tint: oklch(94% 0.035 29);
+  --color-diose-red-ink: oklch(40% 0.17 29);
+  --color-diose-gold: oklch(54% 0.19 75);
+  --color-diose-gold-tint: oklch(94% 0.035 75);
+  --color-diose-gold-ink: oklch(40% 0.17 75);
+  --color-diose-blue: oklch(54% 0.19 250);
+  --color-diose-blue-tint: oklch(94% 0.035 250);
+  --color-diose-blue-ink: oklch(40% 0.17 250);
+  --color-diose-green: oklch(56% 0.17 150);
+  --color-diose-green-tint: oklch(94% 0.035 150);
+  --color-diose-green-ink: oklch(40% 0.17 150);
+  --color-diose-purple: oklch(54% 0.19 320);
+  --color-diose-purple-tint: oklch(94% 0.035 320);
+  --color-diose-purple-ink: oklch(40% 0.17 320);
+
+  --font-heading: var(--font-space-grotesk), sans-serif;
+  --font-sans: var(--font-manrope), sans-serif;
 
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-medium: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -131,5 +148,5 @@ body {
 
 h1, h2, h3, h4 {
   font-family: var(--font-heading);
-  font-weight: 400;
+  font-weight: 700;
 }

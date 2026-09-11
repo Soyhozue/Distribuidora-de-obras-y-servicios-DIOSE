@@ -58,7 +58,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/producto/${product.id}`}
-      className={`group relative block bg-white border border-diose-border overflow-hidden transition-all duration-300 hover:border-diose-amber hover:shadow-[0_10px_28px_rgba(0,0,0,0.12)] hover:-translate-y-1 ${
+      className={`group relative block bg-white border border-diose-border rounded-3xl overflow-hidden transition-all duration-300 hover:border-diose-amber hover:shadow-[0_10px_28px_rgba(0,0,0,0.12)] hover:-translate-y-1 ${
         agotado ? "opacity-60" : ""
       }`}
     >
@@ -101,7 +101,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <span className="text-[11px] font-normal text-gray-400 ml-1">MXN</span>
           </div>
           {product.unit && (
-            <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-gray-400 border border-diose-border-light px-2 py-0.5 shrink-0">
+            <span className="text-[10px] font-medium tracking-[0.08em] uppercase text-gray-400 border border-diose-border-light rounded-full px-2.5 py-0.5 shrink-0">
               {product.unit}
             </span>
           )}

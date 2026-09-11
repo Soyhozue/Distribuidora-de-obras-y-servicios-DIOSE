@@ -12,11 +12,13 @@ export default function ShopPromoCard({
   mediaType,
   badgeText,
   product,
+  accent = "var(--color-diose-amber)",
 }: {
   imageUrl: string;
   mediaType: "IMAGE" | "VIDEO";
   badgeText: string | null;
   product: Product;
+  accent?: string;
 }) {
   const add = useCartStore((s) => s.add);
   const showToast = useToastStore((s) => s.show);
@@ -28,7 +30,7 @@ export default function ShopPromoCard({
   }
 
   return (
-    <div className="sm:col-span-2 relative bg-diose-black overflow-hidden group flex flex-col sm:flex-row">
+    <div className="sm:col-span-2 relative bg-diose-black rounded-3xl overflow-hidden group flex flex-col sm:flex-row">
       <Link href={`/producto/${product.id}`} className="relative w-full sm:w-1/2 aspect-[4/3] sm:aspect-auto shrink-0 block overflow-hidden">
         {mediaType === "VIDEO" ? (
           <video
@@ -48,7 +50,10 @@ export default function ShopPromoCard({
           />
         )}
         {badgeText && (
-          <div className="absolute top-3 right-3 bg-diose-amber text-white text-[11px] font-bold tracking-[0.02em] px-3 py-1.5 rotate-3 shadow-strong">
+          <div
+            className="absolute top-3 right-3 text-white text-[11px] font-bold tracking-[0.02em] px-3 py-1.5 rounded-full rotate-3 shadow-strong"
+            style={{ background: accent }}
+          >
             {badgeText}
           </div>
         )}
@@ -59,7 +64,7 @@ export default function ShopPromoCard({
           <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400">{product.brand}</span>
           <StockBadge status={product.stockStatus} />
         </div>
-        <Link href={`/producto/${product.id}`} className="font-heading text-xl text-diose-black tracking-[0.02em] leading-tight hover:text-diose-amber transition-colors">
+        <Link href={`/producto/${product.id}`} className="font-heading text-xl text-diose-black leading-tight hover:text-diose-amber transition-colors">
           {product.name}
         </Link>
         <div className="text-2xl font-semibold text-diose-amber">
@@ -69,7 +74,7 @@ export default function ShopPromoCard({
         <button
           onClick={handleAdd}
           disabled={agotado}
-          className="bg-diose-black hover:bg-diose-amber text-white px-5 py-3 text-xs font-semibold tracking-[0.08em] uppercase cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="bg-diose-black hover:bg-diose-amber text-white px-5 py-3 rounded-2xl text-xs font-semibold tracking-[0.08em] uppercase cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {agotado ? "Agotado" : "Añadir al carrito"}
         </button>

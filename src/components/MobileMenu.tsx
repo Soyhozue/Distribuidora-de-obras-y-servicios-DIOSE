@@ -66,7 +66,7 @@ export default function MobileMenu({
 
           {/* drawer */}
           <div
-            className="absolute top-16 left-0 right-0 bg-white border-b border-diose-border-light shadow-xl"
+            className="absolute top-[84px] left-0 right-0 mx-4 rounded-2xl bg-white border border-diose-border-light shadow-xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Nav links */}
@@ -85,7 +85,7 @@ export default function MobileMenu({
                   >
                     {link.label}
                     {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-diose-amber" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-diose-blue" />
                     )}
                   </Link>
                 );
@@ -96,7 +96,7 @@ export default function MobileMenu({
             <div className="grid grid-cols-2 gap-3 p-5">
               <Link
                 href="/cuenta"
-                className="flex items-center gap-2.5 border border-diose-border px-4 py-3 text-[13px] font-medium text-diose-black"
+                className="flex items-center gap-2.5 border border-diose-border rounded-xl px-4 py-3 text-[13px] font-medium text-diose-black"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
@@ -105,7 +105,7 @@ export default function MobileMenu({
               </Link>
               <Link
                 href="/carrito"
-                className="flex items-center gap-2.5 border border-diose-border px-4 py-3 text-[13px] font-medium text-diose-black"
+                className="flex items-center gap-2.5 border border-diose-border rounded-xl px-4 py-3 text-[13px] font-medium text-diose-black"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 01-8 0" />
