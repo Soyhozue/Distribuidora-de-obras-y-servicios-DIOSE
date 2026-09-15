@@ -81,6 +81,40 @@ export function LockIcon({ size = 22, color = "#1d5fb8", strokeWidth = 1.6, clas
   );
 }
 
+export function CardPaymentIcon({ size = 22, color = "#1d5fb8", strokeWidth = 1.6, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <line x1="2" y1="10" x2="22" y2="10" />
+      <line x1="6" y1="15" x2="10" y2="15" />
+    </svg>
+  );
+}
+
+export function BankTransferIcon({ size = 22, color = "#1d5fb8", strokeWidth = 1.6, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3 10l9-6 9 6" />
+      <line x1="4" y1="10" x2="4" y2="19" />
+      <line x1="9" y1="10" x2="9" y2="19" />
+      <line x1="15" y1="10" x2="15" y2="19" />
+      <line x1="20" y1="10" x2="20" y2="19" />
+      <line x1="2" y1="19" x2="22" y2="19" />
+    </svg>
+  );
+}
+
+export function CashIcon({ size = 22, color = "#1d5fb8", strokeWidth = 1.6, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <circle cx="12" cy="12" r="3" />
+      <line x1="6" y1="9" x2="6" y2="9.01" />
+      <line x1="18" y1="15" x2="18" y2="15.01" />
+    </svg>
+  );
+}
+
 export function PinIcon({ size = 15, color = "#555", strokeWidth = 1.8, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>

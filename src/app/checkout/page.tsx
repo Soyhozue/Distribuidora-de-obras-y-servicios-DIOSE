@@ -6,19 +6,18 @@ import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import { cartTotals, useCartStore } from "@/store/cart";
 import { formatPrice } from "@/lib/currency";
+import { CardPaymentIcon, BankTransferIcon, CashIcon, WhatsAppIcon } from "@/components/icons";
 
 const PAYMENT_METHODS = [
-  { id: "mercadopago", label: "Tarjeta de crédito / débito (MercadoPago)" },
-  { id: "transferencia", label: "Transferencia bancaria (SPEI)" },
-  { id: "efectivo", label: "Pago en efectivo (en sucursal)" },
-  { id: "whatsapp", label: "Cotización por WhatsApp" },
+  { id: "mercadopago", label: "Tarjeta de crédito / débito (MercadoPago)", Icon: CardPaymentIcon },
+  { id: "transferencia", label: "Transferencia bancaria (SPEI)", Icon: BankTransferIcon },
+  { id: "efectivo", label: "Pago en efectivo (en sucursal)", Icon: CashIcon },
 ];
 
 const PAYMENT_MAP: Record<string, string> = {
   mercadopago: "TARJETA",
   transferencia: "TRANSFERENCIA",
   efectivo: "EFECTIVO",
-  whatsapp: "WHATSAPP",
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,6 +43,11 @@ const CFDI_USES = [
   { code: "I08", label: "I08 · Otra maquinaria y equipo" },
   { code: "P01", label: "P01 · Por definir" },
 ];
+
+function whatsappQuoteMessage(lines: { product: { name: string }; quantity: number }[], total: number): string {
+  const itemLines = lines.map((l) => `• ${l.quantity} x ${l.product.name}`).join("\n");
+  return `Hola, quisiera cotizar este pedido:\n\n${itemLines}\n\nTotal aproximado: ${formatPrice(total)}`;
+}
 
 type SavedAddress = {
   id: string;
@@ -81,6 +85,7 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [whatsapp, setWhatsapp] = useState("");
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [useNewAddress, setUseNewAddress] = useState(false);
@@ -98,6 +103,12 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     revalidateCoupon();
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((s: { whatsapp?: string }) => {
+        if (s.whatsapp) setWhatsapp(s.whatsapp);
+      })
+      .catch(() => {});
     fetch("/api/me")
       .then((r) => r.json())
       .then((u: { name: string; email: string; phone: string | null } | null) => {
@@ -346,17 +357,36 @@ export default function CheckoutPage() {
                   payment === m.id ? "border-[1.5px] border-diose-black" : "border border-diose-border"
                 }`}
               >
+                <div
+                  className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center ${
+                    payment === m.id ? "bg-diose-black" : "bg-diose-gray"
+                  }`}
+                >
+                  <m.Icon size={17} color={payment === m.id ? "#ffffff" : "#1d5fb8"} strokeWidth={1.7} />
+                </div>
+                <span className={`text-[13px] flex-1 ${payment === m.id ? "font-medium text-diose-black" : "text-gray-600"}`}>
+                  {m.label}
+                </span>
                 <div className={`w-4 h-4 rounded-full shrink-0 flex items-center justify-center ${
                   payment === m.id ? "bg-diose-black" : "border-[1.5px] border-gray-300"
                 }`}>
                   {payment === m.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                 </div>
-                <span className={`text-[13px] ${payment === m.id ? "font-medium text-diose-black" : "text-gray-600"}`}>
-                  {m.label}
-                </span>
               </button>
             ))}
           </div>
+
+          {whatsapp && (
+            <a
+              href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(whatsappQuoteMessage(lines, total))}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center justify-center gap-2.5 border border-diose-border px-4.5 py-3 text-[12px] font-semibold text-gray-600 hover:border-[#25D366] hover:text-[#128C4A] transition-colors"
+            >
+              <WhatsAppIcon size={16} color="#25D366" />
+              ¿Prefieres cotizar primero? Habla con nosotros por WhatsApp
+            </a>
+          )}
 
           {/* Facturación */}
           <div className="mb-7" />
