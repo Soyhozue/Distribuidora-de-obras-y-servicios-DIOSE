@@ -133,6 +133,8 @@ export default async function Home() {
         </div>
       </section>
 
+      <ScrewFinder options={screwOptions} />
+
       {/* TRUST STRIP — cada tarjeta con su propio acento de color */}
       <section className="px-4 md:px-6 pb-8">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
@@ -248,8 +250,6 @@ export default async function Home() {
           </div>
         </section>
       )}
-
-      <ScrewFinder options={screwOptions} />
 
       <PromoSection promos={promos} />
 

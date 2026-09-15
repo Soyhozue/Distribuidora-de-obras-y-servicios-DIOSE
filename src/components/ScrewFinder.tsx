@@ -29,21 +29,24 @@ export default function ScrewFinder({ options }: { options: ScrewFinderOption[] 
       <section className="px-4 md:px-6 pb-8">
         <button
           onClick={() => setOpen(true)}
-          className="group max-w-7xl mx-auto w-full flex items-center gap-4 bg-diose-gold-tint hover:brightness-95 rounded-3xl px-6 py-5 text-left cursor-pointer transition-[filter] duration-200"
+          className="group max-w-3xl mx-auto w-full flex flex-col items-center text-center gap-1 bg-diose-gold-tint hover:brightness-95 rounded-3xl px-6 py-8 md:py-9 cursor-pointer transition-[filter] duration-200"
         >
-          <div className="shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12">
-            <BoltIcon size={30} />
+          <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center mb-2 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12">
+            <BoltIcon size={34} />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-semibold tracking-[0.16em] uppercase text-diose-gold-ink mb-0.5">
-              Tornillería
-            </div>
-            <div className="font-heading text-lg md:text-xl text-diose-black tracking-[0.02em] leading-tight">
-              ¿No sabes qué tornillo llevas? Encuéntralo en pantalla
-            </div>
+          <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-diose-gold-ink">
+            Tornillería
           </div>
-          <div className="shrink-0 w-9 h-9 rounded-full bg-diose-black flex items-center justify-center transition-transform duration-200 group-hover:translate-x-1">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="font-heading text-xl md:text-2xl text-diose-black tracking-[0.02em] leading-tight">
+            ¿No sabes qué tornillo llevas?
+          </div>
+          <p className="text-[13px] text-diose-black/60 max-w-sm mt-1">
+            Compara el tamaño real directo en tu pantalla y encuéntralo en segundos.
+            <span className="block mt-0.5">Recomendado usar desde una computadora, por el tamaño de pantalla.</span>
+          </p>
+          <div className="mt-4 inline-flex items-center gap-2 bg-diose-black text-white rounded-full pl-5 pr-4 py-2.5 text-[12px] font-semibold tracking-[0.06em] uppercase transition-[gap] duration-200 group-hover:gap-3">
+            Identificar mi tornillo
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
