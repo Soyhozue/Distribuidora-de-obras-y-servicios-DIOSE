@@ -139,9 +139,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             {product.name}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-2.5">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-semibold text-diose-amber">{formatPrice(product.price)}</span>
+              {(product.minOrderQty ?? 1) > 1 && (
+                <span className="text-sm text-gray-400 font-normal whitespace-nowrap">por pieza</span>
+              )}
               <span className="text-[11px] text-gray-400 whitespace-nowrap">(IVA incluido)</span>
             </div>
             {product.stockStatus !== "AGOTADO" ? (
@@ -155,6 +158,14 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               <span className="text-xs font-medium text-diose-danger tracking-[0.04em]">Agotado</span>
             )}
           </div>
+
+          {(product.minOrderQty ?? 1) > 1 && (
+            <div className="mb-5 bg-diose-amber/10 border border-diose-amber/30 px-3.5 py-2.5 text-[13px] text-diose-black">
+              Este producto se vende por bolsa de <strong>{product.minOrderQty} piezas</strong> — pagas{" "}
+              <strong>{formatPrice(product.price * (product.minOrderQty ?? 1))}</strong> por la bolsa completa, no{" "}
+              {formatPrice(product.price)}.
+            </div>
+          )}
 
           {variants.length > 0 && (
             <div className="mb-5">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toastStore";
 import { WhatsAppIcon } from "@/components/icons";
+import { formatPrice } from "@/lib/currency";
 import type { Product } from "@/data/products";
 
 export default function ProductPurchasePanel({ product, whatsapp }: { product: Product; whatsapp: string }) {
@@ -23,7 +24,7 @@ export default function ProductPurchasePanel({ product, whatsapp }: { product: P
           {product.packLabel}
         </div>
       )}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-2">
         <div className="flex items-center border border-diose-border">
           <button
             onClick={() => setQuantity((q) => Math.max(step, q - step))}
@@ -57,6 +58,10 @@ export default function ProductPurchasePanel({ product, whatsapp }: { product: P
             {added ? "Agregado ✓" : "Agregar al carrito"}
           </span>
         </button>
+      </div>
+      <div className="text-[12px] text-gray-500 mb-4">
+        {quantity} {quantity === 1 ? "pieza" : "piezas"} · Total a pagar:{" "}
+        <strong className="text-diose-black">{formatPrice(product.price * quantity)}</strong>
       </div>
       {step > 1 && !product.packLabel && (
         <div className="text-[11px] text-gray-400 -mt-2.5 mb-4">Se vende en múltiplos de {step} piezas.</div>
