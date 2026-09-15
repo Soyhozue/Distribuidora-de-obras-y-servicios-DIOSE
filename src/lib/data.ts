@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import type { Product } from "@/data/products";
 import type { ProductIconKey } from "@/components/icons";
 import { formatPrice } from "@/lib/currency";
+import { calcShipping, isLocalJuarez } from "@/lib/shipping";
 
 export function pickIcon(categoryName: string): ProductIconKey {
   const map: Record<string, ProductIconKey> = {
@@ -512,17 +513,6 @@ export type CreateOrderInput = {
   };
 };
 
-const SHIPPING_RATES = [
-  { max: 1, p: 120 }, { max: 3, p: 180 }, { max: 5, p: 250 },
-  { max: 10, p: 350 }, { max: 20, p: 500 }, { max: Infinity, p: 700 },
-];
-
-function isJuarezCity(city: string) {
-  return ["juárez", "juarez", "cd. juárez", "ciudad juárez", "ciudad juarez"].some((k) =>
-    city.toLowerCase().includes(k)
-  );
-}
-
 export async function createOrder(input: CreateOrderInput, sessionUserId?: string) {
   // Never trust a client-supplied unit price — a tampered request could set
   // any price it wants. Re-derive every line from the product's real,
@@ -541,7 +531,7 @@ export async function createOrder(input: CreateOrderInput, sessionUserId?: strin
   const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
 
   let shipping = 0;
-  if (input.items.length > 0 && !isJuarezCity(input.city)) {
+  if (input.items.length > 0 && !isLocalJuarez(input.city)) {
     const weights = await prisma.product.findMany({
       where: { id: { in: input.items.map((i) => i.productId) } },
       select: { id: true, weight: true },
@@ -551,7 +541,7 @@ export async function createOrder(input: CreateOrderInput, sessionUserId?: strin
       return sum + w * i.quantity;
     }, 0);
     if (totalWeight > 0) {
-      shipping = (SHIPPING_RATES.find((r) => totalWeight <= r.max) ?? SHIPPING_RATES[SHIPPING_RATES.length - 1]).p;
+      shipping = calcShipping(totalWeight, input.city);
     }
   }
 

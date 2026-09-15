@@ -16,13 +16,13 @@ const DEFAULT_RATE = 3.49;
 const DEFAULT_FIXED = 4;
 const DEFAULT_IVA = 16;
 
+// Tarifas reales de Paquetería Tres Guerras (Entrega a domicilio, plana a
+// nivel nacional) — mismos números que src/lib/shipping.ts.
 const SHIPPING_REFERENCE = [
-  { label: "Hasta 1 kg", price: 120 },
-  { label: "Hasta 3 kg", price: 180 },
-  { label: "Hasta 5 kg", price: 250 },
-  { label: "Hasta 10 kg", price: 350 },
-  { label: "Hasta 20 kg", price: 500 },
-  { label: "Más de 20 kg", price: 700 },
+  { label: "Hasta 5 kg", price: 173 },
+  { label: "Hasta 10 kg", price: 363 },
+  { label: "Hasta 20 kg", price: 487 },
+  { label: "Más de 20 kg (estimado)", price: 750 },
 ];
 
 function NumberField({

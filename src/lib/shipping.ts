@@ -6,14 +6,21 @@ export function isLocalJuarez(city: string): boolean {
   return JUAREZ_KEYWORDS.some((kw) => city.toLowerCase().includes(kw));
 }
 
-// Tarifa por peso para envíos fuera de Juárez (MXN)
+// Tarifa por peso para envíos fuera de Juárez (MXN) — tomada de cotizaciones
+// reales del cotizador de Paquetería Tres Guerras (servicio "Entrega a
+// domicilio", el más barato: tú llevas el paquete a su sucursal en Juárez y
+// ellos lo entregan en la puerta del cliente), confirmadas el 15-sep-2026.
+// Es tarifa plana nacional — se cotizó igual a Guadalajara, CDMX y Hermosillo
+// para el mismo peso, así que no depende del destino.
+// Los tramos 1-20 kg son precios reales de su cotizador. Arriba de 20 kg no
+// hay dato real todavía — ese último tramo es una proyección (misma tasa
+// marginal que entre 10 y 20 kg, con margen de sobra) hasta que consigas una
+// cotización real para paquetes pesados.
 const WEIGHT_RATES: { maxKg: number; price: number }[] = [
-  { maxKg: 1,   price: 120 },
-  { maxKg: 3,   price: 180 },
-  { maxKg: 5,   price: 250 },
-  { maxKg: 10,  price: 350 },
-  { maxKg: 20,  price: 500 },
-  { maxKg: Infinity, price: 700 },
+  { maxKg: 5,   price: 173 },  // real: $172.84 (tarifa plana 1-5kg)
+  { maxKg: 10,  price: 363 },  // real: $363.08
+  { maxKg: 20,  price: 487 },  // real: $487.20
+  { maxKg: Infinity, price: 750 }, // proyectado — confirma con Tres Guerras para pedidos así de pesados
 ];
 
 export function calcShipping(totalWeightKg: number, city: string): number {
