@@ -218,7 +218,7 @@ function ListFinder({ options }: { options: ScrewFinderOption[] }) {
   );
 }
 
-const MAX_LENGTH_PX = 220;
+const MAX_LENGTH_PX = 420;
 const MAX_DIAMETER_PX = 90;
 
 function VisualFinder({ options }: { options: ScrewFinderOption[] }) {
