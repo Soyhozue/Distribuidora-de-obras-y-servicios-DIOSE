@@ -716,6 +716,8 @@ export async function getOrderById(id: string) {
         }
       : null,
     total: Number(order.total.toString()),
+    shipping: Number(order.shipping.toString()),
+    totalWeightKg: order.items.reduce((sum, i) => sum + (i.product.weight ?? 0) * i.quantity, 0),
     createdAt: order.createdAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }),
     customer: {
       name: order.user.name,

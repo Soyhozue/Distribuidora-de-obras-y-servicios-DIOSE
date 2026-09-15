@@ -3,6 +3,7 @@ import Link from "next/link";
 import OrderStatusPanel from "./OrderStatusPanel";
 import { getOrderById } from "@/lib/data";
 import { formatPrice } from "@/lib/currency";
+import { shippingGuidance, TRES_GUERRAS_ORIGIN_CP, TRES_GUERRAS_COTIZADOR_URL } from "@/lib/shipping";
 
 export const revalidate = 0;
 
@@ -19,6 +20,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   if (!order) notFound();
 
   const currentStep = STEPS.findIndex((s) => s.key === order.status);
+  const shipGuidance = shippingGuidance(order.totalWeightKg, order.customer.city);
 
   return (
     <>
@@ -88,6 +90,69 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 <Field label="Correo" value={order.customer.email} />
                 <Field label="Dirección" value={order.customer.address || "—"} />
               </div>
+            </div>
+
+            <div className="bg-white border border-diose-border p-6">
+              <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-gray-400 mb-3.5">
+                Envío
+              </div>
+
+              {shipGuidance.isLocal ? (
+                <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-3.5 py-2.5">
+                  Entrega local gratis en Ciudad Juárez — no necesitas paquetería para este pedido.
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-4">
+                    <Field label="Peso total del pedido" value={`${order.totalWeightKg} kg`} />
+                    <Field label="Envío cobrado al cliente" value={formatPrice(order.shipping)} />
+                  </div>
+
+                  {shipGuidance.isEstimate && (
+                    <div className="bg-diose-amber/10 border border-diose-amber text-diose-black text-xs px-3.5 py-2.5 mb-4">
+                      ⚠️ Este pedido pesa más de 20&nbsp;kg — el precio de arriba es una <strong>estimación</strong>,
+                      no un dato confirmado con Tres Guerras. Cotízalo antes de despacharlo para no perder dinero
+                      si sale más caro.
+                    </div>
+                  )}
+
+                  <div className="bg-[#F9F9F9] border border-diose-border-light p-3.5 mb-4">
+                    <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 mb-2">
+                      Cómo despacharlo
+                    </p>
+                    <ol className="text-xs text-diose-black leading-relaxed list-decimal list-inside space-y-1">
+                      <li>
+                        Lleva el paquete a la sucursal de <strong>Tres Guerras en Ciudad Juárez</strong> y usa el
+                        servicio <strong>&quot;Entrega a domicilio&quot;</strong> (es el más barato — ellos lo
+                        entregan en la puerta del cliente).
+                      </li>
+                      <li>
+                        Destino: <strong>{order.customer.city}, {order.customer.state}</strong> — CP{" "}
+                        <strong>{order.customer.postalCode || "—"}</strong>
+                      </li>
+                      <li>
+                        Peso a declarar: <strong>{order.totalWeightKg} kg</strong>
+                      </li>
+                    </ol>
+                  </div>
+
+                  <a
+                    href={TRES_GUERRAS_COTIZADOR_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-diose-black hover:bg-diose-amber text-white px-4 py-2.5 text-[11px] font-semibold tracking-[0.08em] uppercase transition-colors"
+                  >
+                    Cotizar en Tres Guerras
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 17L17 7M7 7h10v10" />
+                    </svg>
+                  </a>
+                  <p className="text-[11px] text-gray-400 mt-2">
+                    En su cotizador pon CP origen <strong>{TRES_GUERRAS_ORIGIN_CP}</strong> → CP destino{" "}
+                    <strong>{order.customer.postalCode || "—"}</strong>, peso <strong>{order.totalWeightKg} kg</strong>.
+                  </p>
+                </>
+              )}
             </div>
 
             {order.paymentMethod === "TRANSFERENCIA" && (

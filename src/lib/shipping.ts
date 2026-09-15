@@ -26,11 +26,28 @@ const WEIGHT_RATES: { maxKg: number; price: number }[] = [
 export function calcShipping(totalWeightKg: number, city: string): number {
   if (isLocalJuarez(city)) return 0;
   const rate = WEIGHT_RATES.find((r) => totalWeightKg <= r.maxKg);
-  return rate?.price ?? 700;
+  return rate?.price ?? WEIGHT_RATES[WEIGHT_RATES.length - 1].price;
 }
 
 export function shippingLabel(totalWeightKg: number, city: string): string {
   if (totalWeightKg === 0) return "A calcular (sin peso registrado)";
   if (isLocalJuarez(city)) return "Gratis — envío local Juárez";
   return formatPrice(calcShipping(totalWeightKg, city));
+}
+
+// CP de la sucursal de origen (Ciudad Juárez) que ya usamos para cotizar con
+// Tres Guerras — para que el panel de admin pueda mandar al admin derechito
+// a su cotizador con los mismos datos.
+export const TRES_GUERRAS_ORIGIN_CP = "32000";
+export const TRES_GUERRAS_COTIZADOR_URL = "https://tresguerras.com.mx";
+
+// Para el panel de admin: qué tanto confiar en la tarifa mostrada, y qué
+// pasos seguir para despacharlo. El último tramo (más de 20kg) es una
+// proyección, no un precio confirmado con Tres Guerras — por eso se marca
+// aparte, para que el admin lo corrobore con ellos antes de cobrar/enviar.
+export function shippingGuidance(totalWeightKg: number, city: string) {
+  const isLocal = isLocalJuarez(city);
+  const price = calcShipping(totalWeightKg, city);
+  const isEstimate = !isLocal && totalWeightKg > 20;
+  return { isLocal, price, isEstimate };
 }
