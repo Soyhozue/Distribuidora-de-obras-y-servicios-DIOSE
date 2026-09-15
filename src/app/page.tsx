@@ -80,24 +80,24 @@ export default async function Home() {
       <Navbar />
 
       {/* HERO — bento: carrusel de fotos reales + panel de promo con foto */}
-      <section className="px-4 md:px-6 pt-2 pb-8 md:pb-10">
+      <section className="px-4 md:px-6 pt-2 pb-5 md:pb-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-5">
-          <RevealOnScroll className="relative rounded-3xl overflow-hidden min-h-[360px] md:min-h-[440px] bg-diose-black">
+          <RevealOnScroll className="relative rounded-3xl overflow-hidden min-h-[240px] md:min-h-[300px] bg-diose-black">
             <HeroCarousel slides={heroSlides} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-7 md:p-9 z-10">
+            <div className="absolute inset-x-0 bottom-0 p-5 md:p-7 z-10">
               <HeroTitle
                 title={settings.heroTitle.replace(/\n/g, " ")}
                 highlight={settings.heroTitleHighlight}
                 highlightColor={settings.heroTitleHighlightColor}
-                className="font-heading text-white text-[28px] md:text-[40px] leading-[1.08] mb-3"
+                className="font-heading text-white text-[22px] md:text-[30px] leading-[1.08] mb-2"
               />
-              <p className="text-[13.5px] text-white/70 max-w-[420px] leading-relaxed mb-5">
+              <p className="text-[12.5px] text-white/70 max-w-[420px] leading-relaxed mb-3.5 hidden sm:block">
                 {settings.heroSubtitle}
               </p>
               <Link
                 href={settings.heroCta1Link}
-                className="inline-block bg-white hover:bg-diose-gray text-diose-black px-7 py-3 rounded-2xl text-[12px] font-bold tracking-[0.08em] uppercase transition-colors duration-200"
+                className="inline-block bg-white hover:bg-diose-gray text-diose-black px-6 py-2.5 rounded-2xl text-[11px] font-bold tracking-[0.08em] uppercase transition-colors duration-200"
               >
                 {settings.heroCta1Label}
               </Link>
@@ -106,7 +106,7 @@ export default async function Home() {
 
           <RevealOnScroll
             delay={80}
-            className="relative rounded-3xl overflow-hidden min-h-[360px] md:min-h-[440px] bg-diose-blue"
+            className="relative rounded-3xl overflow-hidden min-h-[240px] md:min-h-[300px] bg-diose-blue"
           >
             {sidePhoto && (
               <>
@@ -115,16 +115,16 @@ export default async function Home() {
                 <div className="absolute inset-0 bg-gradient-to-t from-diose-blue/95 via-diose-blue/50 to-diose-blue/20" />
               </>
             )}
-            <div className="absolute inset-x-0 bottom-0 p-7 md:p-9 z-10">
-              <span className="text-[11px] font-bold tracking-[0.08em] uppercase text-white/75 block mb-3">
+            <div className="absolute inset-x-0 bottom-0 p-5 md:p-7 z-10">
+              <span className="text-[11px] font-bold tracking-[0.08em] uppercase text-white/75 block mb-2">
                 {settings.heroEyebrow}
               </span>
-              <div className="font-heading text-[22px] leading-tight text-white mb-5">
+              <div className="font-heading text-[18px] leading-tight text-white mb-3.5 hidden sm:block">
                 {[settings.aboutHeroLine1, settings.aboutHeroLine2, settings.aboutHeroLine3].join(" ")}
               </div>
               <Link
                 href={settings.heroCta2Link}
-                className="inline-block bg-white text-diose-blue px-5 py-3 rounded-2xl text-xs font-bold tracking-[0.04em]"
+                className="inline-block bg-white text-diose-blue px-5 py-2.5 rounded-2xl text-xs font-bold tracking-[0.04em]"
               >
                 {settings.heroCta2Label}
               </Link>
