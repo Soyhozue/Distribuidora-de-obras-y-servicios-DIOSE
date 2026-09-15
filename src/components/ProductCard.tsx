@@ -8,7 +8,7 @@ import { useToastStore } from "@/store/toastStore";
 import type { Product } from "@/data/products";
 
 function formatPrice(price: number) {
-  return `$${price.toLocaleString("es-MX")}`;
+  return `$${price.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function StockBadge({ status }: { status: Product["stockStatus"] }) {
